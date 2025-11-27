@@ -1,0 +1,8 @@
+debug: false
+ore-generation-times:
+  diamond_ore:
+    min-time: 6000
+    max-time: 24000
+  ancient_debris:
+    min-time: 6000
+    max-time: 24000
