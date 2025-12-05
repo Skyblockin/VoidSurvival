@@ -5,8 +5,8 @@ plugins {
     id("xyz.jpenilla.run-paper") version "3.0.0" // Adds runServer and runMojangMappedServer tasks for testing
 }
 
-group = "com.skyblockin"
-version = "1.0.0-SNAPSHOT"
+group = "com.skyblockin.voidsurvival"
+version = "1.0"
 description = "Simple plugin for generating floating islands in ungenerated chunks"
 
 java {

@@ -1,9 +1,9 @@
 name: VoidSurvival
 version: '1.0'
-main: com.skyblockin.VoidSurvival
+main: com.skyblockin.voidsurvival.VoidSurvival
 description: hkasgasg
 api-version: '1.21.10'
-bootstrapper: com.skyblockin.VoidSurvivalBootstrap
+bootstrapper: com.skyblockin.voidsurvival.VoidSurvivalBootstrap
 dependencies:
   server:
     WorldGuard:

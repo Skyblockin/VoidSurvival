@@ -1,7 +1,17 @@
 name: VoidSurvival
 version: 1.0
 description: Small plugin to manage void survival things
-depend: [WorldEdit, WorldGuard]
+depend: [ WorldEdit, WorldGuard ]
+main: com.skyblockin.voidsurvival.VoidSurvival
 libraries:
   - com.sk89q.worldguard:worldguard-bukkit:7.0.14
   - com.sk89q.worldedit:worldedit-bukkit:7.3.17
+commands:
+  createisland:
+    permission: voidsurvival.createisland
+    aliases:
+      - ci
+  home:
+    permission: voidsurvival.home
+  sethome:
+    permission: voidsurvival.sethome
