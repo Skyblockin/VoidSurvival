@@ -26,6 +26,10 @@ public class CombatTracker implements Listener {
             event.deathMessage(Component.text(event.getPlayer().getName() + " got too greedy.", NamedTextColor.RED));
         }
 
+        if (source.getDamageType().equals(DamageTypes.BLEED)) {
+            event.deathMessage(Component.text(event.getPlayer().getName() + " bled to death.", NamedTextColor.RED));
+        }
+
         // Don't allow a player to get a killstreak on themselves lol
         if (source.getCausingEntity() instanceof Player player && !player.equals(event.getPlayer())) {
 
