@@ -1,17 +1,19 @@
 package com.skyblockin.voidsurvival;
 
 import com.skyblockin.voidsurvival.chat.ChatListener;
+import com.skyblockin.voidsurvival.constants.ItemIds;
 import com.skyblockin.voidsurvival.loot.LootChestManager;
 import com.skyblockin.voidsurvival.region.Flags;
-import com.skyblockin.voidsurvival.storage.Database;
-import com.skyblockin.voidsurvival.storage.PlayerDataException;
-import com.skyblockin.voidsurvival.storage.PlayerJoinHandler;
+import com.skyblockin.voidsurvival.storage.*;
 import com.skyblockin.voidsurvival.world.IslandGenerator;
 import com.skyblockin.voidsurvival.world.OreGenerator;
 import com.skyblockin.voidsurvival.world.WorldListener;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
 import org.bukkit.event.Listener;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -90,6 +92,18 @@ public class VoidSurvival extends JavaPlugin {
         );
 
         this.allowJoins = true;
+
+        getServer().getScheduler().runTaskTimer(this, () -> {
+
+            getServer().getOnlinePlayers().forEach(player -> {
+
+                ItemStack item = player.getEquipment().getHelmet();
+
+                if (item != null && !item.isEmpty() && Accessors.ITEM_ID.equals(item, ItemIds.AVARITIA)) {
+                    player.damage(1, DamageSource.builder(DamageType.MAGIC).withCausingEntity(player).build());
+                }
+            });
+        }, 0, 20L);
     }
 
     public void reload() {
@@ -121,6 +135,8 @@ public class VoidSurvival extends JavaPlugin {
             Database.savePlayers(PLAYER_DATA_MAP.values());
             Database.saveChestLocations(this.lootTableManager.getChestLootTables());
             Database.saveGlobalData();
+
+            getServer().getScheduler().cancelTasks(this);
 
         } catch (IOException | PlayerDataException e) {
             throw new RuntimeException(e);

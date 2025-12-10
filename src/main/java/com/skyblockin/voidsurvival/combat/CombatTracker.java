@@ -1,7 +1,12 @@
 package com.skyblockin.voidsurvival.combat;
 
+import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
+import com.skyblockin.voidsurvival.constants.DamageTypes;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.util.TextUtil;
+import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Player;
@@ -16,7 +21,14 @@ public class CombatTracker implements Listener {
 
         DamageSource source = event.getDamageSource();
 
-        if (source.getCausingEntity() instanceof Player player) {
+        // Funny
+        if (source.getDamageType().equals(DamageTypes.GREED)) {
+            event.deathMessage(Component.text(event.getPlayer().getName() + " got too greedy.", NamedTextColor.RED));
+        }
+
+        // Don't allow a player to get a killstreak on themselves lol
+        if (source.getCausingEntity() instanceof Player player && !player.equals(event.getPlayer())) {
+
             PlayerData data = PlayerData.of(player);
             data.kills++;
             data.killStreak++;
@@ -26,6 +38,7 @@ public class CombatTracker implements Listener {
             }
         }
 
+        // But definitely allow them to reset their own killstreak and shame them for it!
         PlayerData data = PlayerData.of(event.getPlayer());
 
         if (data.killStreak >= 10 && source.getCausingEntity() instanceof Player player) {
@@ -33,6 +46,16 @@ public class CombatTracker implements Listener {
         }
 
         data.killStreak = 0;
+    }
+
+    public void onEquip(PlayerInventorySlotChangeEvent event) {
+
+        Player player = event.getPlayer();
+
+        player.getInventory().getItem(event.getSlot());
+
+
+
     }
 
 }

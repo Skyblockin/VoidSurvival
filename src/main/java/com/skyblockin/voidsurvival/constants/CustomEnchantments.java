@@ -1,5 +1,6 @@
-package com.skyblockin.voidsurvival.enchantment;
+package com.skyblockin.voidsurvival.constants;
 
+import com.skyblockin.voidsurvival.enchantment.CustomEnchantment;
 import io.papermc.paper.registry.keys.tags.ItemTypeTagKeys;
 import org.bukkit.inventory.EquipmentSlotGroup;
 

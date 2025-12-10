@@ -1,6 +1,7 @@
 package com.skyblockin.voidsurvival.loot;
 
 import com.skyblockin.voidsurvival.storage.Accessors;
+import com.skyblockin.voidsurvival.constants.ItemIds;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -14,7 +15,7 @@ public class LootUtil {
 
         Inventory inventory = Bukkit.createInventory(null, InventoryType.CHEST, Component.text(title));
 
-        if (Accessors.ITEM_ID.equals(player.getEquipment().getHelmet(), "avaritia")) {
+        if (Accessors.ITEM_ID.equals(player.getEquipment().getHelmet(), ItemIds.AVARITIA)) {
             lootBonus += 50;
         }
 
@@ -29,7 +30,7 @@ public class LootUtil {
 
         Inventory inventory = Bukkit.createInventory(null, InventoryType.CHEST);
 
-        if (Accessors.ITEM_ID.equals(player.getEquipment().getHelmet(), "avaritia")) {
+        if (Accessors.ITEM_ID.equals(player.getEquipment().getHelmet(), ItemIds.AVARITIA)) {
             lootBonus += 50;
         }
 
