@@ -64,6 +64,10 @@ public class Accessor<C> {
         return read(item.getItemMeta(), def);
     }
 
+    public void write(ItemStack item, C value) {
+        item.editMeta(meta -> write(meta, value));
+    }
+
     public void write(PersistentDataHolder holder, C value) {
         write(holder.getPersistentDataContainer(), value);
     }

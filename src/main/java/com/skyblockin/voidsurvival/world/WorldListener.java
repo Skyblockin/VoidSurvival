@@ -1,10 +1,14 @@
 package com.skyblockin.voidsurvival.world;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.storage.Database;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.inventory.ItemStack;
 
 public class WorldListener implements Listener {
 
@@ -15,6 +19,17 @@ public class WorldListener implements Listener {
         if (event.isNewChunk()) {
             this.generatedChunkCount++;
         }
+    }
+
+    @EventHandler
+    public void onBlockPlace(BlockPlaceEvent event) {
+
+        ItemStack item = event.getItemInHand();
+
+        if (Accessors.CAN_PLACE.equals(item, false)) {
+            event.setCancelled(true);
+        }
+
     }
 
     public long getGeneratedChunkCount() {

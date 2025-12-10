@@ -14,10 +14,11 @@ import java.io.IOException;
 @JsonDeserialize(using = LootTable.Deserializer.class)
 public class LootTable {
 
-    private final WeightedCollection<ItemData> items = new WeightedCollection<>();
+    // private final WeightedCollection<ItemData> items = new WeightedCollection<>();
+    private final ProbabilityCollection<ItemData> items = new ProbabilityCollection<>();
 
-    public void addItem(String id, ItemData item, double weight) {
-        this.items.add(new Weighted<>(id, item, weight));
+    public void addItem(String id, ItemData item, double chance) {
+        this.items.add(item, chance);
     }
 
     public ItemStack[] fill(int size, double lootBonus) {
@@ -25,7 +26,10 @@ public class LootTable {
         ItemStack[] items = new ItemStack[size];
 
         for (int i = 0; i < size; i++) {
-            items[i] = this.items.choose(lootBonus).createItem();
+            ItemData data = this.items.chooseOne(lootBonus);
+            if (data != null) {
+                items[i] = data.createItem();
+            }
         }
 
         return items;
@@ -49,11 +53,13 @@ public class LootTable {
                 String id = entry.getKey();
                 JsonNode itemNode = entry.getValue();
 
-                double weight = itemNode.get("weight").asDouble();
+                double chance = itemNode.get("chance").asDouble() / 100;
                 ItemData itemData = Json.convert(itemNode.get("item"), ItemData.class);
 
-                table.addItem(id, itemData, weight);
+                table.addItem(id, itemData, chance);
             });
+
+            table.items.sort();
 
             return table;
         }
