@@ -1,6 +1,8 @@
 package com.skyblockin.voidsurvival;
 
 import com.skyblockin.voidsurvival.chat.ChatListener;
+import com.skyblockin.voidsurvival.combat.CombatTracker;
+import com.skyblockin.voidsurvival.constants.DamageTypes;
 import com.skyblockin.voidsurvival.constants.ItemIds;
 import com.skyblockin.voidsurvival.loot.LootChestManager;
 import com.skyblockin.voidsurvival.region.Flags;
@@ -88,7 +90,8 @@ public class VoidSurvival extends JavaPlugin {
             new PlayerJoinHandler(),
             this.oreGenerator,
             this.worldListener,
-            this.lootTableManager
+            this.lootTableManager,
+            new CombatTracker()
         );
 
         this.allowJoins = true;
@@ -100,7 +103,7 @@ public class VoidSurvival extends JavaPlugin {
                 ItemStack item = player.getEquipment().getHelmet();
 
                 if (item != null && !item.isEmpty() && Accessors.ITEM_ID.equals(item, ItemIds.AVARITIA)) {
-                    player.damage(1, DamageSource.builder(DamageType.MAGIC).withCausingEntity(player).build());
+                    player.damage(1, DamageSource.builder(DamageTypes.GREED).build());
                 }
             });
         }, 0, 20L);

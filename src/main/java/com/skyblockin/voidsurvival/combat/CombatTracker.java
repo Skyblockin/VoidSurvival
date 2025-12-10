@@ -1,12 +1,14 @@
 package com.skyblockin.voidsurvival.combat;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
+import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.constants.DamageTypes;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Player;
@@ -23,11 +25,13 @@ public class CombatTracker implements Listener {
 
         // Funny
         if (source.getDamageType().equals(DamageTypes.GREED)) {
-            event.deathMessage(Component.text(event.getPlayer().getName() + " got too greedy.", NamedTextColor.RED));
+            event.deathMessage(Component.text(event.getPlayer().getName() + " got too greedy.", TextColor.color(0xCC0000)));
+            event.deathScreenMessageOverride(Component.text("You got too greedy.", TextColor.color(0xCC0000)));
         }
 
         if (source.getDamageType().equals(DamageTypes.BLEED)) {
-            event.deathMessage(Component.text(event.getPlayer().getName() + " bled to death.", NamedTextColor.RED));
+            event.deathMessage(Component.text(event.getPlayer().getName() + " bled to death.", TextColor.color(0xCC0000)));
+            event.deathScreenMessageOverride(Component.text("You bled to death.", TextColor.color(0xCC0000)));
         }
 
         // Don't allow a player to get a killstreak on themselves lol
@@ -50,16 +54,6 @@ public class CombatTracker implements Listener {
         }
 
         data.killStreak = 0;
-    }
-
-    public void onEquip(PlayerInventorySlotChangeEvent event) {
-
-        Player player = event.getPlayer();
-
-        player.getInventory().getItem(event.getSlot());
-
-
-
     }
 
 }
