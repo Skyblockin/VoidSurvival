@@ -54,7 +54,7 @@ public final class ItemData {
     public Boolean glintOverride = false;
     public Integer maxStackSize = null;
     public Integer maxDamage = null;
-    public Integer damage = null;
+    public NumberValue damage = null;
     public DyedItemColor dyedItemColor = null;
     public Component name = null;
     public ItemLore lore = null;
@@ -205,7 +205,7 @@ public final class ItemData {
             data.trim = Json.convert(node.get("trim"), ArmorTrim.class);
             data.maxStackSize = Json.convert(node.get("max_stack_size"), Integer.class);
             data.glintOverride = Json.convert(node.get("glint"), Boolean.class);
-            data.damage = Json.convert(node.get("damage"), Integer.class);
+            data.damage = Json.convert(node.get("damage"), NumberValue.class);
             data.maxDamage = Json.convert(node.get("max_damage"), Integer.class);
 
             data.writableBookContent = Json.convert(node.get("writable_book_content"), WritableBookContent.class);
