@@ -2,20 +2,79 @@ package com.skyblockin.voidsurvival.command;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.config.JsonDeserializers;
+import com.skyblockin.voidsurvival.leaderboard.LeaderboardManager;
+import com.skyblockin.voidsurvival.leaderboard.LeaderboardType;
 import com.skyblockin.voidsurvival.storage.Database;
 import com.skyblockin.voidsurvival.storage.InvalidHomeException;
 import com.skyblockin.voidsurvival.storage.PlayerData;
+import com.skyblockin.voidsurvival.util.TextUtil;
 import com.skyblockin.voidsurvival.world.IslandGenerator;
 import io.papermc.paper.command.brigadier.Commands;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+
+import java.util.List;
 
 import static io.papermc.paper.command.brigadier.Commands.argument;
 import static io.papermc.paper.command.brigadier.Commands.literal;
 
 public final class BasicCommands {
 
+    private static Component renderLeaderboard(Component title, List<PlayerData> leaderboard) {
+
+        int counter = 0;
+        String color;
+
+        for (PlayerData data : leaderboard) {
+
+            counter++;
+
+            if (counter == 1) {
+                color = "<gold>";
+            } else if (counter == 2) {
+                color = "<#c0c0c0>";
+            } else if (counter == 3) {
+                color = "<#cd7f32>";
+            } else {
+                color = "<white>";
+            }
+
+            title = title.appendNewline()
+                .append(TextUtil.color("%s%d. %s", color, counter, data.lastKnownUserName))
+                .appendNewline();
+        }
+
+        return title;
+    }
+
+    private static Component getLeaderboard(LeaderboardType type, int limit) {
+
+        List<PlayerData> leaderboard = VoidSurvival.getInstance().getLeaderboardManager().getLeaderboard(type, limit);
+
+        return renderLeaderboard(Component.text("Top " + type.getDisplayName(), NamedTextColor.GOLD, TextDecoration.BOLD), leaderboard);
+    }
+
     public static void register(Commands commands) {
+
+        commands.register(literal("killstreaktop")
+            .executes(ctx -> {
+                ctx.getSource().getSender().sendMessage(getLeaderboard(LeaderboardType.KILLSTREAK, 10));
+                return 1;
+            })
+            .build()
+        );
+
+        commands.register(literal("killtop")
+            .executes(ctx -> {
+                ctx.getSource().getSender().sendMessage(getLeaderboard(LeaderboardType.KILLS, 10));
+                return 1;
+            })
+            .build()
+        );
 
         commands.register(literal("home")
                 .then(argument("name", StringArgumentType.word())

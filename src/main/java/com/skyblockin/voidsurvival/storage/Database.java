@@ -1,8 +1,11 @@
 package com.skyblockin.voidsurvival.storage;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Json;
+import com.skyblockin.voidsurvival.leaderboard.LeaderboardManager;
+import com.skyblockin.voidsurvival.leaderboard.LeaderboardType;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -258,6 +261,33 @@ public class Database {
 
     }
 
+    public static Set<PlayerData> getLeaderboard(LeaderboardType type, int limit) {
+
+        try {
+
+            Statement statement = getConnection().createStatement();
+
+            ResultSet rs = statement.executeQuery(String.format(
+                "SELECT id, player_data FROM players ORDER BY JSON_EXTRACT(player_data, '$.%s') DESC LIMIT %d", type.getColumnKey(), limit
+            ));
+
+            Set<PlayerData> leaderboard = new HashSet<>(limit);
+
+            while (rs.next()) {
+                leaderboard.add(playerFromResultSet(rs));
+            }
+
+            statement.close();
+
+            return leaderboard;
+
+        } catch (Exception ex) {
+            VoidSurvival.logError("Failed to get leaderboard!", ex);
+        }
+
+        return null;
+    }
+
     private static final String loadPlayerData =
         """
         SELECT id, player_data FROM players WHERE id = ?
@@ -278,20 +308,7 @@ public class Database {
                 return new PlayerData(uuid);
             }
 
-            JsonNode playerData = Json.readJson(rs.getString("player_data"));
-
-            PlayerData data = new PlayerData(UUID.fromString(rs.getString("id")));
-
-            data.hasGeneratedIsland = playerData.at("/hasGeneratedIsland").asBoolean(false);
-            data.lastKnownUserName = playerData.at("/lastKnownUserName").asText();
-            data.kills = playerData.at("/kills").asInt(0);
-            data.killStreak = playerData.at("/killStreak").asInt(0);
-
-            if (playerData.hasNonNull("homes")) {
-                data.homes = Json.nodeToValue(playerData.at("/homes"), HomeMap.class);
-            } else {
-                data.homes = new HomeMap();
-            }
+            PlayerData data = playerFromResultSet(rs);
 
             statement.close();
 
@@ -300,6 +317,26 @@ public class Database {
         } catch (Exception ex) {
             throw new PlayerDataException("Failed to load player data: " + ex.getMessage(), ex);
         }
+    }
+
+    private static PlayerData playerFromResultSet(ResultSet rs) throws SQLException, JsonProcessingException {
+
+        JsonNode playerData = Json.readJson(rs.getString("player_data"));
+
+        PlayerData data = new PlayerData(UUID.fromString(rs.getString("id")));
+
+        data.hasGeneratedIsland = playerData.at("/hasGeneratedIsland").asBoolean(false);
+        data.lastKnownUserName = playerData.at("/lastKnownUserName").asText();
+        data.kills = playerData.at("/kills").asInt(0);
+        data.killStreak = playerData.at("/killStreak").asInt(0);
+
+        if (playerData.hasNonNull("homes")) {
+            data.homes = Json.nodeToValue(playerData.path("homes"), HomeMap.class);
+        } else {
+            data.homes = new HomeMap();
+        }
+
+        return data;
     }
 
     private static final String upsertPlayerData =

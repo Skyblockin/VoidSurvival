@@ -1,13 +1,9 @@
 package com.skyblockin.voidsurvival.combat;
 
-import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
-import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.constants.DamageTypes;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.util.TextUtil;
-import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.damage.DamageSource;
@@ -22,6 +18,11 @@ public class CombatTracker implements Listener {
     public void onKill(PlayerDeathEvent event) {
 
         DamageSource source = event.getDamageSource();
+
+        Component deathMessage = event.deathMessage();
+        if (deathMessage != null) {
+            event.deathMessage(deathMessage.color(TextColor.color(0xCC0000)));
+        }
 
         // Funny
         if (source.getDamageType().equals(DamageTypes.GREED)) {

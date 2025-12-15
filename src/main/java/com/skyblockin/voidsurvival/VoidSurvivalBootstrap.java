@@ -49,7 +49,7 @@ public class VoidSurvivalBootstrap implements PluginBootstrap {
                     b.damageEffect(DamageEffect.HURT)
                         .messageId("bleed")
                         .damageScaling(DamageScaling.ALWAYS)
-                        .exhaustion(0.5F)
+                        .exhaustion(1F)
                         .deathMessageType(DeathMessageType.DEFAULT);
                 });
 
@@ -57,7 +57,7 @@ public class VoidSurvivalBootstrap implements PluginBootstrap {
                     b.damageEffect(DamageEffect.HURT)
                         .messageId("greed")
                         .damageScaling(DamageScaling.NEVER)
-                        .exhaustion(0.5F)
+                        .exhaustion(1F)
                         .deathMessageType(DeathMessageType.DEFAULT);
                 });
 

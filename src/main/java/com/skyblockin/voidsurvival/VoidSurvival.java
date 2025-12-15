@@ -4,6 +4,7 @@ import com.skyblockin.voidsurvival.chat.ChatListener;
 import com.skyblockin.voidsurvival.combat.CombatTracker;
 import com.skyblockin.voidsurvival.constants.DamageTypes;
 import com.skyblockin.voidsurvival.constants.ItemIds;
+import com.skyblockin.voidsurvival.leaderboard.LeaderboardManager;
 import com.skyblockin.voidsurvival.loot.LootChestManager;
 import com.skyblockin.voidsurvival.region.Flags;
 import com.skyblockin.voidsurvival.storage.*;
@@ -42,6 +43,8 @@ public class VoidSurvival extends JavaPlugin {
     private IslandGenerator islandGenerator;
     private OreGenerator oreGenerator;
     private LootChestManager lootTableManager;
+    private LeaderboardManager leaderboardManager;
+
     private WorldListener worldListener;
 
     private boolean allowJoins = false;
@@ -70,6 +73,7 @@ public class VoidSurvival extends JavaPlugin {
         this.oreGenerator = new OreGenerator();
         this.lootTableManager = new LootChestManager();
         this.worldListener = new WorldListener();
+        this.leaderboardManager = new LeaderboardManager();
 
         try {
             Database.createDataBase();
@@ -103,7 +107,7 @@ public class VoidSurvival extends JavaPlugin {
                 ItemStack item = player.getEquipment().getHelmet();
 
                 if (item != null && !item.isEmpty() && Accessors.ITEM_ID.equals(item, ItemIds.AVARITIA)) {
-                    player.damage(1, DamageSource.builder(DamageTypes.GREED).build());
+                    player.damage(4, DamageSource.builder(DamageTypes.GREED).build());
                 }
             });
         }, 0, 20L);
@@ -161,6 +165,10 @@ public class VoidSurvival extends JavaPlugin {
 
     public IslandGenerator getIslandGenerator() {
         return this.islandGenerator;
+    }
+
+    public LeaderboardManager getLeaderboardManager() {
+        return this.leaderboardManager;
     }
 
     public boolean isAllowingJoins() {

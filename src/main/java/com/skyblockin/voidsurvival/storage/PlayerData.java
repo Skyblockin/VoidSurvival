@@ -6,9 +6,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 
-import java.util.HashMap;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PlayerData {
@@ -23,9 +21,12 @@ public class PlayerData {
         PLAYER_DATA_MAP.put(data.uuid, data);
     }
 
+    public static Set<PlayerData> getTop(int limit, Comparator<PlayerData> comparator) {
+        return new HashSet<>(PLAYER_DATA_MAP.values().stream().sorted(comparator).limit(limit).toList());
+    }
+
     public final transient UUID uuid;
     public transient boolean generatingIsland = false;
-    private final HashMap<String, Long> chestCooldowns = new HashMap<>();
     public boolean hasGeneratedIsland = false;
     public String lastKnownUserName;
     public int kills = 0;
@@ -87,16 +88,17 @@ public class PlayerData {
         return homes.keySet();
     }
 
-    public void putCooldown(String id, long cooldown) {
-        chestCooldowns.putIfAbsent(id, System.currentTimeMillis() + cooldown);
-    }
-
-    public long getChestCooldown(String id) {
-        return chestCooldowns.getOrDefault(id, 0L);
-    }
-
     public void resetCooldowns() {
-        this.chestCooldowns.clear();
+        this.lastChestOpenTimes.clear();
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(uuid);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof PlayerData data && Objects.equals(uuid, data.uuid);
+    }
 }

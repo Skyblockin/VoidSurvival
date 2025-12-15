@@ -34,31 +34,27 @@ public class Functions {
     }
 
     @SuppressWarnings("UnstableApiUsage")
-    public static <T extends Keyed> RegistryKeySet<@NotNull T> parseRegistryKeySet(RegistryKey<@NotNull T> registryKey, JsonNode rule) {
+    public static <T extends Keyed> RegistryKeySet<@NotNull T> parseRegistryKeySet(RegistryKey<@NotNull T> registryKey, JsonNode node) {
 
-        JsonNode type = rule.get("type");
+        if (node.isArray()) {
 
-        if (type.isArray()) {
+            List<TypedKey<@NotNull T>> keys = new ArrayList<>(node.size());
 
-            List<TypedKey<@NotNull T>> blockTypeKeys = new ArrayList<>(type.size());
-
-            for (JsonNode value : type) {
-                TypedKey<@NotNull T> blockTypeKey = TypedKey.create(registryKey, value.asText());
-                blockTypeKeys.add(blockTypeKey);
+            for (JsonNode value : node) {
+                keys.add(TypedKey.create(registryKey, value.asText()));
             }
 
-            return RegistrySet.keySet(registryKey, blockTypeKeys);
+            return RegistrySet.keySet(registryKey, keys);
 
         } else {
 
-            String value = type.asText();
+            String value = node.asText();
 
             if (value.startsWith("#")) {
                 value = value.substring(1);
                 return RegistryAccess.registryAccess().getRegistry(registryKey).getTag(TagKey.create(registryKey, value));
             } else {
-                TypedKey<@NotNull T> blockType = TypedKey.create(registryKey, value);
-                return RegistrySet.keySet(registryKey, blockType);
+                return RegistrySet.keySet(registryKey, TypedKey.create(registryKey, value));
             }
 
         }
