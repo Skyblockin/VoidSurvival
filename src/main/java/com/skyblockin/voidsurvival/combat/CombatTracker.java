@@ -63,6 +63,16 @@ public class CombatTracker implements Listener {
 
             bleedMap.replaceAll((uuid, value) -> {
 
+                Player player = Bukkit.getPlayer(uuid);
+
+                if (player != null) {
+                    player.getWorld().spawnParticle(Particle.BLOCK_CRUMBLE,
+                        player.getBoundingBox().getCenter().toLocation(player.getWorld()),
+                        10, 0.5, player.getBoundingBox().getHeight() / 2.0, 0.5, 1,
+                        BlockType.REDSTONE_BLOCK.createBlockData()
+                    );
+                }
+
                 if (lastDamageTimes.getOrDefault(uuid, 0L) + 5000L > System.currentTimeMillis()) {
                     return value;
                 }
@@ -147,8 +157,8 @@ public class CombatTracker implements Listener {
                 );
 
                 player.getWorld().spawnParticle(Particle.BLOCK_CRUMBLE,
-                    player.getLocation(),
-                    50, 0.5, player.getBoundingBox().getHeight() / 2.0, 0.5, 1,
+                    player.getLocation().clone().add(0, 1, 0),
+                    200, 0.5, 0.5, 0.5, 0,
                     BlockType.REDSTONE_BLOCK.createBlockData()
                 );
 
