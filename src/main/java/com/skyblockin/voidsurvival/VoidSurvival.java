@@ -2,8 +2,6 @@ package com.skyblockin.voidsurvival;
 
 import com.skyblockin.voidsurvival.chat.ChatListener;
 import com.skyblockin.voidsurvival.combat.CombatTracker;
-import com.skyblockin.voidsurvival.constants.DamageTypes;
-import com.skyblockin.voidsurvival.constants.ItemIds;
 import com.skyblockin.voidsurvival.leaderboard.LeaderboardManager;
 import com.skyblockin.voidsurvival.loot.LootChestManager;
 import com.skyblockin.voidsurvival.region.Flags;
@@ -13,10 +11,7 @@ import com.skyblockin.voidsurvival.world.OreGenerator;
 import com.skyblockin.voidsurvival.world.WorldListener;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.damage.DamageSource;
-import org.bukkit.damage.DamageType;
 import org.bukkit.event.Listener;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -99,18 +94,6 @@ public class VoidSurvival extends JavaPlugin {
         );
 
         this.allowJoins = true;
-
-        getServer().getScheduler().runTaskTimer(this, () -> {
-
-            getServer().getOnlinePlayers().forEach(player -> {
-
-                ItemStack item = player.getEquipment().getHelmet();
-
-                if (item != null && !item.isEmpty() && Accessors.ITEM_ID.equals(item, ItemIds.AVARITIA)) {
-                    player.damage(4, DamageSource.builder(DamageTypes.GREED).build());
-                }
-            });
-        }, 0, 20L);
     }
 
     public void reload() {

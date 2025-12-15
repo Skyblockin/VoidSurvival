@@ -69,6 +69,8 @@ public class VoidSurvivalBootstrap implements PluginBootstrap {
         manager.registerEventHandler(LifecycleEvents.TAGS.postFlatten(RegistryKey.DAMAGE_TYPE).newHandler(event -> {
             event.registrar().addToTag(DamageTypeTagKeys.NO_KNOCKBACK, List.of(GREED_DAMAGE_TYPE_KEY, BLEED_DAMAGE_TYPE_KEY));
             event.registrar().addToTag(DamageTypeTagKeys.NO_IMPACT, List.of(GREED_DAMAGE_TYPE_KEY, BLEED_DAMAGE_TYPE_KEY));
+            event.registrar().addToTag(DamageTypeTagKeys.BYPASSES_ARMOR, List.of(BLEED_DAMAGE_TYPE_KEY));
+            event.registrar().addToTag(DamageTypeTagKeys.BYPASSES_ENCHANTMENTS, List.of(BLEED_DAMAGE_TYPE_KEY));
         }));
 
         manager.registerEventHandler(RegistryEvents.ENCHANTMENT.compose().newHandler(CustomEnchantments.BLEED::register));
