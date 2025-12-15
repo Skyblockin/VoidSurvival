@@ -9,6 +9,10 @@ import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemAttributeModifiers;
+import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.TypedKey;
+import io.papermc.paper.registry.keys.tags.EntityTypeTagKeys;
+import io.papermc.paper.tag.EntityTags;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
@@ -17,13 +21,13 @@ import org.bukkit.*;
 import org.bukkit.block.BlockType;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 
@@ -65,6 +69,7 @@ public class CombatTracker implements Listener {
 
                 Player player = Bukkit.getPlayer(uuid);
 
+                // Play a "bleeding" effect around the player
                 if (player != null) {
                     player.getWorld().spawnParticle(Particle.BLOCK_CRUMBLE,
                         player.getBoundingBox().getCenter().toLocation(player.getWorld()),
@@ -73,6 +78,7 @@ public class CombatTracker implements Listener {
                     );
                 }
 
+                // If the player was damaged in the past 5 seconds, prevent bleeding from decaying
                 if (lastDamageTimes.getOrDefault(uuid, 0L) + 5000L > System.currentTimeMillis()) {
                     return value;
                 }
@@ -106,6 +112,15 @@ public class CombatTracker implements Listener {
     }
 
     @EventHandler
+    public void onProjectileHit(ProjectileHitEvent event) {
+        if (Registry.ENTITY_TYPE.getTag(EntityTypeTagKeys.ARROWS).contains(
+            TypedKey.create(RegistryKey.ENTITY_TYPE, event.getEntity().getType().key())
+        )) {
+            event.getEntity().remove();
+        }
+    }
+
+    @EventHandler
     public void onHit(EntityDamageByEntityEvent event) {
 
         // Proteccc
@@ -131,7 +146,7 @@ public class CombatTracker implements Listener {
             int bleedingLevel = weapon.getEnchantmentLevel(Enchantments.BLEED);
 
             double bleedResistance = calculateBleedResistance(equipment);
-            double bleedingDamage = 5 * bleedingLevel * (1.0 - bleedResistance);
+            double bleedingDamage = 5 * bleedingLevel * (1.0 - bleedResistance) * (event.isCritical() ? 1.5 : 1.0) * player.getAttackCooldown();
             double currentBleeding = bleedMap.getOrDefault(player.getUniqueId(), 0.0) + bleedingDamage;
 
             bleedingBars.computeIfAbsent(player.getUniqueId(), key -> {
