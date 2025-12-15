@@ -128,7 +128,7 @@ public class CombatTracker implements Listener {
 
                 BossBar bar = BossBar.bossBar(
                     getBleedingTitleForBleedingAmount(currentBleeding), (float) (currentBleeding / 100), BossBar.Color.RED,
-                    BossBar.Overlay.NOTCHED_10
+                    BossBar.Overlay.NOTCHED_20
                 );
 
                 player.showBossBar(bar);
