@@ -6,6 +6,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 
+@SuppressWarnings("UnstableApiUsage")
 public class ChatListener implements Listener {
 
     @EventHandler

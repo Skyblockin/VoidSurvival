@@ -6,6 +6,7 @@ import com.skyblockin.voidsurvival.constants.Enchantments;
 import com.skyblockin.voidsurvival.constants.ItemIds;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.storage.PlayerData;
+import com.skyblockin.voidsurvival.util.TagUtil;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemAttributeModifiers;
@@ -113,9 +114,7 @@ public class CombatTracker implements Listener {
 
     @EventHandler
     public void onProjectileHit(ProjectileHitEvent event) {
-        if (Registry.ENTITY_TYPE.getTag(EntityTypeTagKeys.ARROWS).contains(
-            TypedKey.create(RegistryKey.ENTITY_TYPE, event.getEntity().getType().key())
-        )) {
+        if (TagUtil.isTagged(EntityTypeTagKeys.ARROWS, event.getEntity().getType())) {
             event.getEntity().remove();
         }
     }
@@ -138,16 +137,18 @@ public class CombatTracker implements Listener {
 
             EntityEquipment equipment = damager.getEquipment();
 
-            // Null equipment cannot possibly have an enchantment
             if (equipment == null) return;
 
             ItemStack weapon = equipment.getItemInMainHand();
 
             int bleedingLevel = weapon.getEnchantmentLevel(Enchantments.BLEED);
 
+            // If the sword has no bleeding, just don't do anything
+            if (bleedingLevel == 0) return;
+
             double attackSpeedModifier = damager instanceof Player attacker ? attacker.getAttackCooldown() : 1.0;
-            double bleedResistance = calculateBleedResistance(equipment);
-            double bleedingDamage = 5 * bleedingLevel * (1.0 - bleedResistance) * (event.isCritical() ? 1.5 : 1.0) * attackSpeedModifier;
+            double bleedResistance = calculateBleedResistance(player.getEquipment());
+            double bleedingDamage = 10 * (1.0 - bleedResistance) * (event.isCritical() ? 1.5 : 1.0) * attackSpeedModifier;
             double currentBleeding = bleedMap.getOrDefault(player.getUniqueId(), 0.0) + bleedingDamage;
 
             bleedingBars.computeIfAbsent(player.getUniqueId(), key -> {
@@ -166,7 +167,7 @@ public class CombatTracker implements Listener {
 
             if (currentBleeding >= 100) {
 
-                player.damage(8, DamageSource.builder(DamageTypes.BLEED)
+                player.damage(4 + 4 * bleedingLevel, DamageSource.builder(DamageTypes.BLEED)
                     .withDirectEntity(damager)
                     .withCausingEntity(damager)
                     .build()
@@ -195,6 +196,8 @@ public class CombatTracker implements Listener {
     }
 
     private double calculateBleedResistance(EntityEquipment equipment) {
+
+        if (equipment == null) return 0.0;
 
         double resistance = 0.0;
 
