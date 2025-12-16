@@ -145,8 +145,9 @@ public class CombatTracker implements Listener {
 
             int bleedingLevel = weapon.getEnchantmentLevel(Enchantments.BLEED);
 
+            double attackSpeedModifier = damager instanceof Player attacker ? attacker.getAttackCooldown() : 1.0;
             double bleedResistance = calculateBleedResistance(equipment);
-            double bleedingDamage = 5 * bleedingLevel * (1.0 - bleedResistance) * (event.isCritical() ? 1.5 : 1.0) * player.getAttackCooldown();
+            double bleedingDamage = 5 * bleedingLevel * (1.0 - bleedResistance) * (event.isCritical() ? 1.5 : 1.0) * attackSpeedModifier;
             double currentBleeding = bleedMap.getOrDefault(player.getUniqueId(), 0.0) + bleedingDamage;
 
             bleedingBars.computeIfAbsent(player.getUniqueId(), key -> {
