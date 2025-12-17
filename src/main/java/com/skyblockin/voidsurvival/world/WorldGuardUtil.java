@@ -1,9 +1,13 @@
 package com.skyblockin.voidsurvival.world;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.flags.Flags;
+import com.sk89q.worldguard.protection.flags.LocationFlag;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
@@ -27,6 +31,12 @@ public class WorldGuardUtil {
             .getApplicableRegions(
                 BukkitAdapter.adapt(location), RegionQuery.QueryOption.SORT
             ).getRegions();
+    }
+
+    public static <T> T getFlagValueAt(Location location, Flag<T> flag) {
+        return createRegionQuery()
+            .getApplicableRegions(BukkitAdapter.adapt(location))
+            .queryValue(null, flag);
     }
 
     public static ProtectedRegion getTopRegionAt(Location location) {

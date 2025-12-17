@@ -1,14 +1,43 @@
 package com.skyblockin.voidsurvival.storage;
 
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldguard.protection.flags.Flags;
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.world.WorldGuardUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Location;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 public class PlayerJoinHandler implements Listener {
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+
+        Player player = event.getPlayer();
+
+        // Exclude ops of course lol
+        if (player.isOp()) {
+            return;
+        }
+
+        var worldGuardLocation = WorldGuardUtil.getFlagValueAt(player.getLocation(), Flags.TELE_LOC);
+
+        if (worldGuardLocation != null) {
+
+            Location location = BukkitAdapter.adapt(worldGuardLocation);
+
+            if (player.getLocation().distanceSquared(location) >= 25) {
+                player.teleportAsync(location);
+            }
+        }
+
+    }
 
     @EventHandler
     public void onPlayerPreLogin(AsyncPlayerPreLoginEvent event) {
