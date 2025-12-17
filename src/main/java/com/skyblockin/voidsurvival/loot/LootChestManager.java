@@ -26,10 +26,13 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 import java.io.File;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 public class LootChestManager implements Listener {
 
@@ -161,6 +164,7 @@ public class LootChestManager implements Listener {
 
         String tableId = chestLootTables.get(block.getLocation());
 
+        // No loot table set for this chest
         if (tableId == null) {
             return;
         }
@@ -168,22 +172,24 @@ public class LootChestManager implements Listener {
         // Cancel the event so the chest does not open and we can do our own chest logic
         event.setCancelled(true);
 
-        Long lastTime = data.getLastChestOpenTime(block);
+        Instant lastTime = Instant.ofEpochMilli(data.getLastChestOpenTime(block));
         Long cooldown = cooldowns.get(tableId);
-        long currentTime = System.currentTimeMillis();
+        Instant currentTime = Instant.now();
 
         if (cooldown == null) {
             VoidSurvival.logError("Table '%s' has no cooldown set! Is this intended? Defaulting to 0.", tableId);
             cooldown = 0L;
         }
 
-        if (lastTime == null || lastTime + cooldown <= currentTime) {
+        if (currentTime.isAfter(lastTime.plusMillis(cooldown))) {
 
             LootTable table = tables.get(tableId);
 
             if (table != null) {
 
-                LootUtil.openInventory(block, player, table, Functions.tableIdToName(tableId), 0);
+                double lootBonus = Math.clamp(ChronoUnit.HOURS.between(lastTime, currentTime), 0, 72);
+
+                LootUtil.openInventory(block, player, table, Functions.tableIdToName(tableId), lootBonus);
 
                 this.chestViewers.computeIfAbsent(block, k -> new ArrayList<>()).add(player.getUniqueId());
 
@@ -191,7 +197,7 @@ public class LootChestManager implements Listener {
                     chest.open();
                 }
 
-                data.setLastChestOpenTime(block, currentTime);
+                data.setLastChestOpenTime(block, currentTime.toEpochMilli());
 
             } else {
                 VoidSurvival.logError("%s tried to open loot table '%s' for chest at %d %d %d, but no such table exists.",
@@ -200,8 +206,8 @@ public class LootChestManager implements Listener {
             }
 
         } else {
-            long remainingTime = lastTime + cooldown - currentTime;
-            player.sendRichMessage("<red>You must wait " + Format.getFormattedTime(remainingTime / 1000) + " before opening this chest again.");
+            long remainingTime = ChronoUnit.SECONDS.between(currentTime, lastTime.plusMillis(cooldown));
+            player.sendRichMessage("<red>You must wait " + Format.getFormattedTime(remainingTime) + " before opening this chest again.");
         }
     }
 

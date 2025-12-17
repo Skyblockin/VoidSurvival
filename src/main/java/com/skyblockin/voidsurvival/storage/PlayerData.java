@@ -46,8 +46,8 @@ public class PlayerData {
         lastChestOpenTimes.put(BlockPosition.ofBlock(block).asLong(), time);
     }
 
-    public Long getLastChestOpenTime(Block block) {
-        return lastChestOpenTimes.get(BlockPosition.ofBlock(block).asLong());
+    public long getLastChestOpenTime(Block block) {
+        return lastChestOpenTimes.getOrDefault(BlockPosition.ofBlock(block).asLong(), 0L);
     }
 
     public void setHome(String name, Location location) {

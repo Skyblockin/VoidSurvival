@@ -21,12 +21,12 @@ public class LootTable {
         this.items.add(item, chance);
     }
 
-    public ItemStack[] fill(int size, double lootBonus) {
+    public ItemStack[] fill(int size, double lootMultiplier) {
 
         ItemStack[] items = new ItemStack[size];
 
         for (int i = 0; i < size; i++) {
-            ItemData data = this.items.chooseOne(lootBonus);
+            ItemData data = this.items.chooseOne(lootMultiplier);
             if (data != null) {
                 items[i] = data.createItem();
             }

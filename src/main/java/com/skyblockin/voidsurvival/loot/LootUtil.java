@@ -13,11 +13,13 @@ public class LootUtil {
 
         DummyInventoryHolder holder = new DummyInventoryHolder(block, player.getUniqueId(), title);
 
+        double lootMultiplier = 1.0 + (lootBonus / 100);
+
         if (Accessors.ITEM_ID.equals(player.getEquipment().getHelmet(), ItemIds.AVARITIA)) {
-            lootBonus += 50;
+            lootMultiplier *= 1.5;
         }
 
-        ItemStack[] contents = lootTable.fill(holder.getInventory().getSize(), lootBonus);
+        ItemStack[] contents = lootTable.fill(holder.getInventory().getSize(), lootMultiplier);
 
         holder.getInventory().setContents(contents);
 

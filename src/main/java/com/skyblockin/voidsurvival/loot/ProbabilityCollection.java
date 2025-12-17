@@ -19,9 +19,7 @@ public class ProbabilityCollection<T> {
         items.sort(Comparator.comparingDouble(entry -> entry.chance));
     }
 
-    public T chooseOne(double lootBonus) {
-
-        double lootMultiplier = 1.0 + lootBonus / 100.0;
+    public T chooseOne(double lootMultiplier) {
 
         for (Entry<T> entry : items) {
             if (ThreadLocalRandom.current().nextDouble() < entry.chance * lootMultiplier) {
@@ -32,11 +30,9 @@ public class ProbabilityCollection<T> {
         return null;
     }
 
-    public List<T> choose(double lootBonus) {
+    public List<T> choose(double lootMultiplier) {
 
         List<T> chosen = new ArrayList<>();
-
-        double lootMultiplier = 1.0 + lootBonus / 100.0;
 
         for (Entry<T> entry : items) {
             if (ThreadLocalRandom.current().nextDouble() < entry.chance * lootMultiplier) {
