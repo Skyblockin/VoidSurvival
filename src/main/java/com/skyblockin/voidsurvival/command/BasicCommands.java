@@ -15,7 +15,10 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Location;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
+import org.bukkit.util.BoundingBox;
 
 import java.util.List;
 
@@ -58,6 +61,57 @@ public final class BasicCommands {
         return renderLeaderboard(Component.text("Top " + type.getDisplayName(), NamedTextColor.GOLD, TextDecoration.BOLD), leaderboard);
     }
 
+    private static void handlePlayerHome(Player player, String homeName) {
+
+        PlayerData data = PlayerData.of(player);
+        Location home = data.getHome(homeName);
+
+        if (home == null) {
+            if (homeName.equals("island")) {
+                player.sendRichMessage("<red>Your default home has not been set. You can set it by running <dark_red>/sethome");
+            } else {
+                player.sendRichMessage("<red>Could not find a home with the name '" + homeName + "'. You can set it by running <dark_red>/sethome " + homeName);
+            }
+            return;
+        }
+
+        double eyeHeight = player.getEyeHeight();
+
+        // Check for suffocation
+        if (home.getWorld().getBlockAt(home.getBlockX(), (int) (home.getY() + eyeHeight), home.getBlockZ()).isSuffocating()) {
+            player.sendRichMessage("<red>Your home location is no longer supported by solid blocks or became obstructed.");
+            return;
+        }
+
+        Block block = home.getBlock();
+
+        if (block.isSolid()) {
+            if (block.getRelative(BlockFace.DOWN).isSolid()) {
+                player.teleportAsync(home).thenAccept(success -> {
+                    player.sendRichMessage("<green>You have been teleported to your home.");
+                });
+            } else {
+                player.teleportAsync(home.add(0, 1, 0)).thenAccept(success -> {
+                    player.sendRichMessage("<green>You have been teleported to your home.");
+                });
+            }
+        } else {
+
+            while (!block.isSolid()) {
+                block = block.getRelative(BlockFace.DOWN);
+            }
+
+            if (block.getY() == block.getWorld().getMinHeight()) {
+                player.sendRichMessage("<red>Your home location is no longer supported by solid blocks or became obstructed.");
+                return;
+            }
+
+            player.teleportAsync(home).thenAccept(success -> {
+                player.sendRichMessage("<green>You have been teleported to your home.");
+            });
+        }
+    }
+
     public static void register(Commands commands) {
 
         commands.register(literal("killstreaktop")
@@ -92,35 +146,7 @@ public final class BasicCommands {
                     .executes(ctx -> {
 
                         if (ctx.getSource().getSender() instanceof Player player) {
-
-                            String homeName = ctx.getArgument("name", String.class);
-
-                            try {
-
-                                Location home = PlayerData.of(player).getHome(homeName);
-
-                                if (home != null) {
-                                    player.teleportAsync(home).thenAccept(success -> {
-                                        player.sendRichMessage("<green>You have been teleported to your home.");
-                                    });
-                                } else {
-                                    player.sendRichMessage("<red>Could not find a home with the name '" + homeName + "'. You can set it by running <dark_red>/sethome " + homeName);
-                                }
-
-                            } catch (InvalidHomeException e) {
-
-                                Location infirmary = VoidSurvival.getInstance().getInfirmaryLocation();
-
-                                if (infirmary != null) {
-                                    player.teleportAsync(infirmary).thenAccept(success -> {
-                                        player.sendRichMessage("<red>Your home location is no longer supported by solid blocks or became obstructed. You have been teleported to safety.");
-                                    });
-                                } else {
-                                    player.performCommand("spawn");
-                                    player.sendRichMessage("<red>Your home location is no longer supported by solid blocks or became obstructed. You have been teleported to spawn.");
-                                }
-                            }
-
+                            handlePlayerHome(player, ctx.getArgument("name", String.class));
                         }
 
                         return 1;
@@ -130,33 +156,7 @@ public final class BasicCommands {
             .executes(ctx -> {
 
                 if (ctx.getSource().getSender() instanceof Player player) {
-
-                    try {
-
-                        Location home = PlayerData.of(player).getHome("island");
-
-                        if (home != null) {
-                            player.teleportAsync(home).thenAccept(success -> {
-                                player.sendRichMessage("<green>You have been teleported to your home.");
-                            });
-                        } else {
-                            player.sendRichMessage("<red>Your default home has not been set. You can set it by running <dark_red>/sethome");
-                        }
-
-                    } catch (InvalidHomeException e) {
-
-                        Location infirmary = VoidSurvival.getInstance().getInfirmaryLocation();
-
-                        if (infirmary != null) {
-                            player.teleportAsync(infirmary).thenAccept(success -> {
-                                player.sendRichMessage("<red>Your home location is no longer supported by solid blocks or became obstructed. You have been teleported to safety.");
-                            });
-                        } else {
-                            player.performCommand("spawn");
-                            player.sendRichMessage("<red>Your home location is no longer supported by solid blocks or became obstructed. You have been teleported to spawn.");
-                        }
-                    }
-
+                    handlePlayerHome(player, "island");
                 }
 
                 return 1;
