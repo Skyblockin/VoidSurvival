@@ -6,19 +6,10 @@ import com.skyblockin.voidsurvival.storage.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.util.Format;
 import com.skyblockin.voidsurvival.util.Functions;
-import net.kyori.adventure.audience.Audience;
-import net.minecraft.world.level.block.TrappedChestBlock;
 import org.bukkit.Location;
-import org.bukkit.Sound;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.block.BlockType;
 import org.bukkit.block.Chest;
-import org.bukkit.block.data.AnaloguePowerable;
-import org.bukkit.block.data.Powerable;
-import org.bukkit.block.data.type.RedstoneWire;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -32,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 public class LootChestManager implements Listener {
 
