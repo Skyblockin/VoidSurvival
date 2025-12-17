@@ -1,9 +1,13 @@
 package com.skyblockin.voidsurvival.storage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.skyblockin.voidsurvival.util.TagUtil;
+import io.papermc.paper.registry.keys.tags.BlockTypeTagKeys;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockType;
 import org.bukkit.entity.Player;
 
 import java.util.*;
@@ -57,30 +61,8 @@ public class PlayerData {
      * @param name The name of the home
      * @return The home location of the player, or null if the player has no home
      */
-    public Location getHome(String name) throws InvalidHomeException {
-
-        Location home = homes.get(name);
-
-        if (home == null) {
-            return null;
-        }
-
-        Block block = home.getBlock();
-
-        if (block.getRelative(BlockFace.UP).isSuffocating()) {
-            throw new InvalidHomeException("A home was previously set, but the position is no longer valid.");
-        }
-
-        while (!block.getRelative(BlockFace.DOWN).isSolid() && block.getY() > block.getWorld().getMinHeight()) {
-            block = block.getRelative(BlockFace.DOWN);
-        }
-
-        if (block.getRelative(BlockFace.DOWN).isSolid()) {
-            homes.put(name, block.getLocation());
-            return block.getLocation();
-        } else {
-            throw new InvalidHomeException("A home was previously set, but the position is no longer valid.");
-        }
+    public Location getHome(String name) {
+        return homes.get(name);
     }
 
     @JsonIgnore

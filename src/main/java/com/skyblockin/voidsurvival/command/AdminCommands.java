@@ -9,8 +9,10 @@ import com.skyblockin.voidsurvival.loot.LootChestManager;
 import com.skyblockin.voidsurvival.loot.LootUtil;
 import com.skyblockin.voidsurvival.storage.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
+import com.skyblockin.voidsurvival.util.Functions;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.entity.Player;
@@ -67,11 +69,13 @@ public class AdminCommands {
             .then(argument("player", ArgumentTypes.player())
                 .executes(ctx -> {
 
-                    Player target = ctx.getArgument("player", Player.class);
+                    PlayerSelectorArgumentResolver target = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
 
-                    PlayerData.of(target).resetCooldowns();
+                    Player player = target.resolve(ctx.getSource()).getFirst();
 
-                    ctx.getSource().getSender().sendRichMessage("<green>Reset chest cooldowns of " + target.getName());
+                    PlayerData.of(player).resetCooldowns();
+
+                    ctx.getSource().getSender().sendRichMessage("<green>Reset chest cooldowns of " + player.getName());
 
                     return 1;
                 })
@@ -173,7 +177,7 @@ public class AdminCommands {
                         LootTable table = VoidSurvival.getInstance().getLootTableManager().getTable(tableName);
 
                         if (table != null) {
-                            LootUtil.openInventory(player, table, 0);
+                            LootUtil.openInventory(player, table, Functions.tableIdToName(tableName), 0);
                         }
 
                     }

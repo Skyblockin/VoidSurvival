@@ -61,4 +61,15 @@ public class Functions {
 
     }
 
+    public static String tableIdToName(String tableId) {
+
+        String[] parts = tableId.split("_");
+
+        for (int i = 0; i < parts.length; i++) {
+            parts[i] = Character.toUpperCase(parts[i].charAt(0)) + parts[i].substring(1);
+        }
+
+        return String.join(" ", parts);
+    }
+
 }
