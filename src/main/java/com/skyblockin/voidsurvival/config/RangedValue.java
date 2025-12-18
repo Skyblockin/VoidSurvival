@@ -9,18 +9,18 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.IOException;
 import java.util.concurrent.ThreadLocalRandom;
 
-@JsonDeserialize(using = NumberValue.Deserialize.class)
-public class NumberValue implements Gettable<Integer> {
+@JsonDeserialize(using = RangedValue.Deserialize.class)
+public class RangedValue implements Gettable<Integer> {
 
     private final int min;
     private final int max;
 
-    public NumberValue(int min, int max) {
+    public RangedValue(int min, int max) {
         this.min = min;
         this.max = max;
     }
 
-    public NumberValue(int value) {
+    public RangedValue(int value) {
         this(value, value);
     }
 
@@ -30,15 +30,15 @@ public class NumberValue implements Gettable<Integer> {
         return ThreadLocalRandom.current().nextInt(min, max + 1);
     }
 
-    public static class Deserialize extends JsonDeserializer<NumberValue> {
+    public static class Deserialize extends JsonDeserializer<RangedValue> {
 
         @Override
-        public NumberValue deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+        public RangedValue deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
 
             JsonNode node = p.getCodec().readTree(p);
 
-            if (node.isInt()) return new NumberValue(node.asInt());
-            else if (node.isArray()) return new NumberValue(node.get(0).asInt(), node.get(1).asInt());
+            if (node.isInt()) return new RangedValue(node.asInt());
+            else if (node.isArray()) return new RangedValue(node.get(0).asInt(), node.get(1).asInt());
 
             return null;
         }

@@ -45,6 +45,7 @@ public class VoidSurvival extends JavaPlugin {
     private boolean allowJoins = false;
     private boolean debug = false;
     private Location infirmaryLocation;
+    private int blockDegenerationSeconds = 20;
 
     @Override
     public void onLoad() {
@@ -61,6 +62,7 @@ public class VoidSurvival extends JavaPlugin {
 
         FileConfiguration config = getConfig();
 
+        this.blockDegenerationSeconds = config.getInt("block-degeneration-seconds", 20);
         this.debug = config.getBoolean("debug");
         this.infirmaryLocation = config.getLocation("missing-home-backup-location", null);
 
@@ -132,6 +134,10 @@ public class VoidSurvival extends JavaPlugin {
             throw new RuntimeException(e);
         }
 
+    }
+
+    public int getBlockDegenerationSeconds() {
+        return blockDegenerationSeconds;
     }
 
     public @Nullable Location getInfirmaryLocation() {

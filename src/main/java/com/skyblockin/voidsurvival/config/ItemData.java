@@ -13,6 +13,8 @@ import com.skyblockin.voidsurvival.storage.Accessors;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.*;
+import io.papermc.paper.datacomponent.item.Repairable;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.inventory.*;
@@ -30,25 +32,40 @@ import java.util.UUID;
 @JsonDeserialize(using = ItemData.Deserializer.class)
 public final class ItemData {
 
-    public NumberValue amount = new NumberValue(1);
+    public RangedValue amount = new RangedValue(1);
     public boolean unbreakable = false;
+    public boolean glider = false;
+    public boolean intangibleProjectile = false;
     public boolean hideToolTip = false;
-    public boolean placeable = false;
+    public boolean placeable = true;
     public PotionContents potionContents = null;
     public Boolean glintOverride = false;
     public Integer maxStackSize = null;
     public Integer maxDamage = null;
-    public NumberValue damage = null;
+    public Integer repairCost = null;
+    public RangedValue damage = null;
     public DyedItemColor dyedItemColor = null;
     public Component name = null;
     public ItemLore lore = null;
+    public ItemRarity rarity = null;
     public TooltipDisplay tooltipDisplay = null;
+
+    public Repairable repairable = null;
+    public Enchantable enchantable = null;
+    public BlocksAttacks blocksAttacks = null;
+    public UseRemainder useRemainder = null;
+    public UseCooldown useCooldown = null;
+    public ItemContainerContents containerContents = null;
+
+    public Key breakSound = null;
+    public Key tooltipStyle = null;
 
     public WritableBookContent writableBookContent = null;
     public WrittenBookContent writtenBookContent = null;
 
     public ItemType type = ItemType.STONE;
     public Equippable equippable = null;
+    public Weapon weapon;
     public ResolvableProfile profile = null;
     public ArmorTrim trim = null;
 
@@ -57,6 +74,7 @@ public final class ItemData {
     public Tool tool = null;
     public FoodProperties foodProperties;
     public Consumable consumable;
+    public DeathProtection deathProtection = null;
 
     public ItemAttributeModifiers attributeModifiers = null;
     public ItemEnchantmentMap enchantments = null;
@@ -71,6 +89,7 @@ public final class ItemData {
 
         ItemStack item = type.createItemStack(amount.get());
 
+
         // Item appearance things
         setData(item, DataComponentTypes.CUSTOM_NAME, name);
         setData(item, DataComponentTypes.LORE, lore);
@@ -84,7 +103,19 @@ public final class ItemData {
         setData(item, DataComponentTypes.POTION_CONTENTS, potionContents);
         setData(item, DataComponentTypes.FOOD, foodProperties);
         setData(item, DataComponentTypes.CONSUMABLE, consumable);
-        // setData(item, DataComponentTypes.DEATH_PROTECTION, null);
+        setData(item, DataComponentTypes.DEATH_PROTECTION, deathProtection);
+        setData(item, DataComponentTypes.USE_REMAINDER, useRemainder);
+        setData(item, DataComponentTypes.USE_COOLDOWN, useCooldown);
+        setData(item, DataComponentTypes.REPAIRABLE, repairable);
+        setData(item, DataComponentTypes.BLOCKS_ATTACKS, blocksAttacks);
+        setData(item, DataComponentTypes.CONTAINER, containerContents);
+        setData(item, DataComponentTypes.ENCHANTABLE, enchantable);
+
+        setData(item, DataComponentTypes.WEAPON, weapon);
+        setData(item, DataComponentTypes.TOOLTIP_STYLE, tooltipStyle);
+        setData(item, DataComponentTypes.BREAK_SOUND, breakSound);
+        setData(item, DataComponentTypes.RARITY, rarity);
+        setData(item, DataComponentTypes.REPAIR_COST, repairCost);
 
         // Item durability things
         setData(item, DataComponentTypes.DAMAGE_RESISTANT, resistant);
@@ -104,6 +135,8 @@ public final class ItemData {
         setData(item, DataComponentTypes.CAN_PLACE_ON, canPlaceOn);
         setData(item, DataComponentTypes.TOOL, tool);
         setData(item, DataComponentTypes.EQUIPPABLE, equippable);
+        setFlag(item, DataComponentTypes.GLIDER, glider);
+        setFlag(item, DataComponentTypes.INTANGIBLE_PROJECTILE, intangibleProjectile);
 
         if (!placeable) {
             Accessors.CAN_PLACE.write(item, false);
@@ -175,10 +208,12 @@ public final class ItemData {
 
             ItemData data = new ItemData();
 
-            data.amount = Json.convert(node.path("amount"), NumberValue.class, new NumberValue(1));
+            data.amount = Json.convert(node.path("amount"), RangedValue.class, new RangedValue(1));
             data.unbreakable = node.path("unbreakable").asBoolean(false);
+            data.glider = node.path("glider").asBoolean(false);
+            data.intangibleProjectile = node.path("intangible_projectile").asBoolean(false);
             data.hideToolTip = node.path("hide_tooltip").asBoolean(false);
-            data.placeable = node.path("placeable").asBoolean(false);
+            data.placeable = node.path("placeable").asBoolean(true);
             data.foodProperties = Json.convert(node.get("food"), FoodProperties.class);
             data.tool = Json.convert(node.get("tool"), Tool.class);
             data.consumable = Json.convert(node.get("consumable"), Consumable.class);
@@ -188,8 +223,9 @@ public final class ItemData {
 
             data.trim = Json.convert(node.get("trim"), ArmorTrim.class);
             data.maxStackSize = Json.convert(node.get("max_stack_size"), Integer.class);
+            data.repairCost = Json.convert(node.get("repair_cost"), Integer.class);
             data.glintOverride = Json.convert(node.get("glint"), Boolean.class);
-            data.damage = Json.convert(node.get("damage"), NumberValue.class);
+            data.damage = Json.convert(node.get("damage"), RangedValue.class);
             data.maxDamage = Json.convert(node.get("max_damage"), Integer.class);
 
             data.writableBookContent = Json.convert(node.get("writable_book_content"), WritableBookContent.class);
@@ -198,6 +234,17 @@ public final class ItemData {
             data.enchantments = Json.convert(node.get("enchantments"), ItemEnchantmentMap.class);
             data.potionContents = Json.convert(node.get("potion_contents"), PotionContents.class);
             data.attributeModifiers = Json.convert(node.get("attributes"), ItemAttributeModifiers.class);
+            data.containerContents = Json.convert(node.get("container_contents"), ItemContainerContents.class);
+            data.blocksAttacks = Json.convert(node.get("blocks_attacks"), BlocksAttacks.class);
+            data.useRemainder = Json.convert(node.get("use_remainder"), UseRemainder.class);
+            data.useCooldown = Json.convert(node.get("use_cooldown"), UseCooldown.class);
+            data.repairable = Json.convert(node.get("repairable"), Repairable.class);
+            data.enchantable = Json.convert(node.get("enchantable"), Enchantable.class);
+            data.tooltipStyle = Json.convert(node.get("tooltip_style"), Key.class);
+            data.breakSound = Json.convert(node.get("break_sound"), Key.class);
+            data.weapon = Json.convert(node.get("weapon"), Weapon.class);
+            data.rarity = Json.convert(node.get("rarity"), ItemRarity.class);
+            data.deathProtection = Json.convert(node.get("death_protection"), DeathProtection.class);
 
             data.tooltipDisplay = Json.convert(node.get("hidden_components"), TooltipDisplay.class);
             data.resistant = Json.convert(node.get("damage_resistant"), DamageResistant.class);

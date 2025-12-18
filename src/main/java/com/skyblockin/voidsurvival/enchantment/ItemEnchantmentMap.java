@@ -1,13 +1,12 @@
 package com.skyblockin.voidsurvival.enchantment;
 
-import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.skyblockin.voidsurvival.config.Gettable;
-import com.skyblockin.voidsurvival.config.NumberValue;
+import com.skyblockin.voidsurvival.config.RangedValue;
 import io.papermc.paper.datacomponent.item.ItemEnchantments;
 import org.bukkit.enchantments.Enchantment;
 
@@ -18,9 +17,9 @@ import java.util.HashMap;
 @JsonDeserialize(using = ItemEnchantmentMap.Deserializer.class)
 public class ItemEnchantmentMap implements Gettable<ItemEnchantments> {
 
-    private final HashMap<Enchantment, NumberValue> enchantments;
+    private final HashMap<Enchantment, RangedValue> enchantments;
 
-    public ItemEnchantmentMap(HashMap<Enchantment, NumberValue> enchantments) {
+    public ItemEnchantmentMap(HashMap<Enchantment, RangedValue> enchantments) {
         this.enchantments = enchantments;
     }
 
@@ -43,7 +42,7 @@ public class ItemEnchantmentMap implements Gettable<ItemEnchantments> {
         @Override
         public ItemEnchantmentMap deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
 
-            HashMap<Enchantment, NumberValue> map = p.getCodec().readValue(p, new TypeReference<>(){});
+            HashMap<Enchantment, RangedValue> map = p.getCodec().readValue(p, new TypeReference<>(){});
 
             return new ItemEnchantmentMap(map);
         }

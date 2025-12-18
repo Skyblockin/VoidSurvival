@@ -1,5 +1,6 @@
 package com.skyblockin.voidsurvival.command;
 
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
@@ -168,22 +169,25 @@ public class AdminCommands {
 
                     return builder.buildFuture();
                 })
-                .executes(ctx -> {
+                .then(argument("loot_bonus", IntegerArgumentType.integer(0))
+                    .executes(ctx -> {
 
-                    if (ctx.getSource().getSender() instanceof Player player) {
+                        if (ctx.getSource().getSender() instanceof Player player) {
 
-                        String tableName = ctx.getArgument("table", String.class);
+                            String tableName = ctx.getArgument("table", String.class);
+                            int lootBonus = ctx.getArgument("loot_bonus", Integer.class);
 
-                        LootTable table = VoidSurvival.getInstance().getLootTableManager().getTable(tableName);
+                            LootTable table = VoidSurvival.getInstance().getLootTableManager().getTable(tableName);
 
-                        if (table != null) {
-                            LootUtil.openInventory(player, table, Functions.tableIdToName(tableName), 0);
+                            if (table != null) {
+                                LootUtil.openInventory(player, table, Functions.tableIdToName(tableName), lootBonus);
+                            }
+
                         }
 
-                    }
-
-                    return 1;
-                })
+                        return 1;
+                    })
+                )
             )
             .build()
         );

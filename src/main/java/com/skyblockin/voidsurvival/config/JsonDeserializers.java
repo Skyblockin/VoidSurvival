@@ -1,6 +1,5 @@
 package com.skyblockin.voidsurvival.config;
 
-import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -14,8 +13,9 @@ import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.util.Functions;
 import io.papermc.paper.block.BlockPredicate;
 import io.papermc.paper.datacomponent.DataComponentType;
-import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.*;
+import io.papermc.paper.datacomponent.item.blocksattacks.DamageReduction;
+import io.papermc.paper.datacomponent.item.blocksattacks.ItemDamageFunction;
 import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.registry.RegistryAccess;
@@ -34,10 +34,7 @@ import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.BlockType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
-import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.EquipmentSlotGroup;
-import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.ItemType;
+import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
@@ -99,6 +96,18 @@ public class JsonDeserializers {
     public static final TooltipDisplayDeserializer TOOLTIP_DISPLAY = new TooltipDisplayDeserializer();
     public static final WrittenBookContentDeserializer WRITTEN_BOOK_CONTENT = new WrittenBookContentDeserializer();
     public static final WritableBookContentDeserializer WRITABLE_BOOK_CONTENT = new WritableBookContentDeserializer();
+    public static final WeaponDeserializer WEAPON = new WeaponDeserializer();
+    public static final UseRemainderDeserializer USE_REMAINDER = new UseRemainderDeserializer();
+    public static final RepairableDeserializer REPAIRABLE = new RepairableDeserializer();
+    public static final BlocksAttacksDeserializer BLOCKS_ATTACKS = new BlocksAttacksDeserializer();
+    public static final ItemDamageFunctionDeserializer ITEM_DAMAGE_FUNCTION = new ItemDamageFunctionDeserializer();
+    public static final DamageReductionDeserializer DAMAGE_REDUCTION = new DamageReductionDeserializer();
+    public static final EnchantableDeserializer ENCHANTABLE = new EnchantableDeserializer();
+    public static final ItemContainerContentsDeserializer ITEM_CONTAINER_CONTENTS = new ItemContainerContentsDeserializer();
+    public static final AdventureKeyDeserializer KEY = new AdventureKeyDeserializer();
+    public static final ItemRarityDeserializer ITEM_RARITY = new ItemRarityDeserializer();
+    public static final DeathProtectionDeserializer DEATH_PROTECTION = new DeathProtectionDeserializer();
+    public static final UseCooldownDeserializer USE_COOLDOWN = new UseCooldownDeserializer();
 
     private static <T> StdDelegatingDeserializer<T> delegate(Converter<?, T> converter) {
         return new StdDelegatingDeserializer<>(converter);
@@ -365,7 +374,7 @@ public class JsonDeserializers {
 
             JsonNode node = p.getCodec().readTree(p);
 
-            String name = node.get("name").asText();
+            String name = node.path("name").asText(null);
             double amount = node.get("amount").asDouble();
 
             AttributeModifier.Operation operation = AttributeModifier.Operation.valueOf(node.get("operation").asText().toUpperCase());
@@ -382,7 +391,9 @@ public class JsonDeserializers {
                 slot = EquipmentSlotGroup.ANY;
             }
 
-            return new AttributeModifier(new NamespacedKey("voidsurvival", name), amount, operation, slot);
+            return new AttributeModifier(new NamespacedKey("voidsurvival", name == null ? java.util.UUID.randomUUID().toString() : name),
+                amount, operation, slot
+            );
         }
 
     }
@@ -509,7 +520,6 @@ public class JsonDeserializers {
             Consumable.Builder builder = Consumable.consumable();
 
             // Basic case where it's just simple effects since this will likely be the most used one
-
             if (effectNode.isArray()) {
                 if (node.has("effect_chance")) {
                     List<PotionEffect> effects = Json.convert(effectNode, new TypeReference<>() {});
@@ -740,4 +750,207 @@ public class JsonDeserializers {
         }
     }
 
+    public static class WeaponDeserializer extends StdDeserializer<Weapon> {
+
+        protected WeaponDeserializer() {
+            super(Weapon.class);
+        }
+
+        @Override
+        public Weapon deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+
+            JsonNode node = p.getCodec().readTree(p);
+
+            return Weapon.weapon()
+                .itemDamagePerAttack(node.path("attack_damage").asInt(1))
+                .disableBlockingForSeconds((float) node.path("disable_blocking_seconds").asDouble(0.0))
+                .build();
+        }
+    }
+
+    public static class UseRemainderDeserializer extends StdDeserializer<UseRemainder> {
+
+        protected UseRemainderDeserializer() {
+            super(UseRemainder.class);
+        }
+
+        @Override
+        public UseRemainder deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+
+            ItemData itemData = p.getCodec().readValue(p, ItemData.class);
+
+            return UseRemainder.useRemainder(itemData.createItem());
+        }
+    }
+
+    public static class UseCooldownDeserializer extends StdDeserializer<UseCooldown> {
+
+        protected UseCooldownDeserializer() {
+            super(UseCooldown.class);
+        }
+
+        @Override
+        public UseCooldown deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+
+            JsonNode node = p.getCodec().readTree(p);
+
+            return UseCooldown.useCooldown((float) node.get("cooldown").asDouble(0.0))
+                .cooldownGroup(node.has("group") ? Key.key(node.get("group").asText()) : null)
+                .build();
+        }
+
+    }
+
+    public static class EnchantableDeserializer extends StdDeserializer<Enchantable> {
+
+        protected EnchantableDeserializer() {
+            super(Enchantable.class);
+        }
+
+        @Override
+        public Enchantable deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+            return Enchantable.enchantable(p.getIntValue());
+        }
+    }
+
+    public static class RepairableDeserializer extends StdDeserializer<Repairable> {
+
+        protected RepairableDeserializer() {
+            super(Repairable.class);
+        }
+
+        @Override
+        public Repairable deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+            return Repairable.repairable(Functions.parseRegistryKeySet(RegistryKey.ITEM, p.getCodec().readTree(p)));
+        }
+    }
+
+    public static class DamageReductionDeserializer extends StdDeserializer<DamageReduction> {
+
+        protected DamageReductionDeserializer() {
+            super(DamageReduction.class);
+        }
+
+        @Override
+        public DamageReduction deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+
+            JsonNode node = p.getCodec().readTree(p);
+
+            return DamageReduction
+                .damageReduction()
+                .type(Functions.parseRegistryKeySet(RegistryKey.DAMAGE_TYPE, node.get("damage_type")))
+                .factor((float) node.get("factor").asDouble(1.0))
+                .base((float) node.get("base").asDouble(0.0))
+                .horizontalBlockingAngle((float) node.get("horizontal_angle").asDouble(0.0))
+                .build();
+        }
+    }
+
+    public static class ItemDamageFunctionDeserializer extends StdDeserializer<ItemDamageFunction> {
+
+        protected ItemDamageFunctionDeserializer() {
+            super(ItemDamageFunction.class);
+        }
+
+        @Override
+        public ItemDamageFunction deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+
+            JsonNode node = p.getCodec().readTree(p);
+
+            return ItemDamageFunction.itemDamageFunction()
+                .base((float) node.path("base").asDouble(0.0))
+                .factor((float) node.path("factor").asDouble(1.0))
+                .threshold((float) node.path("threshold").asDouble(0.0))
+                .build();
+        }
+    }
+
+    public static class BlocksAttacksDeserializer extends StdDeserializer<BlocksAttacks> {
+
+        protected BlocksAttacksDeserializer() {
+            super(BlocksAttacks.class);
+        }
+
+        @Override
+        public BlocksAttacks deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+
+            JsonNode node = p.getCodec().readTree(p);
+
+            return BlocksAttacks.blocksAttacks()
+                .damageReductions(Json.convert(node.get("damage_reductions"), new TypeReference<>() {}))
+                .itemDamage(Json.convert(node.get("item_damage"), ItemDamageFunction.class))
+                .disableCooldownScale((float) node.path("disable_cooldown_scale").asDouble(1.0))
+                .blockDelaySeconds((float) node.path("block_delay").asDouble(0.0))
+                .blockSound(node.has("block_sound") ? Key.key(node.get("block_sound").asText()) : null)
+                .disableSound(node.has("disable_sound") ? Key.key(node.get("disable_sound").asText()) : null)
+                .build();
+        }
+    }
+
+    public static class ItemContainerContentsDeserializer extends StdDeserializer<ItemContainerContents> {
+
+        protected ItemContainerContentsDeserializer() {
+            super(ItemContainerContents.class);
+        }
+
+        @Override
+        public ItemContainerContents deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+
+            List<ItemData> data = Json.convert(p.getCodec().readTree(p), new TypeReference<>() {});
+            List<ItemStack> contents = new ArrayList<>(data.size());
+
+            for (ItemData itemData : data) {
+                contents.add(itemData.createItem());
+            }
+
+            return ItemContainerContents.containerContents(contents);
+        }
+
+    }
+
+    public static class AdventureKeyDeserializer extends StdDeserializer<Key> {
+
+        protected AdventureKeyDeserializer() {
+            super(Key.class);
+        }
+
+        @Override
+        public Key deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+            return Key.key(p.getValueAsString());
+        }
+    }
+
+    public static class ItemRarityDeserializer extends StdDeserializer<ItemRarity> {
+
+        protected ItemRarityDeserializer() {
+            super(ItemRarity.class);
+        }
+
+        @Override
+        public ItemRarity deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+
+            return switch (p.getValueAsString().toLowerCase()) {
+                case "common" -> ItemRarity.COMMON;
+                case "uncommon" -> ItemRarity.UNCOMMON;
+                case "rare" -> ItemRarity.RARE;
+                case "epic" -> ItemRarity.EPIC;
+                default -> null;
+            };
+        }
+    }
+
+    public static class DeathProtectionDeserializer extends StdDeserializer<DeathProtection> {
+
+        protected DeathProtectionDeserializer() {
+            super(DeathProtection.class);
+        }
+
+        @Override
+        public DeathProtection deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+
+            List<ConsumeEffect> effects = Json.convert(p.getCodec().readTree(p), new TypeReference<>() {});
+
+            return DeathProtection.deathProtection(effects);
+        }
+    }
 }
