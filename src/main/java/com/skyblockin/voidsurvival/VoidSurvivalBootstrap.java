@@ -37,8 +37,12 @@ public class VoidSurvivalBootstrap implements PluginBootstrap {
         LifecycleEventManager<@NotNull BootstrapContext> manager = context.getLifecycleManager();
 
         manager.registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
-            BasicCommands.register(commands.registrar());
-            AdminCommands.register(commands.registrar());
+            try {
+                BasicCommands.register(commands.registrar());
+                AdminCommands.register(commands.registrar());
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         });
 
         manager.registerEventHandler(RegistryEvents.DAMAGE_TYPE.compose().newHandler(event -> {

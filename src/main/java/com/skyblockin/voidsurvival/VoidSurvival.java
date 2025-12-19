@@ -2,6 +2,7 @@ package com.skyblockin.voidsurvival;
 
 import com.skyblockin.voidsurvival.chat.ChatListener;
 import com.skyblockin.voidsurvival.combat.CombatTracker;
+import com.skyblockin.voidsurvival.config.ItemManager;
 import com.skyblockin.voidsurvival.leaderboard.LeaderboardManager;
 import com.skyblockin.voidsurvival.loot.LootChestManager;
 import com.skyblockin.voidsurvival.region.Flags;
@@ -39,6 +40,7 @@ public class VoidSurvival extends JavaPlugin {
     private OreGenerator oreGenerator;
     private LootChestManager lootTableManager;
     private LeaderboardManager leaderboardManager;
+    private ItemManager itemManager;
 
     private WorldListener worldListener;
 
@@ -71,6 +73,7 @@ public class VoidSurvival extends JavaPlugin {
         this.lootTableManager = new LootChestManager();
         this.worldListener = new WorldListener();
         this.leaderboardManager = new LeaderboardManager();
+        this.itemManager = new ItemManager();
 
         try {
             Database.createDataBase();
@@ -80,6 +83,7 @@ public class VoidSurvival extends JavaPlugin {
             return;
         }
 
+        this.itemManager.loadItemsFromFile();
         this.oreGenerator.loadMissingBlocksFromFile();
         this.worldListener.loadGeneratedChunkCount();
         this.lootTableManager.loadTables();
@@ -101,6 +105,7 @@ public class VoidSurvival extends JavaPlugin {
     public void reload() {
         reloadConfig();
         this.infirmaryLocation = getConfig().getLocation("missing-home-backup-location", null);
+        this.itemManager.reload();
         this.islandGenerator.reload();
         this.oreGenerator.reload();
         this.lootTableManager.reload();
@@ -134,6 +139,10 @@ public class VoidSurvival extends JavaPlugin {
             throw new RuntimeException(e);
         }
 
+    }
+
+    public ItemManager getItemManager() {
+        return itemManager;
     }
 
     public int getBlockDegenerationSeconds() {

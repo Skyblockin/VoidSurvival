@@ -8,7 +8,9 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.enchantment.ItemEnchantmentMap;
+import com.skyblockin.voidsurvival.nms.SpawnerData;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
@@ -26,18 +28,20 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
 import java.util.UUID;
 
 @SuppressWarnings("UnstableApiUsage")
 @JsonDeserialize(using = ItemData.Deserializer.class)
 public final class ItemData {
 
-    public RangedValue amount = new RangedValue(1);
-    public boolean unbreakable = false;
-    public boolean glider = false;
-    public boolean intangibleProjectile = false;
-    public boolean hideToolTip = false;
-    public boolean placeable = true;
+    public RangedValue amount = null;
+    public Boolean unbreakable = null;
+    public Boolean glider = null;
+    public Boolean intangibleProjectile = null;
+    public Boolean placeable = null;
     public PotionContents potionContents = null;
     public Boolean glintOverride = false;
     public Integer maxStackSize = null;
@@ -63,11 +67,11 @@ public final class ItemData {
     public WritableBookContent writableBookContent = null;
     public WrittenBookContent writtenBookContent = null;
 
-    public ItemType type = ItemType.STONE;
+    public ItemType id = null;
     public Equippable equippable = null;
-    public Weapon weapon;
+    public Weapon weapon = null;
     public ResolvableProfile profile = null;
-    public ArmorTrim trim = null;
+    public ItemArmorTrim trim = null;
 
     public DamageResistant resistant = null;
 
@@ -82,13 +86,19 @@ public final class ItemData {
 
     public ItemAdventurePredicate canPlaceOn = null;
 
+    public SpawnerData spawnerData = null;
+
     // Extra JsonNode for storing any "item_specific" data that doesn't make sense to parse here
     public JsonNode customData = null;
+    public transient JsonNode rawData = null;
 
     public ItemStack createItem() {
 
-        ItemStack item = type.createItemStack(amount.get());
+        ItemStack item = id.createItemStack(amount.get());
 
+        if (spawnerData != null) {
+            item = spawnerData.applyNmsTag(item);
+        }
 
         // Item appearance things
         setData(item, DataComponentTypes.CUSTOM_NAME, name);
@@ -98,6 +108,8 @@ public final class ItemData {
         setData(item, DataComponentTypes.DYED_COLOR, dyedItemColor);
         setData(item, DataComponentTypes.PROFILE, profile);
         setData(item, DataComponentTypes.TOOLTIP_DISPLAY, tooltipDisplay);
+        setData(item, DataComponentTypes.TOOLTIP_STYLE, tooltipStyle);
+        setData(item, DataComponentTypes.TRIM, trim);
 
         // Item consumable things
         setData(item, DataComponentTypes.POTION_CONTENTS, potionContents);
@@ -145,6 +157,10 @@ public final class ItemData {
         setCustomData(item);
 
         return item;
+    }
+
+    public ItemData copy() {
+        return Json.convert(rawData, ItemData.class);
     }
 
     private void setCustomData(ItemStack item) {
@@ -197,8 +213,49 @@ public final class ItemData {
 
     public static class Deserializer extends StdDeserializer<ItemData> {
 
+        private static final HashMap<String, Object> DEFAULT_VALUES = new HashMap<>() {{
+            put("damage", new RangedValue(0));
+            put("unbreakable", false);
+            put("amount", new RangedValue(1));
+            put("intangible_projectile", false);
+            put("placeable", true);
+            put("id", ItemType.STONE);
+            put("hide_tooltip", false);
+            put("glider", false);
+        }};
+
         public Deserializer() {
             super(ItemData.class);
+        }
+
+        private String javaFieldNameToJsonKey(String javaFieldName) {
+            return javaFieldName.replaceAll("([A-Z])", "_$1").toLowerCase();
+        }
+
+        private void setAllFields(ItemData object, JsonNode node) {
+
+            for (Field field : ItemData.class.getDeclaredFields()) {
+
+                if (field.getName().equals("id") || Modifier.isTransient(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
+                    continue;
+                }
+
+                try {
+
+                    String jsonKey = javaFieldNameToJsonKey(field.getName());
+
+                    if (node.has(jsonKey)) {
+                        field.set(object, Json.convert(node.get(jsonKey), field.getType()));
+                    } else if (field.get(object) == null) {
+                        // Only set the default value if the field has not been set yet
+                        field.set(object, DEFAULT_VALUES.get(jsonKey));
+                    }
+
+                } catch (IllegalAccessException ex) {
+                    VoidSurvival.logError("Failed to access field '%s' in ItemData!", field.getName());
+                }
+            }
+
         }
 
         @Override
@@ -206,54 +263,21 @@ public final class ItemData {
 
             JsonNode node = p.getCodec().readTree(p);
 
-            ItemData data = new ItemData();
+            // Allow the use of custom item ids for items
+            String id = node.get("id").asText();
 
-            data.amount = Json.convert(node.path("amount"), RangedValue.class, new RangedValue(1));
-            data.unbreakable = node.path("unbreakable").asBoolean(false);
-            data.glider = node.path("glider").asBoolean(false);
-            data.intangibleProjectile = node.path("intangible_projectile").asBoolean(false);
-            data.hideToolTip = node.path("hide_tooltip").asBoolean(false);
-            data.placeable = node.path("placeable").asBoolean(true);
-            data.foodProperties = Json.convert(node.get("food"), FoodProperties.class);
-            data.tool = Json.convert(node.get("tool"), Tool.class);
-            data.consumable = Json.convert(node.get("consumable"), Consumable.class);
+            ItemData data;
 
-            data.name = Json.convert(node.get("name"), Component.class);
-            data.type = Json.convert(node.get("id"), ItemType.class);
+            if (id.startsWith("voidsurvival:")) {
+                id = id.substring(13);
+                data = VoidSurvival.getInstance().getItemManager().getItem(id).copy();
+            } else {
+                data = new ItemData();
+                data.id = Json.convert(node.get("id"), ItemType.class, ItemType.STONE);
+            }
 
-            data.trim = Json.convert(node.get("trim"), ArmorTrim.class);
-            data.maxStackSize = Json.convert(node.get("max_stack_size"), Integer.class);
-            data.repairCost = Json.convert(node.get("repair_cost"), Integer.class);
-            data.glintOverride = Json.convert(node.get("glint"), Boolean.class);
-            data.damage = Json.convert(node.get("damage"), RangedValue.class);
-            data.maxDamage = Json.convert(node.get("max_damage"), Integer.class);
-
-            data.writableBookContent = Json.convert(node.get("writable_book_content"), WritableBookContent.class);
-            data.writtenBookContent = Json.convert(node.get("written_book_content"), WrittenBookContent.class);
-            data.storedEnchantments = Json.convert(node.get("stored_enchantments"), ItemEnchantmentMap.class);
-            data.enchantments = Json.convert(node.get("enchantments"), ItemEnchantmentMap.class);
-            data.potionContents = Json.convert(node.get("potion_contents"), PotionContents.class);
-            data.attributeModifiers = Json.convert(node.get("attributes"), ItemAttributeModifiers.class);
-            data.containerContents = Json.convert(node.get("container_contents"), ItemContainerContents.class);
-            data.blocksAttacks = Json.convert(node.get("blocks_attacks"), BlocksAttacks.class);
-            data.useRemainder = Json.convert(node.get("use_remainder"), UseRemainder.class);
-            data.useCooldown = Json.convert(node.get("use_cooldown"), UseCooldown.class);
-            data.repairable = Json.convert(node.get("repairable"), Repairable.class);
-            data.enchantable = Json.convert(node.get("enchantable"), Enchantable.class);
-            data.tooltipStyle = Json.convert(node.get("tooltip_style"), Key.class);
-            data.breakSound = Json.convert(node.get("break_sound"), Key.class);
-            data.weapon = Json.convert(node.get("weapon"), Weapon.class);
-            data.rarity = Json.convert(node.get("rarity"), ItemRarity.class);
-            data.deathProtection = Json.convert(node.get("death_protection"), DeathProtection.class);
-
-            data.tooltipDisplay = Json.convert(node.get("hidden_components"), TooltipDisplay.class);
-            data.resistant = Json.convert(node.get("damage_resistant"), DamageResistant.class);
-            data.equippable = Json.convert(node.get("equippable"), Equippable.class);
-            data.lore = Json.convert(node.get("lore"), ItemLore.class);
-            data.dyedItemColor = Json.convert(node.get("color"), DyedItemColor.class);
-            data.canPlaceOn = Json.convert(node.get("can_place_on"), ItemAdventurePredicate.class);
-
-            data.customData = node.get("custom_data");
+            setAllFields(data, node);
+            data.rawData = node;
 
             JsonNode texture = node.get("base64");
 

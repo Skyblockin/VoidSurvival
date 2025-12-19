@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.deser.std.StdDelegatingDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer;
 import io.papermc.paper.block.BlockPredicate;
@@ -57,10 +58,9 @@ public class Json {
         module.addDeserializer(BlockType.class, JsonDeserializers.BLOCK_TYPE);
         module.addDeserializer(ItemType.class, JsonDeserializers.ITEM_TYPE);
 
-        module.addDeserializer(ArmorTrim.class, JsonDeserializers.ARMOR_TRIM);
+        module.addDeserializer(ItemArmorTrim.class, JsonDeserializers.ARMOR_TRIM);
         module.addDeserializer(Component.class, JsonDeserializers.COMPONENT);
         module.addDeserializer(EquipmentSlot.class, JsonDeserializers.EQUIPMENT_SLOT);
-        module.addDeserializer(BookMeta.Generation.class, JsonDeserializers.BOOK_GENERATION);
         module.addDeserializer(EquipmentSlotGroup.class, JsonDeserializers.EQUIPMENT_SLOT_GROUP);
         module.addDeserializer(ItemFlag.class, JsonDeserializers.ITEM_FLAG);
         module.addDeserializer(Vector3f.class, JsonDeserializers.VECTOR_3F);
@@ -96,6 +96,7 @@ public class Json {
         module.addDeserializer(DeathProtection.class, JsonDeserializers.DEATH_PROTECTION);
         module.addDeserializer(UseCooldown.class, JsonDeserializers.USE_COOLDOWN);
 
+        module.addKeyDeserializer(EquipmentSlot.class, JsonDeserializers.EQUIPMENT_SLOT_KEY);
         module.addKeyDeserializer(NamespacedKey.class, JsonDeserializers.NAMESPACED_KEY);
         module.addKeyDeserializer(Attribute.class, JsonDeserializers.ATTRIBUTE_KEY);
         module.addKeyDeserializer(Enchantment.class, JsonDeserializers.ENCHANTMENT_KEY);

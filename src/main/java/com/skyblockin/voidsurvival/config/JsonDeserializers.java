@@ -65,12 +65,11 @@ public class JsonDeserializers {
     public static final StdDelegatingDeserializer<ItemType> ITEM_TYPE = delegate(new RegistryConverter<>("ItemType", Registry.ITEM));
 
     // Enum converters
-    public static final StdDelegatingDeserializer<BookMeta.Generation> BOOK_GENERATION = delegate(new EnumConverter<>(BookMeta.Generation.class));
     public static final StdDelegatingDeserializer<EquipmentSlot> EQUIPMENT_SLOT = delegate(new EnumConverter<>(EquipmentSlot.class));
     public static final StdDelegatingDeserializer<ItemFlag> ITEM_FLAG = delegate(new EnumConverter<>(ItemFlag.class));
 
     public static final StdDelegatingDeserializer<Color> COLOR = delegate(new ColorConverter());
-    public static final ArmorTrimDeserializer ARMOR_TRIM = new ArmorTrimDeserializer();
+    public static final ItemArmorTrimDeserializer ARMOR_TRIM = new ItemArmorTrimDeserializer();
     public static final Vector3fDeserializer VECTOR_3F = new Vector3fDeserializer();
     public static final PotionEffectDeserializer POTION_EFFECT = new PotionEffectDeserializer();
     public static final AttributeModifierDeserializer ATTRIBUTE_MODIFIER = new AttributeModifierDeserializer();
@@ -81,6 +80,7 @@ public class JsonDeserializers {
     public static final EnchantmentKeyDeserializer ENCHANTMENT_KEY = new EnchantmentKeyDeserializer();
     public static final AttributeKeyDeserializer ATTRIBUTE_KEY = new AttributeKeyDeserializer();
     public static final NamespacedKeyKeyDeserializer NAMESPACED_KEY = new NamespacedKeyKeyDeserializer();
+    public static final EquipmentSlotKeyDeserializer EQUIPMENT_SLOT_KEY = new EquipmentSlotKeyDeserializer();
     public static final EquipmentSlotGroupDeserializer EQUIPMENT_SLOT_GROUP = new EquipmentSlotGroupDeserializer();
     public static final ComponentDeserializer COMPONENT = new ComponentDeserializer();
     public static final UUIDDeserializer UUID = new UUIDDeserializer();
@@ -108,6 +108,7 @@ public class JsonDeserializers {
     public static final ItemRarityDeserializer ITEM_RARITY = new ItemRarityDeserializer();
     public static final DeathProtectionDeserializer DEATH_PROTECTION = new DeathProtectionDeserializer();
     public static final UseCooldownDeserializer USE_COOLDOWN = new UseCooldownDeserializer();
+
 
     private static <T> StdDelegatingDeserializer<T> delegate(Converter<?, T> converter) {
         return new StdDelegatingDeserializer<>(converter);
@@ -218,6 +219,14 @@ public class JsonDeserializers {
 
     }
 
+    public static class EquipmentSlotKeyDeserializer extends KeyDeserializer {
+
+        @Override
+        public Object deserializeKey(String key, DeserializationContext ctxt) throws IOException {
+            return EquipmentSlot.valueOf(key.toUpperCase());
+        }
+    }
+
     public static class NamespacedKeyKeyDeserializer extends KeyDeserializer {
 
         @Override
@@ -297,21 +306,21 @@ public class JsonDeserializers {
 
     }
 
-    public static class ArmorTrimDeserializer extends StdDeserializer<ArmorTrim> {
+    public static class ItemArmorTrimDeserializer extends StdDeserializer<ItemArmorTrim> {
 
-        protected ArmorTrimDeserializer() {
+        protected ItemArmorTrimDeserializer() {
             super(ArmorTrim.class);
         }
 
         @Override
-        public ArmorTrim deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+        public ItemArmorTrim deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
 
             JsonNode node = p.getCodec().readTree(p);
 
             TrimMaterial material = Json.convert(node.get("material"), TrimMaterial.class);
             TrimPattern pattern = Json.convert(node.get("pattern"), TrimPattern.class);
 
-            return new ArmorTrim(material, pattern);
+            return ItemArmorTrim.itemArmorTrim(new ArmorTrim(material, pattern)).build();
         }
 
     }

@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.config.ItemData;
 import com.skyblockin.voidsurvival.loot.LootTable;
 import com.skyblockin.voidsurvival.loot.LootChestManager;
 import com.skyblockin.voidsurvival.loot.LootUtil;
@@ -32,6 +33,31 @@ public class AdminCommands {
     }
 
     public static void register(Commands commands) {
+
+        commands.register(literal("vsgive")
+            .requires(ctx -> ctx.getSender().isOp())
+                .then(argument("item", StringArgumentType.word())
+                    .suggests(Functions.suggest(() -> VoidSurvival.getInstance().getItemManager().getIds()))
+                    .executes(ctx -> {
+
+                        if (ctx.getSource().getSender() instanceof Player player) {
+
+                            String itemId = ctx.getArgument("item", String.class);
+
+                            ItemData data = VoidSurvival.getInstance().getItemManager().getItem(itemId);
+
+                            if (data != null) {
+                                player.getInventory().addItem(data.createItem());
+                            } else {
+                                player.sendRichMessage("<red>No item with id '" + itemId + "' found!");
+                            }
+                        }
+
+                        return 1;
+                    })
+                )
+            .build()
+        );
 
         commands.register(literal("vsreload")
             .requires(ctx -> ctx.getSender().isOp())

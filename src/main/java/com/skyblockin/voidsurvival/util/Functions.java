@@ -1,6 +1,11 @@
 package com.skyblockin.voidsurvival.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
@@ -11,13 +16,22 @@ import org.bukkit.Keyed;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Supplier;
 
 public class Functions {
+
+    public static SuggestionProvider<CommandSourceStack> suggest(Supplier<Collection<String>> suggestions) {
+        return (ctx, builder) -> {
+            suggestions.get().forEach(builder::suggest);
+            return builder.buildFuture();
+        };
+    }
 
     public static <T> CompletableFuture<T> runAsync(Callable<T> callable) {
         return CompletableFuture.supplyAsync(() -> {
