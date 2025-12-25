@@ -3,6 +3,7 @@ package com.skyblockin.voidsurvival.storage;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.skyblockin.voidsurvival.util.TagUtil;
 import io.papermc.paper.registry.keys.tags.BlockTypeTagKeys;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -16,6 +17,37 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PlayerData {
 
     public static final ConcurrentHashMap<UUID, PlayerData> PLAYER_DATA_MAP = new ConcurrentHashMap<>();
+
+    public static PlayerData getByNameorUuid(String text) throws PlayerDataException {
+
+        // By name
+        if (text.length() <= 16) {
+
+            Player player = Bukkit.getPlayer(text);
+
+            // Return current data for online players
+            if (player != null) {
+                return PLAYER_DATA_MAP.get(player.getUniqueId());
+            } else {
+                return Database.loadPlayerByName(text);
+            }
+
+        // By uuid
+        } else {
+
+            UUID uuid = UUID.fromString(text);
+            PlayerData data = PLAYER_DATA_MAP.get(uuid);
+
+            if (data != null) {
+                return data;
+            // Maybe the player is not online, let's try the database
+            } else {
+                return Database.loadPlayer(uuid);
+            }
+
+        }
+
+    }
 
     public static PlayerData of(Player player) {
         return PLAYER_DATA_MAP.get(player.getUniqueId());

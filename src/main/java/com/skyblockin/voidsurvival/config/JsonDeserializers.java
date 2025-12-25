@@ -108,6 +108,7 @@ public class JsonDeserializers {
     public static final ItemRarityDeserializer ITEM_RARITY = new ItemRarityDeserializer();
     public static final DeathProtectionDeserializer DEATH_PROTECTION = new DeathProtectionDeserializer();
     public static final UseCooldownDeserializer USE_COOLDOWN = new UseCooldownDeserializer();
+    public static final EntityTypeKeyDeserializer ENTITY_TYPE_KEY = new EntityTypeKeyDeserializer();
 
 
     private static <T> StdDelegatingDeserializer<T> delegate(Converter<?, T> converter) {
@@ -285,6 +286,14 @@ public class JsonDeserializers {
         @Override
         public UUID deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
             return java.util.UUID.fromString(p.getValueAsString());
+        }
+    }
+
+    public static class EntityTypeKeyDeserializer extends KeyDeserializer {
+
+        @Override
+        public Object deserializeKey(String key, DeserializationContext ctxt) throws IOException {
+            return Json.convert(key, EntityType.class);
         }
     }
 
@@ -890,8 +899,8 @@ public class JsonDeserializers {
                 .itemDamage(Json.convert(node.get("item_damage"), ItemDamageFunction.class))
                 .disableCooldownScale((float) node.path("disable_cooldown_scale").asDouble(1.0))
                 .blockDelaySeconds((float) node.path("block_delay").asDouble(0.0))
-                .blockSound(node.has("block_sound") ? Key.key(node.get("block_sound").asText()) : null)
-                .disableSound(node.has("disable_sound") ? Key.key(node.get("disable_sound").asText()) : null)
+                .blockSound(node.hasNonNull("block_sound") ? Key.key(node.get("block_sound").asText()) : null)
+                .disableSound(node.hasNonNull("disable_sound") ? Key.key(node.get("disable_sound").asText()) : null)
                 .build();
         }
     }

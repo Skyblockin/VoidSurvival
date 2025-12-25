@@ -1,7 +1,7 @@
 package com.skyblockin.voidsurvival;
 
-import com.skyblockin.voidsurvival.command.AdminCommands;
 import com.skyblockin.voidsurvival.command.BasicCommands;
+import com.skyblockin.voidsurvival.command.MainCommand;
 import com.skyblockin.voidsurvival.constants.CustomEnchantments;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
@@ -38,8 +38,8 @@ public class VoidSurvivalBootstrap implements PluginBootstrap {
 
         manager.registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
             try {
+                commands.registrar().register(MainCommand.COMMAND.build());
                 BasicCommands.register(commands.registrar());
-                AdminCommands.register(commands.registrar());
             } catch (Exception ex) {
                 ex.printStackTrace();
             }

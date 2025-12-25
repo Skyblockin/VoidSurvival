@@ -6,11 +6,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.skyblockin.voidsurvival.config.Json;
+import com.skyblockin.voidsurvival.util.Functions;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.component.TypedEntityData;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -43,9 +42,9 @@ public class SpawnerData {
             JsonNode node = p.getCodec().readTree(p);
             SpawnerData data = new SpawnerData();
 
-            data.minSpawnDelay = (short) node.path("min_spawn_delay").asInt(200);
-            data.maxSpawnDelay = (short) node.path("max_spawn_delay").asInt(800);
-            data.spawnDelay = (short) node.path("spawn_delay").asInt(0);
+            data.minSpawnDelay = parseTimeField("min_spawn_delay", node, 200);
+            data.maxSpawnDelay = parseTimeField("max_spawn_delay", node, 800);
+            data.spawnDelay = parseTimeField("spawn_delay", node, 0);
             data.spawnCount = (short) node.path("spawn_count").asInt(4);
             data.maxNearbyEntities = (short) node.path("max_nearby_entities").asInt(4);
             data.requiredPlayerRange = (short) node.path("required_player_range").asInt(16);
@@ -54,6 +53,19 @@ public class SpawnerData {
             data.entityData = Json.convert(node.get("entity"), EntityData.class);
 
             return data;
+        }
+
+        private short parseTimeField(String key, JsonNode node, int defaultValue) {
+
+            JsonNode timeNode = node.path(key);
+
+            if (timeNode.isInt()) {
+                return (short) timeNode.asInt(defaultValue);
+            } else if (timeNode.isTextual()) {
+                return (short) Functions.parseTicks(timeNode.asText());
+            }
+
+            return (short) defaultValue;
         }
     }
 

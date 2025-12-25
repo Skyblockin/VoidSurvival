@@ -70,7 +70,8 @@ public class LootChestManager implements Listener {
         this.cooldowns.clear();
 
         for (String key : section.getKeys(false)) {
-            this.cooldowns.put(key, section.getLong(key) * 1000L);
+            long timeMillis = Functions.parseMillis(section.getString(key));
+            this.cooldowns.put(key, timeMillis);
         }
 
         VoidSurvival.logInfo("Loaded chest cooldowns with %d entries.", this.cooldowns.size());

@@ -20,8 +20,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.inventory.*;
-import org.bukkit.inventory.meta.*;
-import org.bukkit.inventory.meta.trim.ArmorTrim;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
@@ -37,54 +36,61 @@ import java.util.UUID;
 @JsonDeserialize(using = ItemData.Deserializer.class)
 public final class ItemData {
 
+    public transient ItemType id = null;
     public RangedValue amount = null;
-    public Boolean unbreakable = null;
-    public Boolean glider = null;
-    public Boolean intangibleProjectile = null;
-    public Boolean placeable = null;
-    public PotionContents potionContents = null;
-    public Boolean glintOverride = false;
     public Integer maxStackSize = null;
+
+    // Durability
     public Integer maxDamage = null;
-    public Integer repairCost = null;
     public RangedValue damage = null;
-    public DyedItemColor dyedItemColor = null;
+    public Boolean unbreakable = null;
+
+    // Uhh idk what to call these
+    public ItemRarity rarity = null;
     public Component name = null;
     public ItemLore lore = null;
-    public ItemRarity rarity = null;
+    public ItemAttributeModifiers attributes = null;
+    public ItemEnchantmentMap enchantments = null;
+    public ItemEnchantmentMap storedEnchantments = null;
     public TooltipDisplay tooltipDisplay = null;
 
-    public Repairable repairable = null;
-    public Enchantable enchantable = null;
-    public BlocksAttacks blocksAttacks = null;
+    public Integer repairCost = null;
+    public Boolean glint = null;
+    public Boolean intangibleProjectile = null;
+
+    // Consumable things
+    public FoodProperties foodProperties;
+    public Consumable consumable;
     public UseRemainder useRemainder = null;
     public UseCooldown useCooldown = null;
+
+    // Item behavior/rules
+    public DamageResistant resistant = null;
+    public Tool tool = null;
+    public Enchantable enchantable = null;
+    public Equippable equippable = null;
+    public Repairable repairable = null;
+    public Boolean glider = null;
+    public Key tooltipStyle = null;
+    public DeathProtection deathProtection = null;
+    public BlocksAttacks blocksAttacks = null;
+    public DyedItemColor dyedItemColor = null;
+
+    // Storage stuff
+    public PotionContents potionContents = null;
+    public WritableBookContent writableBookContent = null;
+    public WrittenBookContent writtenBookContent = null;
+    public ItemArmorTrim trim = null;
+    public ResolvableProfile profile = null;
     public ItemContainerContents containerContents = null;
 
     public Key breakSound = null;
-    public Key tooltipStyle = null;
 
-    public WritableBookContent writableBookContent = null;
-    public WrittenBookContent writtenBookContent = null;
-
-    public ItemType id = null;
-    public Equippable equippable = null;
     public Weapon weapon = null;
-    public ResolvableProfile profile = null;
-    public ItemArmorTrim trim = null;
 
-    public DamageResistant resistant = null;
-
-    public Tool tool = null;
-    public FoodProperties foodProperties;
-    public Consumable consumable;
-    public DeathProtection deathProtection = null;
-
-    public ItemAttributeModifiers attributeModifiers = null;
-    public ItemEnchantmentMap enchantments = null;
-    public ItemEnchantmentMap storedEnchantments = null;
-
+    public Boolean placeable = null;
     public ItemAdventurePredicate canPlaceOn = null;
+    public ItemAdventurePredicate canBreak = null;
 
     public SpawnerData spawnerData = null;
 
@@ -104,7 +110,7 @@ public final class ItemData {
         setData(item, DataComponentTypes.CUSTOM_NAME, name);
         setData(item, DataComponentTypes.LORE, lore);
         setData(item, DataComponentTypes.MAX_STACK_SIZE, maxStackSize);
-        setData(item, DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, glintOverride);
+        setData(item, DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, glint);
         setData(item, DataComponentTypes.DYED_COLOR, dyedItemColor);
         setData(item, DataComponentTypes.PROFILE, profile);
         setData(item, DataComponentTypes.TOOLTIP_DISPLAY, tooltipDisplay);
@@ -138,13 +144,14 @@ public final class ItemData {
         // Item container things
         setData(item, DataComponentTypes.ENCHANTMENTS, enchantments);
         setData(item, DataComponentTypes.STORED_ENCHANTMENTS, storedEnchantments);
-        setData(item, DataComponentTypes.ATTRIBUTE_MODIFIERS, attributeModifiers);
+        setData(item, DataComponentTypes.ATTRIBUTE_MODIFIERS, attributes);
         setData(item, DataComponentTypes.POTION_CONTENTS, potionContents);
         setData(item, DataComponentTypes.WRITABLE_BOOK_CONTENT, writableBookContent);
         setData(item, DataComponentTypes.WRITTEN_BOOK_CONTENT, writtenBookContent);
 
         // Placeable, tool, etc "rules
         setData(item, DataComponentTypes.CAN_PLACE_ON, canPlaceOn);
+        setData(item, DataComponentTypes.CAN_BREAK, canBreak);
         setData(item, DataComponentTypes.TOOL, tool);
         setData(item, DataComponentTypes.EQUIPPABLE, equippable);
         setFlag(item, DataComponentTypes.GLIDER, glider);
@@ -214,13 +221,11 @@ public final class ItemData {
     public static class Deserializer extends StdDeserializer<ItemData> {
 
         private static final HashMap<String, Object> DEFAULT_VALUES = new HashMap<>() {{
-            put("damage", new RangedValue(0));
             put("unbreakable", false);
             put("amount", new RangedValue(1));
             put("intangible_projectile", false);
             put("placeable", true);
             put("id", ItemType.STONE);
-            put("hide_tooltip", false);
             put("glider", false);
         }};
 
@@ -236,7 +241,7 @@ public final class ItemData {
 
             for (Field field : ItemData.class.getDeclaredFields()) {
 
-                if (field.getName().equals("id") || Modifier.isTransient(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
+                if (Modifier.isTransient(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
                     continue;
                 }
 
@@ -270,7 +275,11 @@ public final class ItemData {
 
             if (id.startsWith("voidsurvival:")) {
                 id = id.substring(13);
-                data = VoidSurvival.getInstance().getItemManager().getItem(id).copy();
+                data = VoidSurvival.getInstance().getItemManager().getItem(id);
+                if (data == null) {
+                    throw new IllegalStateException("Item with id '" + node.get("id").asText() + "' was specified, but no such item exists!");
+                }
+                data = data.copy();
             } else {
                 data = new ItemData();
                 data.id = Json.convert(node.get("id"), ItemType.class, ItemType.STONE);

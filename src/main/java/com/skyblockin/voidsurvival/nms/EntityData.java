@@ -8,10 +8,16 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.skyblockin.voidsurvival.config.ItemData;
 import com.skyblockin.voidsurvival.config.Json;
+import com.skyblockin.voidsurvival.util.TextUtil;
+import io.papermc.paper.adventure.AdventureComponent;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -30,6 +36,7 @@ import java.util.HashMap;
 public class EntityData {
 
     public HashMap<EquipmentSlot, ItemData> equipment = new HashMap<>();
+    public HashMap<EquipmentSlot, Float> dropChances = new HashMap<>();
     public HashMap<String, Float> attributes = new HashMap<>();
     public boolean persistent;
     public String entityId = null;
@@ -53,6 +60,7 @@ public class EntityData {
             data.customName = node.get("name").asText();
             data.attributes = Json.convert(node.get("attributes"), new TypeReference<>() {});
             data.equipment = Json.convert(node.get("equipment"), new TypeReference<>() {});
+            data.dropChances = Json.convert(node.get("drop_chances"), new TypeReference<>() {});
 
             return data;
         }
@@ -81,25 +89,44 @@ public class EntityData {
         CompoundTag entity = new CompoundTag();
 
         entity.putString("id", entityId);
-        entity.put("equipment", getEquipmentTag());
-        entity.putString("CustomName", customName);
-
-        ListTag attributes = new ListTag();
-
-        this.attributes.forEach((key, value) -> {
-
-            CompoundTag attribute = new CompoundTag();
-
-            attribute.putString("id", key);
-            attribute.putFloat("base", value);
-
-            attributes.add(attribute);
-        });
-
+        entity.put("CustomName", NMSUtil.color(customName));
         entity.putBoolean("PersistenceRequired", persistent);
-        entity.put("attributes", attributes);
+
+        if (equipment != null) {
+            entity.put("equipment", getEquipmentTag());
+        }
+
+        if (dropChances != null) {
+            entity.put("drop_chances", getDropChancesTag());
+        }
+
+        if (this.attributes != null) {
+
+            ListTag attributes = new ListTag();
+
+            this.attributes.forEach((key, value) -> {
+
+                CompoundTag attribute = new CompoundTag();
+
+                attribute.putString("id", key);
+                attribute.putFloat("base", value);
+
+                attributes.add(attribute);
+            });
+
+            entity.put("attributes", attributes);
+        }
 
         return entity;
+    }
+
+    public CompoundTag getDropChancesTag() {
+
+        CompoundTag tag = new CompoundTag();
+
+        dropChances.forEach((slot, chance) -> tag.putFloat(apiEquipmentSlotToNms(slot), chance));
+
+        return tag;
     }
 
     public CompoundTag getEquipmentTag() {

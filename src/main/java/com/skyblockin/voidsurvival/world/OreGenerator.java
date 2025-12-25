@@ -7,6 +7,8 @@ import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Json;
 import com.skyblockin.voidsurvival.region.Flags;
 import com.skyblockin.voidsurvival.storage.BlockPosition;
+import com.skyblockin.voidsurvival.util.CustomTimeUnit;
+import com.skyblockin.voidsurvival.util.Functions;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockType;
@@ -22,6 +24,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 public class OreGenerator implements Listener {
 
@@ -47,8 +50,8 @@ public class OreGenerator implements Listener {
 
             BlockType blockType = Registry.BLOCK.get(NamespacedKey.minecraft(key));
 
-            int minTime = section.getInt(key + ".min-time", 1);
-            int maxTime = section.getInt(key + ".max-time", 1);
+            int minTime = (int) Functions.getTimeFromYaml(section, key + ".min-time", 1000, CustomTimeUnit.TICKS);
+            int maxTime = (int) Functions.getTimeFromYaml(section, key + ".max-time", 1000, CustomTimeUnit.TICKS);
 
             this.regenerationTimes.put(blockType, new Pair<>(minTime, maxTime));
         }
@@ -151,6 +154,10 @@ public class OreGenerator implements Listener {
 
         Player player = event.getPlayer();
         Block block = event.getBlock();
+
+        if (player.isOp()) {
+            return;
+        }
 
         if (Flags.REGENERATE_BLOCKS.test(player, block)) {
 

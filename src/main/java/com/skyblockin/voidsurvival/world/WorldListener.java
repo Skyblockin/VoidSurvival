@@ -1,12 +1,17 @@
 package com.skyblockin.voidsurvival.world;
 
+import com.sk89q.worldguard.bukkit.util.Materials;
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.constants.ItemIds;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.storage.Database;
-import org.bukkit.entity.Player;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -28,6 +33,22 @@ public class WorldListener implements Listener {
 
         if (Accessors.CAN_PLACE.equals(item, false)) {
             event.setCancelled(true);
+        }
+
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onBlockClick(PlayerInteractEvent event) {
+
+        ItemStack item = event.getItem();
+        Block block = event.getClickedBlock();
+
+        if (block != null && Accessors.ITEM_ID.equals(item, ItemIds.GRASS_SEEDS)) {
+            if (block.getType() == Material.DIRT && block.getRelative(BlockFace.UP).isEmpty()) {
+                block.setType(Material.GRASS_BLOCK);
+            } else {
+                event.setCancelled(true);
+            }
         }
 
     }

@@ -288,16 +288,11 @@ public class Database {
         return null;
     }
 
-    private static final String loadPlayerData =
-        """
-        SELECT id, player_data FROM players WHERE id = ?
-        """;
-
     public static PlayerData loadPlayer(UUID uuid) throws PlayerDataException {
 
         try {
 
-            PreparedStatement statement = getConnection().prepareStatement(loadPlayerData);
+            PreparedStatement statement = getConnection().prepareStatement("SELECT id, player_data FROM players WHERE id = ?");
 
             statement.setString(1, uuid.toString());
 
@@ -319,16 +314,42 @@ public class Database {
         }
     }
 
+    public static PlayerData loadPlayerByName(String name) throws PlayerDataException {
+
+        try {
+
+            PreparedStatement statement = getConnection().prepareStatement("SELECT id, player_data FROM players WHERE JSON_EXTRACT(player_data, '$.lastKnownUserName') = ?");
+
+            statement.setString(1, name);
+
+            ResultSet rs = statement.executeQuery();
+
+            if (!rs.next()) {
+                return null;
+            }
+
+            PlayerData data = playerFromResultSet(rs);
+
+            statement.close();
+
+            return data;
+
+        } catch (Exception ex) {
+            throw new PlayerDataException("Failed to load player data: " + ex.getMessage(), ex);
+        }
+
+    }
+
     private static PlayerData playerFromResultSet(ResultSet rs) throws SQLException, JsonProcessingException {
 
         JsonNode playerData = Json.readJson(rs.getString("player_data"));
 
         PlayerData data = new PlayerData(UUID.fromString(rs.getString("id")));
 
-        data.hasGeneratedIsland = playerData.at("/hasGeneratedIsland").asBoolean(false);
-        data.lastKnownUserName = playerData.at("/lastKnownUserName").asText();
-        data.kills = playerData.at("/kills").asInt(0);
-        data.killStreak = playerData.at("/killStreak").asInt(0);
+        data.hasGeneratedIsland = playerData.path("hasGeneratedIsland").asBoolean(false);
+        data.lastKnownUserName = playerData.path("lastKnownUserName").asText();
+        data.kills = playerData.path("kills").asInt(0);
+        data.killStreak = playerData.path("killStreak").asInt(0);
 
         if (playerData.hasNonNull("homes")) {
             data.homes = Json.nodeToValue(playerData.path("homes"), HomeMap.class);

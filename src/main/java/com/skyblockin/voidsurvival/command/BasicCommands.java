@@ -27,38 +27,38 @@ import static io.papermc.paper.command.brigadier.Commands.literal;
 
 public final class BasicCommands {
 
-    private static Component renderLeaderboard(Component title, List<PlayerData> leaderboard) {
+    private static Component renderLeaderboard(Component title, LeaderboardType type, List<PlayerData> leaderboard) {
 
         int counter = 0;
-        String color;
 
         for (PlayerData data : leaderboard) {
-
             counter++;
-
-            if (counter == 1) {
-                color = "<gold>";
-            } else if (counter == 2) {
-                color = "<#c0c0c0>";
-            } else if (counter == 3) {
-                color = "<#cd7f32>";
-            } else {
-                color = "<white>";
-            }
-
             title = title.appendNewline()
-                .append(TextUtil.color("%s%d. %s", color, counter, data.lastKnownUserName))
-                .appendNewline();
+                .append(TextUtil.color("<!b>%s%d. %s: %d",
+                    getRankingColor(counter), counter, data.lastKnownUserName, type == LeaderboardType.KILLS ? data.kills : data.killStreak)
+                );
         }
 
         return title;
+    }
+
+    private static String getRankingColor(int ranking) {
+        if (ranking == 1) {
+            return "<gold>";
+        } else if (ranking == 2) {
+            return "<#c0c0c0>";
+        } else if (ranking == 3) {
+            return "<#cd7f32>";
+        } else {
+            return "<white>";
+        }
     }
 
     private static Component getLeaderboard(LeaderboardType type, int limit) {
 
         List<PlayerData> leaderboard = VoidSurvival.getInstance().getLeaderboardManager().getLeaderboard(type, limit);
 
-        return renderLeaderboard(Component.text("Top " + type.getDisplayName(), NamedTextColor.GOLD, TextDecoration.BOLD), leaderboard);
+        return renderLeaderboard(Component.text("Top " + type.getDisplayName(), NamedTextColor.GOLD, TextDecoration.BOLD), type, leaderboard);
     }
 
     private static void handlePlayerHome(Player player, String homeName) {
@@ -228,11 +228,11 @@ public final class BasicCommands {
                             Location island = generator.generateIsland(chunk);
 
                             Database.saveIsland(island.getChunk().getX(), island.getChunk().getZ());
+                            data.setHome("island", island);
+                            data.hasGeneratedIsland = true;
+                            data.generatingIsland = false;
 
                             VoidSurvival.getInstance().runTaskLater(() -> {
-
-                                data.setHome("island", island);
-                                data.generatingIsland = false;
 
                                 player.teleportAsync(island).thenAccept(success -> {
 
@@ -246,7 +246,6 @@ public final class BasicCommands {
                                         player.sendRichMessage("<green>You have been teleported to your island.");
                                     }
 
-                                    data.hasGeneratedIsland = true;
                                 });
 
                             }, 10L);

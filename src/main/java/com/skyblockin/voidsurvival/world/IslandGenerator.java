@@ -45,7 +45,7 @@ public class IslandGenerator {
 
         return CompletableFuture.supplyAsync(() -> {
 
-            int chunkRange = getIslandGenerationRange();
+            int chunkRange = getIslandGenerationRange() / 16;
 
             ThreadLocalRandom random = ThreadLocalRandom.current();
 

@@ -10,10 +10,7 @@ import com.skyblockin.voidsurvival.util.TagUtil;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemAttributeModifiers;
-import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.keys.tags.EntityTypeTagKeys;
-import io.papermc.paper.tag.EntityTags;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
@@ -29,9 +26,11 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,7 +41,9 @@ public class CombatTracker implements Listener {
 
     private final HashMap<UUID, Double> bleedMap = new HashMap<>();
     private final HashMap<UUID, BossBar> bleedingBars = new HashMap<>();
+    // First is for bleed only lol
     private final HashMap<UUID, Long> lastDamageTimes = new HashMap<>();
+    private final HashMap<UUID, Instant> lastEntityHitTimes = new HashMap<>();
 
     public CombatTracker() {
 
@@ -120,7 +121,45 @@ public class CombatTracker implements Listener {
     }
 
     @EventHandler
+    public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
+
+        Player player = event.getPlayer();
+
+        if (player.isOp()) {
+            return;
+        }
+
+        String command = event.getMessage();
+
+        if (command.startsWith("/")) {
+            command = command.substring(1);
+        }
+
+        int firstSpace = command.indexOf(' ');
+        command = command.substring(0, firstSpace == -1 ? command.length() : firstSpace);
+
+        int combatTagDurationSeconds = VoidSurvival.getInstance().getCombatTagDurationSeconds();
+        Instant lastHitTime = lastEntityHitTimes.get(player.getUniqueId());
+
+        if (lastHitTime != null
+            && lastHitTime.plusSeconds(combatTagDurationSeconds).isAfter(Instant.now())
+            && VoidSurvival.getInstance().getCombatBlockedCommands().contains(command)
+        ) {
+            player.sendMessage(TextUtil.color("<red>You cannot use that command while in combat!"));
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
     public void onHit(EntityDamageByEntityEvent event) {
+
+        if (event.getEntity() instanceof Player player) {
+            this.lastEntityHitTimes.put(player.getUniqueId(), Instant.now());
+        }
+
+        if (event.getDamager() instanceof Player player) {
+            this.lastEntityHitTimes.put(player.getUniqueId(), Instant.now());
+        }
 
         // Proteccc
         if (event.getDamageSource().isIndirect()

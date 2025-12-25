@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.deser.std.StdDelegatingDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer;
 import io.papermc.paper.block.BlockPredicate;
@@ -20,8 +19,6 @@ import org.bukkit.block.BlockType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.*;
-import org.bukkit.inventory.meta.BookMeta;
-import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.potion.PotionEffect;
@@ -100,6 +97,7 @@ public class Json {
         module.addKeyDeserializer(NamespacedKey.class, JsonDeserializers.NAMESPACED_KEY);
         module.addKeyDeserializer(Attribute.class, JsonDeserializers.ATTRIBUTE_KEY);
         module.addKeyDeserializer(Enchantment.class, JsonDeserializers.ENCHANTMENT_KEY);
+        module.addKeyDeserializer(EntityType.class, JsonDeserializers.ENTITY_TYPE_KEY);
 
         module.addSerializer(Keyed.class, new StdDelegatingSerializer(JsonDeserializers.KEYED_TYPE));
         module.addKeySerializer(Keyed.class, new StdDelegatingSerializer(JsonDeserializers.KEYED_TYPE));
@@ -142,6 +140,10 @@ public class Json {
 
     public static JsonNode toJson(Object object) {
         return MAPPER.valueToTree(object);
+    }
+
+    public static String toPrettyJsonString(Object object) throws JsonProcessingException {
+        return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(object);
     }
 
     public static JsonNode readJson(String json) throws JsonProcessingException {

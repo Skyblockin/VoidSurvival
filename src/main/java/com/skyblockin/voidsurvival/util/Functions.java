@@ -13,15 +13,13 @@ import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.registry.set.RegistrySet;
 import io.papermc.paper.registry.tag.TagKey;
 import org.bukkit.Keyed;
+import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.*;
 import java.util.function.Supplier;
 
 public class Functions {
@@ -84,6 +82,66 @@ public class Functions {
         }
 
         return String.join(" ", parts);
+    }
+
+    private record TimePair(CustomTimeUnit unit, char suffix) {}
+    private static final TimePair[] TIME_PAIRS = {
+        new TimePair(CustomTimeUnit.DAYS, 'd'),
+        new TimePair(CustomTimeUnit.HOURS, 'h'),
+        new TimePair(CustomTimeUnit.MINUTES, 'm'),
+        new TimePair(CustomTimeUnit.SECONDS, 's'),
+        new TimePair(CustomTimeUnit.TICKS, 't')
+    };
+
+    public static long parseMillis(String s) {
+
+        long millis = 0;
+
+        // Standardize the string because yeah lol
+        s = s.replaceAll(" ", "").toLowerCase();
+
+        boolean sawAtLeastOneUnit = false;
+
+        for (TimePair pair : TIME_PAIRS) {
+
+            int index = s.indexOf(pair.suffix);
+            if (index > 0) {
+                sawAtLeastOneUnit = true;
+                millis += pair.unit.convert(Long.parseLong(s.substring(0, index)), TimeUnit.MILLISECONDS);
+            }
+
+            s = s.substring(index + 1);
+        }
+
+        if (!sawAtLeastOneUnit) {
+            try {
+                return Long.parseLong(s);
+            } catch (Exception ex) {
+                throw new IllegalArgumentException("Invalid time format! Could not find any valid suffix in time string '" + s + "', valid suffixes are: 'd', 'h', 'm', 's'", ex);
+            }
+        }
+
+        return millis;
+    }
+
+    public static long parseTicks(String s) {
+        return parseMillis(s) / 50;
+    }
+
+    public static long getTimeFromYaml(ConfigurationSection section, String key, int defaultValue, CustomTimeUnit unit) {
+
+        String s = section.getString(key);
+
+        if (s == null) {
+            return defaultValue;
+        }
+
+        try {
+            return CustomTimeUnit.MILLISECONDS.convert(parseMillis(s), unit);
+        } catch (IllegalArgumentException iae) {
+            return section.getInt(key, defaultValue);
+        }
+
     }
 
 }

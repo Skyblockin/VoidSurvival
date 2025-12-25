@@ -1,12 +1,16 @@
 package com.skyblockin.voidsurvival;
 
+import com.sk89q.worldedit.regions.Region;
 import com.skyblockin.voidsurvival.chat.ChatListener;
 import com.skyblockin.voidsurvival.combat.CombatTracker;
 import com.skyblockin.voidsurvival.config.ItemManager;
 import com.skyblockin.voidsurvival.leaderboard.LeaderboardManager;
 import com.skyblockin.voidsurvival.loot.LootChestManager;
 import com.skyblockin.voidsurvival.region.Flags;
+import com.skyblockin.voidsurvival.region.RegionFlagListener;
 import com.skyblockin.voidsurvival.storage.*;
+import com.skyblockin.voidsurvival.util.CustomTimeUnit;
+import com.skyblockin.voidsurvival.util.Functions;
 import com.skyblockin.voidsurvival.world.IslandGenerator;
 import com.skyblockin.voidsurvival.world.OreGenerator;
 import com.skyblockin.voidsurvival.world.WorldListener;
@@ -22,10 +26,14 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.skyblockin.voidsurvival.storage.PlayerData.PLAYER_DATA_MAP;
+import static com.skyblockin.voidsurvival.util.Functions.getTimeFromYaml;
 
 public class VoidSurvival extends JavaPlugin {
 
@@ -48,6 +56,8 @@ public class VoidSurvival extends JavaPlugin {
     private boolean debug = false;
     private Location infirmaryLocation;
     private int blockDegenerationSeconds = 20;
+    private int combatTagDurationSeconds = 10;
+    private List<String> combatBlockedCommands = new ArrayList<>();
 
     @Override
     public void onLoad() {
@@ -64,7 +74,9 @@ public class VoidSurvival extends JavaPlugin {
 
         FileConfiguration config = getConfig();
 
-        this.blockDegenerationSeconds = config.getInt("block-degeneration-seconds", 20);
+        this.combatTagDurationSeconds = (int) getTimeFromYaml(getConfig(), "combat-tag-duration-seconds", 10, CustomTimeUnit.SECONDS);
+        this.combatBlockedCommands = config.getStringList("blocked-commands");
+        this.blockDegenerationSeconds = (int) getTimeFromYaml(getConfig(), "block-degeneration-seconds", 20, CustomTimeUnit.SECONDS);
         this.debug = config.getBoolean("debug");
         this.infirmaryLocation = config.getLocation("missing-home-backup-location", null);
 
@@ -96,7 +108,8 @@ public class VoidSurvival extends JavaPlugin {
             this.oreGenerator,
             this.worldListener,
             this.lootTableManager,
-            new CombatTracker()
+            new CombatTracker(),
+            new RegionFlagListener()
         );
 
         this.allowJoins = true;
@@ -104,6 +117,8 @@ public class VoidSurvival extends JavaPlugin {
 
     public void reload() {
         reloadConfig();
+        this.combatTagDurationSeconds = (int) getTimeFromYaml(getConfig(), "combat-tag-duration-seconds", 10, CustomTimeUnit.SECONDS);
+        this.combatBlockedCommands = getConfig().getStringList("blocked-commands");
         this.infirmaryLocation = getConfig().getLocation("missing-home-backup-location", null);
         this.itemManager.reload();
         this.islandGenerator.reload();
@@ -139,6 +154,14 @@ public class VoidSurvival extends JavaPlugin {
             throw new RuntimeException(e);
         }
 
+    }
+
+    public int getCombatTagDurationSeconds() {
+        return combatTagDurationSeconds;
+    }
+
+    public List<String> getCombatBlockedCommands() {
+        return combatBlockedCommands;
     }
 
     public ItemManager getItemManager() {
@@ -216,7 +239,7 @@ public class VoidSurvival extends JavaPlugin {
 
     public static void logDebug(String message, Object... objects) {
         if (getInstance().debug) {
-            LOGGER.log(Level.INFO, "[DEBUG]" + String.format(message, objects));
+            LOGGER.log(Level.INFO, "[DEBUG] " + String.format(message, objects));
         }
     }
 
