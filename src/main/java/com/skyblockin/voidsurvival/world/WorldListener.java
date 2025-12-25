@@ -5,6 +5,7 @@ import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.constants.ItemIds;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.storage.Database;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -43,9 +44,12 @@ public class WorldListener implements Listener {
         ItemStack item = event.getItem();
         Block block = event.getClickedBlock();
 
-        if (block != null && Accessors.ITEM_ID.equals(item, ItemIds.GRASS_SEEDS)) {
+        if (item != null && block != null && Accessors.ITEM_ID.equals(item, ItemIds.GRASS_SEEDS)) {
             if (block.getType() == Material.DIRT && block.getRelative(BlockFace.UP).isEmpty()) {
                 block.setType(Material.GRASS_BLOCK);
+                if (!event.getPlayer().getGameMode().equals(GameMode.CREATIVE)) {
+                    item.subtract();
+                }
             } else {
                 event.setCancelled(true);
             }
