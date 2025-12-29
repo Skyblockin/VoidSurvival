@@ -37,6 +37,7 @@ public class Accessor<C> {
     }
 
     public C read(ItemStack item) {
+        if (item == null) return null;
         return read(item.getPersistentDataContainer());
     }
 
@@ -49,6 +50,7 @@ public class Accessor<C> {
     }
 
     public boolean equals(ItemStack item, C value) {
+        if (item == null) return false;
         return Objects.equals(read(item), value);
     }
 

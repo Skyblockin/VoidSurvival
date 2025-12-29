@@ -24,11 +24,19 @@ public class MobCapFlag extends Flag<MobCapMap> {
 
     @Override
     public MobCapMap unmarshal(@Nullable Object o) {
-        return Json.convert(o, MobCapMap.class);
+        try {
+            return Json.stringToValue((String)o, MobCapMap.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Object marshal(MobCapMap o) {
-        return Json.toJson(o).toString();
+        try {
+            return Json.toString(o);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

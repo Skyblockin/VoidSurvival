@@ -16,6 +16,7 @@ import static io.papermc.paper.command.brigadier.Commands.literal;
 public class MainCommand {
 
     public static final LiteralArgumentBuilder<CommandSourceStack> COMMAND = literal("vs")
+        .requires(ctx -> ctx.getSender().isOp())
         .then(Admin.COMMAND)
         .then(Chest.COMMAND)
         .then(Give.COMMAND)

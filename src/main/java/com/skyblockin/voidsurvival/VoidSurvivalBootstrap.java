@@ -12,13 +12,17 @@ import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.event.RegistryEvents;
 import io.papermc.paper.registry.keys.DamageTypeKeys;
 import io.papermc.paper.registry.keys.tags.DamageTypeTagKeys;
+import io.papermc.paper.registry.keys.tags.ItemTypeTagKeys;
 import net.kyori.adventure.key.Key;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageScaling;
 import org.bukkit.damage.DamageType;
 import org.bukkit.damage.DeathMessageType;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.util.List;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -35,15 +39,6 @@ public class VoidSurvivalBootstrap implements PluginBootstrap {
     public void bootstrap(BootstrapContext context) {
 
         LifecycleEventManager<@NotNull BootstrapContext> manager = context.getLifecycleManager();
-
-        manager.registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
-            try {
-                commands.registrar().register(MainCommand.COMMAND.build());
-                BasicCommands.register(commands.registrar());
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        });
 
         manager.registerEventHandler(RegistryEvents.DAMAGE_TYPE.compose().newHandler(event -> {
 

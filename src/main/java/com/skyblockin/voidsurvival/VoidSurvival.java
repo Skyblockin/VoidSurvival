@@ -1,21 +1,26 @@
 package com.skyblockin.voidsurvival;
 
-import com.sk89q.worldedit.regions.Region;
 import com.skyblockin.voidsurvival.chat.ChatListener;
 import com.skyblockin.voidsurvival.combat.CombatTracker;
+import com.skyblockin.voidsurvival.command.BasicCommands;
+import com.skyblockin.voidsurvival.command.MainCommand;
 import com.skyblockin.voidsurvival.config.ItemManager;
+import com.skyblockin.voidsurvival.entity.EntityEquipmentHandler;
 import com.skyblockin.voidsurvival.leaderboard.LeaderboardManager;
 import com.skyblockin.voidsurvival.loot.LootChestManager;
+import com.skyblockin.voidsurvival.recipe.RecipeManager;
 import com.skyblockin.voidsurvival.region.Flags;
 import com.skyblockin.voidsurvival.region.RegionFlagListener;
 import com.skyblockin.voidsurvival.storage.*;
 import com.skyblockin.voidsurvival.util.CustomTimeUnit;
-import com.skyblockin.voidsurvival.util.Functions;
 import com.skyblockin.voidsurvival.world.IslandGenerator;
 import com.skyblockin.voidsurvival.world.OreGenerator;
 import com.skyblockin.voidsurvival.world.WorldListener;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -24,11 +29,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,6 +54,7 @@ public class VoidSurvival extends JavaPlugin {
     private LootChestManager lootTableManager;
     private LeaderboardManager leaderboardManager;
     private ItemManager itemManager;
+    private RecipeManager recipeManager;
 
     private WorldListener worldListener;
 
@@ -74,6 +80,8 @@ public class VoidSurvival extends JavaPlugin {
 
         FileConfiguration config = getConfig();
 
+        registerCommands();
+
         this.combatTagDurationSeconds = (int) getTimeFromYaml(getConfig(), "combat-tag-duration-seconds", 10, CustomTimeUnit.SECONDS);
         this.combatBlockedCommands = config.getStringList("blocked-commands");
         this.blockDegenerationSeconds = (int) getTimeFromYaml(getConfig(), "block-degeneration-seconds", 20, CustomTimeUnit.SECONDS);
@@ -86,6 +94,7 @@ public class VoidSurvival extends JavaPlugin {
         this.worldListener = new WorldListener();
         this.leaderboardManager = new LeaderboardManager();
         this.itemManager = new ItemManager();
+        this.recipeManager = new RecipeManager();
 
         try {
             Database.createDataBase();
@@ -101,6 +110,7 @@ public class VoidSurvival extends JavaPlugin {
         this.lootTableManager.loadTables();
         this.lootTableManager.loadChestLocations();
         this.lootTableManager.loadCooldowns();
+        this.recipeManager.loadRecipes();
 
         registerEvents(
             new ChatListener(),
@@ -109,10 +119,36 @@ public class VoidSurvival extends JavaPlugin {
             this.worldListener,
             this.lootTableManager,
             new CombatTracker(),
-            new RegionFlagListener()
+            new RegionFlagListener(),
+            new EntityEquipmentHandler(),
+            this.recipeManager
         );
 
         this.allowJoins = true;
+    }
+
+    public void registerCommands() {
+
+        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
+
+            try {
+
+                File aliasFile = getDataFolder().toPath().resolve("aliases.yml").toFile();
+
+                if (!aliasFile.exists()) {
+                    Files.createDirectories(aliasFile.toPath().getParent());
+                    Files.createFile(aliasFile.toPath());
+                }
+
+                YamlConfiguration config = YamlConfiguration.loadConfiguration(aliasFile);
+
+                commands.registrar().register(MainCommand.COMMAND.build());
+                BasicCommands.register(commands.registrar(), config);
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
     }
 
     public void reload() {
@@ -124,6 +160,7 @@ public class VoidSurvival extends JavaPlugin {
         this.islandGenerator.reload();
         this.oreGenerator.reload();
         this.lootTableManager.reload();
+        this.recipeManager.loadRecipes();
     }
 
     private void registerEvents(Listener... listeners) {
@@ -198,6 +235,10 @@ public class VoidSurvival extends JavaPlugin {
 
     public void setDebug(boolean debug) {
         this.debug = debug;
+    }
+
+    public static NamespacedKey createKey(String key) {
+        return new NamespacedKey(VoidSurvival.getInstance(), key);
     }
 
     public BukkitTask runTask(Runnable runnable) {

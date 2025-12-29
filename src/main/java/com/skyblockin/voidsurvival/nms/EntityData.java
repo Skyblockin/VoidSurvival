@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.ItemData;
 import com.skyblockin.voidsurvival.config.Json;
 import com.skyblockin.voidsurvival.util.TextUtil;
@@ -135,11 +136,18 @@ public class EntityData {
 
         equipment.forEach((slot, data) -> {
 
-            ItemStack apiStack = data.createItem();
-            net.minecraft.world.item.ItemStack nmsStack = ((CraftItemStack)apiStack).handle;
-            Tag itemTag = net.minecraft.world.item.ItemStack.CODEC.encodeStart(NbtOps.INSTANCE, nmsStack).getOrThrow();
+            try {
 
-            tag.put(apiEquipmentSlotToNms(slot), itemTag);
+                ItemStack apiStack = data.createItem();
+                net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(apiStack);
+                Tag itemTag = net.minecraft.world.item.ItemStack.CODEC.encodeStart(NbtOps.INSTANCE, nmsStack).getOrThrow();
+
+                tag.put(apiEquipmentSlotToNms(slot), itemTag);
+
+            } catch (Exception ex) {
+                VoidSurvival.logError("Failed to serialize item in slot " + slot + "!", ex);
+            }
+
         });
 
         return tag;

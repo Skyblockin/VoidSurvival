@@ -75,7 +75,6 @@ public class SpawnerData {
 
         CompoundTag tag = new CompoundTag();
         CompoundTag spawnData = new CompoundTag();
-        ListTag spawnPotentials = new ListTag();
 
         tag.putString("id", "minecraft:mob_spawner");
         tag.putShort("MinSpawnDelay", minSpawnDelay);
@@ -89,10 +88,9 @@ public class SpawnerData {
         CompoundTag entityTag = entityData.getEntityTag();
 
         spawnData.put("entity", entityTag);
-        spawnPotentials.add(getPotentialSpawnEntry(entityTag, 1));
 
         tag.put("SpawnData", spawnData);
-        tag.put("SpawnPotentials", spawnPotentials);
+        //tag.put("SpawnPotentials", spawnPotentials);
 
         TypedEntityData<BlockEntityType<?>> data = TypedEntityData.of(BlockEntityType.MOB_SPAWNER, tag);
 

@@ -17,6 +17,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
 
@@ -112,14 +113,14 @@ public final class BasicCommands {
         }
     }
 
-    public static void register(Commands commands) {
+    public static void register(Commands commands, YamlConfiguration aliasConfig) {
 
         commands.register(literal("killstreaktop")
             .executes(ctx -> {
                 ctx.getSource().getSender().sendMessage(getLeaderboard(LeaderboardType.KILLSTREAK, 10));
                 return 1;
             })
-            .build()
+            .build(), aliasConfig.getStringList("killstreaktop")
         );
 
         commands.register(literal("killtop")
@@ -127,7 +128,7 @@ public final class BasicCommands {
                 ctx.getSource().getSender().sendMessage(getLeaderboard(LeaderboardType.KILLS, 10));
                 return 1;
             })
-            .build()
+            .build(), aliasConfig.getStringList("killtop")
         );
 
         commands.register(literal("home")
@@ -161,7 +162,7 @@ public final class BasicCommands {
 
                 return 1;
             })
-            .build()
+            .build(), aliasConfig.getStringList("home")
         );
 
         commands.register(literal("sethome")
@@ -188,7 +189,7 @@ public final class BasicCommands {
 
                 return 1;
             })
-            .build()
+            .build(), aliasConfig.getStringList("sethome")
         );
 
         commands.register(literal("createisland")
@@ -228,7 +229,7 @@ public final class BasicCommands {
                             Location island = generator.generateIsland(chunk);
 
                             Database.saveIsland(island.getChunk().getX(), island.getChunk().getZ());
-                            data.setHome("island", island);
+                            data.setHome("island", island.toCenterLocation());
                             data.hasGeneratedIsland = true;
                             data.generatingIsland = false;
 
@@ -255,7 +256,7 @@ public final class BasicCommands {
 
                 return 1;
             })
-            .build()
+            .build(), aliasConfig.getStringList("createisland")
         );
     }
 

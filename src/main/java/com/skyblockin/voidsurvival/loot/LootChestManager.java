@@ -4,6 +4,7 @@ import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Json;
 import com.skyblockin.voidsurvival.storage.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
+import com.skyblockin.voidsurvival.util.FileUtil;
 import com.skyblockin.voidsurvival.util.Format;
 import com.skyblockin.voidsurvival.util.Functions;
 import org.bukkit.Location;
@@ -19,10 +20,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import java.io.File;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public class LootChestManager implements Listener {
 
@@ -87,24 +85,9 @@ public class LootChestManager implements Listener {
 
     public void loadTables() {
 
-        File file = new File(VoidSurvival.getInstance().getDataFolder(), "loot_tables");
-
-        if (!file.exists()) {
-            if (file.mkdirs()) {
-                VoidSurvival.logInfo("The loot tables folder was missing, so it was created.");
-            } else {
-                VoidSurvival.logError("The loot tables folder was missing, and it could not be created. Is the plugin folder read-only?");
-            }
-            return;
-        }
-
-        File[] tableFiles = file.listFiles();
-
-        if (tableFiles == null) return;
-
         this.tables.clear();
 
-        for (File tableFile : tableFiles) {
+        for (File tableFile : FileUtil.listFiles("loot_tables")) {
 
             try {
                 LootTable table = Json.readFromFile(tableFile, LootTable.class);

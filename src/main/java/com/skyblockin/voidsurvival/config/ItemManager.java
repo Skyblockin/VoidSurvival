@@ -2,9 +2,11 @@ package com.skyblockin.voidsurvival.config;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.util.FileUtil;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 
 public class ItemManager {
@@ -13,24 +15,9 @@ public class ItemManager {
 
     public void loadItemsFromFile() {
 
-        File file = new File(VoidSurvival.getInstance().getDataFolder(), "items");
-
-        if (!file.exists()) {
-            if (file.mkdirs()) {
-                VoidSurvival.logInfo("The loot tables folder was missing, so it was created.");
-            } else {
-                VoidSurvival.logError("The loot tables folder was missing, and it could not be created. Is the plugin folder read-only?");
-            }
-            return;
-        }
-
-        File[] itemFiles = file.listFiles();
-
-        if (itemFiles == null) return;
-
         this.items.clear();
 
-        for (File itemFile : itemFiles) {
+        for (File itemFile : FileUtil.listFiles("items")) {
 
             try {
 

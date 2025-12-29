@@ -18,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
@@ -144,4 +145,7 @@ public class Functions {
 
     }
 
+    public static <T> Iterable<T> iterate(Iterator<T> iterator) {
+        return () -> iterator;
+    }
 }

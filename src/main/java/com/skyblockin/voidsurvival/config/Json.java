@@ -136,7 +136,9 @@ public class Json {
         return MAPPER.convertValue(node, type);
     }
 
-
+    public static String toString(Object object) throws JsonProcessingException {
+        return MAPPER.writer().writeValueAsString(object);
+    }
 
     public static JsonNode toJson(Object object) {
         return MAPPER.valueToTree(object);
