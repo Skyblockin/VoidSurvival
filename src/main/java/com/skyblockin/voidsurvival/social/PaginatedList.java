@@ -21,7 +21,10 @@ public class PaginatedList<T> {
 
     public List<T> getPage(int page) {
         if (page >= getPageCount()) {
-            page = getPageCount() - 1;
+            return list.subList(Math.max(0, list.size() - pageSize), list.size());
+        }
+        if (page < 1) {
+            page = 1;
         }
         return list.subList((page - 1) * pageSize, Math.min(page * pageSize, list.size()));
     }
@@ -32,6 +35,10 @@ public class PaginatedList<T> {
 
     public void add(T item) {
         list.add(item);
+    }
+
+    public boolean isEmpty() {
+        return list.isEmpty();
     }
 
 }

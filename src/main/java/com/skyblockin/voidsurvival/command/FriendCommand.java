@@ -152,8 +152,8 @@ public final class FriendCommand {
 
     private static Component renderFriendListPage(String title, PaginatedList<Friend> list, int page) {
 
-        if (page > list.getPageCount()) {
-            page = list.getPageCount();
+        if (list.isEmpty()) {
+            return TextUtil.color("<red>You don't have any friends! Maybe make some?");
         }
 
         Component header = TextUtil.color(title, page, list.getPageCount());
