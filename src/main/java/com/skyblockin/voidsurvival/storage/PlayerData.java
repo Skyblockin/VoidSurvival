@@ -1,6 +1,9 @@
 package com.skyblockin.voidsurvival.storage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.skyblockin.voidsurvival.config.Pair;
+import com.skyblockin.voidsurvival.social.Friend;
+import com.skyblockin.voidsurvival.social.FriendList;
 import com.skyblockin.voidsurvival.util.TagUtil;
 import io.papermc.paper.registry.keys.tags.BlockTypeTagKeys;
 import org.bukkit.Bukkit;
@@ -69,6 +72,7 @@ public class PlayerData {
     public int killStreak = 0;
     public HomeMap homes = new HomeMap();
     public HashMap<Long, Long> lastChestOpenTimes = new HashMap<>();
+    public FriendList friendList = new FriendList();
 
     public PlayerData(UUID uuid) {
         this.uuid = uuid;
@@ -100,6 +104,24 @@ public class PlayerData {
     @JsonIgnore
     public Set<String> getHomeNames() {
         return homes.keySet();
+    }
+
+    @JsonIgnore
+    public ArrayList<Friend> getMutualFriends(PlayerData other) {
+
+        ArrayList<Friend> mutuals = new ArrayList<>();
+
+        other.friendList.forEach(friend -> {
+            if (friendList.contains(friend)) {
+                mutuals.add(friend);
+            }
+        });
+
+        return mutuals;
+    }
+
+    public Friend asFriend() {
+        return new Friend(uuid.toString(), lastKnownUserName);
     }
 
     public void resetCooldowns() {

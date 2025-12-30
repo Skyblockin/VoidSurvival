@@ -6,6 +6,9 @@ api-version: '1.21.10'
 bootstrapper: com.skyblockin.voidsurvival.VoidSurvivalBootstrap
 dependencies:
   server:
+    AuraSkills:
+      load: BEFORE
+      required: true
     WorldGuard:
       load: BEFORE
       required: true

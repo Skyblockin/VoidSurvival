@@ -2,6 +2,7 @@ package com.skyblockin.voidsurvival.command;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.command.admin.Admin;
 import com.skyblockin.voidsurvival.command.admin.Chest;
@@ -13,9 +14,9 @@ import java.util.function.Consumer;
 
 import static io.papermc.paper.command.brigadier.Commands.literal;
 
-public class MainCommand {
+public final class MainCommand {
 
-    public static final LiteralArgumentBuilder<CommandSourceStack> COMMAND = literal("vs")
+    public static final LiteralCommandNode<CommandSourceStack> COMMAND = literal("vs")
         .requires(ctx -> ctx.getSender().isOp())
         .then(Admin.COMMAND)
         .then(Chest.COMMAND)
@@ -25,7 +26,7 @@ public class MainCommand {
                 VoidSurvival.getInstance().reload();
                 ctx.getSource().getSender().sendRichMessage("<green>VoidSurvival reloaded!");
             })
-        );
+        ).build();
 
     private static LiteralArgumentBuilder<CommandSourceStack> quickOpCommand(String name, Consumer<CommandContext<CommandSourceStack>> consumer) {
 

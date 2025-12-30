@@ -67,7 +67,7 @@ public class Accessor<C> {
     }
 
     public void write(ItemStack item, C value) {
-        item.editMeta(meta -> write(meta, value));
+        item.editPersistentDataContainer(pdc -> write(pdc, value));
     }
 
     public void write(PersistentDataHolder holder, C value) {

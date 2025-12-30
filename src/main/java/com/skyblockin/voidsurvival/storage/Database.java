@@ -1,11 +1,14 @@
 package com.skyblockin.voidsurvival.storage;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Json;
 import com.skyblockin.voidsurvival.leaderboard.LeaderboardManager;
 import com.skyblockin.voidsurvival.leaderboard.LeaderboardType;
+import com.skyblockin.voidsurvival.social.FriendList;
+import it.unimi.dsi.fastutil.Hash;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -350,12 +353,9 @@ public class Database {
         data.lastKnownUserName = playerData.path("lastKnownUserName").asText();
         data.kills = playerData.path("kills").asInt(0);
         data.killStreak = playerData.path("killStreak").asInt(0);
-
-        if (playerData.hasNonNull("homes")) {
-            data.homes = Json.nodeToValue(playerData.path("homes"), HomeMap.class);
-        } else {
-            data.homes = new HomeMap();
-        }
+        data.friendList = Json.convert(playerData.path("friendList"), FriendList.class, new FriendList());
+        data.lastChestOpenTimes = Json.convert(playerData.path("lastChestOpenTimes"), new TypeReference<>() {}, new HashMap<>());
+        data.homes = Json.convert(playerData.path("homes"), HomeMap.class, new HomeMap());
 
         return data;
     }

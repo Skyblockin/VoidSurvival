@@ -176,28 +176,27 @@ public final class ItemData {
             return;
         }
 
-        ItemMeta meta = item.getItemMeta();
-        PersistentDataContainer data = meta.getPersistentDataContainer();
+        item.editPersistentDataContainer(data -> {
 
-        customData.fields().forEachRemaining(entry -> {
+            customData.fields().forEachRemaining(entry -> {
 
-            String key = entry.getKey();
-            JsonNode value = entry.getValue();
-            NamespacedKey namespacedKey = new NamespacedKey("voidsurvival", key);
+                String key = entry.getKey();
+                JsonNode value = entry.getValue();
+                NamespacedKey namespacedKey = new NamespacedKey("voidsurvival", key);
 
-            if (value.isInt()) {
-                data.set(namespacedKey, PersistentDataType.INTEGER, value.asInt());
-            } else if (value.isFloatingPointNumber()) {
-                data.set(namespacedKey, PersistentDataType.DOUBLE, value.asDouble());
-            } else if (value.isBoolean()) {
-                data.set(namespacedKey, PersistentDataType.BOOLEAN, value.asBoolean());
-            } else if (value.isTextual()) {
-                data.set(namespacedKey, PersistentDataType.STRING, value.asText());
-            }
+                if (value.isInt()) {
+                    data.set(namespacedKey, PersistentDataType.INTEGER, value.asInt());
+                } else if (value.isFloatingPointNumber()) {
+                    data.set(namespacedKey, PersistentDataType.DOUBLE, value.asDouble());
+                } else if (value.isBoolean()) {
+                    data.set(namespacedKey, PersistentDataType.BOOLEAN, value.asBoolean());
+                } else if (value.isTextual()) {
+                    data.set(namespacedKey, PersistentDataType.STRING, value.asText());
+                }
+
+            });
 
         });
-
-        item.setItemMeta(meta);
     }
 
     private void setFlag(ItemStack item, DataComponentType.NonValued key, boolean value) {

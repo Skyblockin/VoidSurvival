@@ -8,6 +8,25 @@ import java.util.List;
 
 public class FileUtil {
 
+    public static File createOrGetFile(String fileName) {
+
+        File file = new File(VoidSurvival.getInstance().getDataFolder(), fileName);
+
+        if (!file.exists()) {
+            try {
+                if (file.getParentFile().mkdirs() && file.createNewFile()) {
+                    return file;
+                } else {
+                    return null;
+                }
+            } catch (Exception ex) {
+                return null;
+            }
+        }
+
+        return file;
+    }
+
     public static List<File> listFiles(String directory) {
 
         File actualDirectory = new File(VoidSurvival.getInstance().getDataFolder(), directory);

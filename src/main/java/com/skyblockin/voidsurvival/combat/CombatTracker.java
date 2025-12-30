@@ -153,6 +153,13 @@ public class CombatTracker implements Listener {
     @EventHandler
     public void onHit(EntityDamageByEntityEvent event) {
 
+        if (event.getDamager() instanceof Player first && event.getEntity() instanceof Player other) {
+            if (VoidSurvival.getInstance().getFriendManager().testFriendship(first, other)) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+
         if (event.getEntity() instanceof Player player) {
             this.lastEntityHitTimes.put(player.getUniqueId(), Instant.now());
         }

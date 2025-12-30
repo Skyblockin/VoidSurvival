@@ -1,21 +1,28 @@
 package com.skyblockin.voidsurvival;
 
+import com.skyblockin.voidsurvival.ability.Abilities;
+import com.skyblockin.voidsurvival.ability.AbilityListener;
 import com.skyblockin.voidsurvival.chat.ChatListener;
 import com.skyblockin.voidsurvival.combat.CombatTracker;
 import com.skyblockin.voidsurvival.command.BasicCommands;
+import com.skyblockin.voidsurvival.command.FriendCommand;
 import com.skyblockin.voidsurvival.command.MainCommand;
 import com.skyblockin.voidsurvival.config.ItemManager;
 import com.skyblockin.voidsurvival.entity.EntityEquipmentHandler;
+import com.skyblockin.voidsurvival.entity.PlayerListener;
 import com.skyblockin.voidsurvival.leaderboard.LeaderboardManager;
 import com.skyblockin.voidsurvival.loot.LootChestManager;
 import com.skyblockin.voidsurvival.recipe.RecipeManager;
 import com.skyblockin.voidsurvival.region.Flags;
 import com.skyblockin.voidsurvival.region.RegionFlagListener;
+import com.skyblockin.voidsurvival.social.FriendManager;
 import com.skyblockin.voidsurvival.storage.*;
 import com.skyblockin.voidsurvival.util.CustomTimeUnit;
+import com.skyblockin.voidsurvival.util.FileUtil;
 import com.skyblockin.voidsurvival.world.IslandGenerator;
 import com.skyblockin.voidsurvival.world.OreGenerator;
 import com.skyblockin.voidsurvival.world.WorldListener;
+import dev.aurelium.auraskills.api.AuraSkillsApi;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -55,6 +62,7 @@ public class VoidSurvival extends JavaPlugin {
     private LeaderboardManager leaderboardManager;
     private ItemManager itemManager;
     private RecipeManager recipeManager;
+    private FriendManager friendManager;
 
     private WorldListener worldListener;
 
@@ -95,6 +103,7 @@ public class VoidSurvival extends JavaPlugin {
         this.leaderboardManager = new LeaderboardManager();
         this.itemManager = new ItemManager();
         this.recipeManager = new RecipeManager();
+        this.friendManager = new FriendManager();
 
         try {
             Database.createDataBase();
@@ -112,6 +121,12 @@ public class VoidSurvival extends JavaPlugin {
         this.lootTableManager.loadCooldowns();
         this.recipeManager.loadRecipes();
 
+        FileUtil.createOrGetFile("mana_abilities.yml");
+
+        AuraSkillsApi.get()
+            .useRegistry("voidsurvival", getDataFolder())
+            .registerManaAbility(Abilities.TREECAPITATOR);
+
         registerEvents(
             new ChatListener(),
             new PlayerJoinHandler(),
@@ -121,7 +136,9 @@ public class VoidSurvival extends JavaPlugin {
             new CombatTracker(),
             new RegionFlagListener(),
             new EntityEquipmentHandler(),
-            this.recipeManager
+            this.recipeManager,
+            new AbilityListener(),
+            new PlayerListener()
         );
 
         this.allowJoins = true;
@@ -142,7 +159,8 @@ public class VoidSurvival extends JavaPlugin {
 
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(aliasFile);
 
-                commands.registrar().register(MainCommand.COMMAND.build());
+                commands.registrar().register(MainCommand.COMMAND);
+                commands.registrar().register(FriendCommand.COMMAND);
                 BasicCommands.register(commands.registrar(), config);
 
             } catch (Exception ex) {
@@ -199,6 +217,10 @@ public class VoidSurvival extends JavaPlugin {
 
     public List<String> getCombatBlockedCommands() {
         return combatBlockedCommands;
+    }
+
+    public FriendManager getFriendManager() {
+        return friendManager;
     }
 
     public ItemManager getItemManager() {

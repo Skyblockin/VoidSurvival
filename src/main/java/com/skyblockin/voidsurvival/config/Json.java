@@ -136,6 +136,17 @@ public class Json {
         return MAPPER.convertValue(node, type);
     }
 
+    public static <T> T convert(Object node, TypeReference<T> type, T defaultValue) {
+
+        T value = MAPPER.convertValue(node, type);
+
+        if (value == null) {
+            return defaultValue;
+        }
+
+        return value;
+    }
+
     public static String toString(Object object) throws JsonProcessingException {
         return MAPPER.writer().writeValueAsString(object);
     }

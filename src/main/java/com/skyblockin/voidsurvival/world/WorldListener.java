@@ -1,6 +1,5 @@
 package com.skyblockin.voidsurvival.world;
 
-import com.sk89q.worldguard.bukkit.util.Materials;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.constants.ItemIds;
 import com.skyblockin.voidsurvival.storage.Accessors;
