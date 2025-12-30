@@ -85,6 +85,17 @@ public final class Admin {
                 return 1;
             })
         )
+        .then(literal("testmsg")
+            .then(argument("text", StringArgumentType.greedyString())
+                .executes(ctx -> {
+
+                    String msg = ctx.getArgument("text", String.class);
+                    ctx.getSource().getSender().sendMessage(TextUtil.color(msg));
+
+                    return 1;
+                })
+            )
+        )
         .then(literal("testdialog")
             .executes(ctx -> {
 
