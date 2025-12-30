@@ -58,7 +58,7 @@ public class EntityData {
 
             data.persistent = node.path("persistent").asBoolean(false);
             data.entityId = node.get("id").asText();
-            data.customName = node.get("name").asText();
+            data.customName = node.path("name").asText(null);
             data.attributes = Json.convert(node.get("attributes"), new TypeReference<>() {});
             data.equipment = Json.convert(node.get("equipment"), new TypeReference<>() {});
             data.dropChances = Json.convert(node.get("drop_chances"), new TypeReference<>() {});
@@ -90,7 +90,11 @@ public class EntityData {
         CompoundTag entity = new CompoundTag();
 
         entity.putString("id", entityId);
-        entity.put("CustomName", NMSUtil.color(customName));
+        
+        if (customName != null) {
+            entity.put("CustomName", NMSUtil.color(customName));
+        }
+
         entity.putBoolean("PersistenceRequired", persistent);
 
         if (equipment != null) {
