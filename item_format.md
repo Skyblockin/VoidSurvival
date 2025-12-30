@@ -49,7 +49,9 @@ This document will cover every possible option for the item deserializer used in
 	32. [Profile](#profile)
 	33. [Item Container Contents](#item-container-contents)
 	34. [Break Sound](#break-sound)
-	35. [Custom Data](#custom-data) 
+    35. [Entity Data](#entity-data)
+    36. [Spawner Data](#spawner-data)
+	37. [Custom Data](#custom-data) 
 
 
 
@@ -472,6 +474,35 @@ A list of ItemData objects.
 ### Break Sound
 The sound to play when the item breaks. For more information on sound keys, see https://minecraft.wiki/w/Sound
 <br>Format: `"break_sound": <sound key>`
+
+### Entity Data
+Format
+```
+{
+    "persistent": boolean, optional, false
+    "id": entity id,
+    "customName": MiniMessage string,
+    "attributes": attribute name -> float map (like vanilla),
+    "equipment": EquipmentSlot -> ItemData map,
+    "drop_chances": EquipmentSlot -> Float map
+}
+```
+
+
+### Spawner Data
+Format
+```
+{
+    "min_spawn_delay": ticks, optional, default 200,
+    "max_spawn_delay": ticks, optional, default 800,
+    "spawn_delay": ticks, optional, default 0,
+    "spawn_count": integer, optional, default 4,
+    "max_nearby_entities": integer, optional, default 4,
+    "required_player_range": integer, optional, default 16,
+    "spawn_range": integer, optional, default 4,
+    "entity_data": entity data object
+}
+```
 
 ### Custom Data
 This is a component allowing you to store any arbitrary JSON data on the item. This is mostly useful for custom items that require a custom item ID to identify the item.
