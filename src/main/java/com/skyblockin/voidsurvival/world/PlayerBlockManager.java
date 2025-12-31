@@ -1,0 +1,215 @@
+package com.skyblockin.voidsurvival.world;
+
+import com.mojang.datafixers.util.Pair;
+import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.region.Flags;
+import com.skyblockin.voidsurvival.storage.BlockPosition;
+import com.skyblockin.voidsurvival.storage.ChunkPosition;
+import com.skyblockin.voidsurvival.util.CustomTimeUnit;
+import com.skyblockin.voidsurvival.util.Functions;
+import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
+import org.bukkit.*;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockType;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+
+@SuppressWarnings("UnstableApiUsage")
+public class PlayerBlockManager implements Listener {
+
+    private final HashMap<BlockType, Pair<Integer, Integer>> regenerationTimes = new HashMap<>();
+    private final HashMap<UUID, HashMap<ChunkPosition, HashMap<BlockPosition, Long>>> playerBlockChanges = new HashMap<>();
+
+    public PlayerBlockManager() {
+
+        VoidSurvival.getInstance().runTaskTimer(() -> {
+
+            playerBlockChanges.forEach((uuid, chunkChanges) -> {
+                chunkChanges.forEach((chunkPos, blockChanges) -> {
+
+                    var iterator = blockChanges.entrySet().iterator();
+
+                    while (iterator.hasNext()) {
+
+                        var entry = iterator.next();
+
+                        // Still allow using null as a value to mean "infinite"
+                        if (entry.getValue() == null) {
+                            continue;
+                        }
+
+                        long remainingTicks = entry.getValue() - 1;
+
+                        if (remainingTicks <= 0) {
+
+                            // Make sure to reset the block state
+                            Player player = Bukkit.getPlayer(uuid);
+                            if (player != null) {
+                                resetBlockState(player, entry.getKey().toLocation(player.getWorld()).getBlock());
+                            }
+
+                            iterator.remove();
+                        } else {
+                            entry.setValue(remainingTicks);
+                        }
+
+                    }
+
+                });
+            });
+
+        }, 0, 1);
+
+    }
+
+    public void reload() {
+
+        ConfigurationSection section = VoidSurvival.getInstance().getConfig().getConfigurationSection("ore-generation-times");
+
+        if (section == null) {
+            VoidSurvival.logInfo("config.yml is missing section ore-generation-times, ore generation was not loaded.");
+            return;
+        }
+
+        this.regenerationTimes.clear();
+
+        for (String key : section.getKeys(false)) {
+
+            BlockType blockType = Registry.BLOCK.get(NamespacedKey.minecraft(key));
+
+            int minTime = (int) Functions.getTimeFromYaml(section, key + ".min-time", 1000, CustomTimeUnit.TICKS);
+            int maxTime = (int) Functions.getTimeFromYaml(section, key + ".max-time", 1000, CustomTimeUnit.TICKS);
+
+            this.regenerationTimes.put(blockType, new Pair<>(minTime, maxTime));
+        }
+
+        VoidSurvival.logInfo("Loaded ore generation with %d entries", this.regenerationTimes.size());
+    }
+
+    @EventHandler
+    public void onPlayerChunkLoad(PlayerChunkLoadEvent event) {
+
+        Player player = event.getPlayer();
+        Chunk chunk = event.getChunk();
+
+        HashMap<ChunkPosition, HashMap<BlockPosition, Long>> changes = playerBlockChanges.get(event.getPlayer().getUniqueId());
+
+        if (changes == null) {
+            return;
+        }
+
+        HashMap<BlockPosition, Long> chunkChanges = changes.get(ChunkPosition.ofChunk(chunk));
+
+        if (chunkChanges == null) {
+            return;
+        }
+
+        if (!sendBlockChanges(player, chunk, chunkChanges)) {
+            changes.remove(ChunkPosition.ofChunk(chunk));
+        }
+    }
+
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+
+        Player player = event.getPlayer();
+        Block block = event.getBlock();
+
+        // Allow ops to just modify the world as they wish
+        if (player.isOp()) {
+            return;
+        }
+
+        if (Flags.REGENERATE_BLOCKS.test(player, block)) {
+
+            BlockData data = block.getBlockData();
+
+            Pair<Integer, Integer> regenerationTime = regenerationTimes.get(data.getMaterial().asBlockType());
+
+            if (regenerationTime != null) {
+                long ticks = ThreadLocalRandom.current().nextLong(regenerationTime.getFirst(), regenerationTime.getSecond());
+                markBlockAsDifferent(player, block, ticks);
+            }
+
+        }
+
+    }
+
+    public void markBlockAsDifferent(Player player, Block block, @Nullable Long expirationTime) {
+        playerBlockChanges.computeIfAbsent(player.getUniqueId(), k -> new HashMap<>())
+            .computeIfAbsent(ChunkPosition.ofChunk(block.getChunk()), k -> new HashMap<>())
+            .put(BlockPosition.ofBlock(block), expirationTime);
+    }
+
+    public void resetBlockState(Player player, Block block) {
+
+        var chunkChanges = playerBlockChanges.get(player.getUniqueId());
+        if (chunkChanges == null) return;
+        var blockChanges = chunkChanges.get(ChunkPosition.ofChunk(block.getChunk()));
+        if (blockChanges == null) return;
+
+        blockChanges.remove(BlockPosition.ofBlock(block));
+        player.sendBlockChange(block.getLocation(), block.getBlockData());
+    }
+
+    private boolean sendBlockChanges(Player player, Chunk chunk, HashMap<BlockPosition, Long> changes) {
+
+        World world = chunk.getWorld();
+        Iterator<Map.Entry<BlockPosition, Long>> iterator = changes.entrySet().iterator();
+
+        HashMap<Location, BlockData> blockChanges = new HashMap<>();
+
+        while (iterator.hasNext()) {
+
+            Map.Entry<BlockPosition, Long> entry = iterator.next();
+
+            BlockPosition position = entry.getKey();
+            Long remainingTicks = entry.getValue();
+
+            if (remainingTicks != null && remainingTicks <= 0) {
+                iterator.remove();
+            } else {
+
+                Location location = position.toLocation(world);
+                BlockData data = createDifferentBlockData(location.getBlock());
+
+                if (data != null) {
+                    blockChanges.put(location, data);
+                }
+            }
+        }
+
+        if (!blockChanges.isEmpty()) {
+            player.sendMultiBlockChange(blockChanges);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private BlockData createDifferentBlockData(Block block) {
+
+        Material type = block.getType();
+
+        if (type.name().toLowerCase().endsWith("ore")) {
+            return BlockType.BEDROCK.createBlockData();
+        } else if (type == Material.CAMPFIRE) {
+            return BlockType.CAMPFIRE.createBlockData(campfire -> {
+                campfire.setLit(true);
+            });
+        }
+
+        return null;
+    }
+}
