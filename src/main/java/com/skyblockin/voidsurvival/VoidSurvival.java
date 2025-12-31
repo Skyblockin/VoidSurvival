@@ -10,6 +10,7 @@ import com.skyblockin.voidsurvival.command.MainCommand;
 import com.skyblockin.voidsurvival.config.ItemManager;
 import com.skyblockin.voidsurvival.entity.EntityEquipmentHandler;
 import com.skyblockin.voidsurvival.entity.PlayerListener;
+import com.skyblockin.voidsurvival.gui.GuiManager;
 import com.skyblockin.voidsurvival.leaderboard.LeaderboardManager;
 import com.skyblockin.voidsurvival.loot.LootChestManager;
 import com.skyblockin.voidsurvival.recipe.RecipeManager;
@@ -128,6 +129,7 @@ public class VoidSurvival extends JavaPlugin {
             .registerManaAbility(Abilities.TREECAPITATOR);
 
         registerEvents(
+            GuiManager.init(),
             new ChatListener(),
             new PlayerJoinHandler(),
             this.oreGenerator,
