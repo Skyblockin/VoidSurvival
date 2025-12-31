@@ -25,13 +25,6 @@ import java.util.function.Supplier;
 
 public class Functions {
 
-    public static SuggestionProvider<CommandSourceStack> suggest(Supplier<Collection<String>> suggestions) {
-        return (ctx, builder) -> {
-            suggestions.get().forEach(builder::suggest);
-            return builder.buildFuture();
-        };
-    }
-
     public static <T> CompletableFuture<T> runAsync(Callable<T> callable) {
         return CompletableFuture.supplyAsync(() -> {
             try {

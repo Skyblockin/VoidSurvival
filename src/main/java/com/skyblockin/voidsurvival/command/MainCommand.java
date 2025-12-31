@@ -9,8 +9,9 @@ import com.skyblockin.voidsurvival.command.admin.Chest;
 import com.skyblockin.voidsurvival.command.admin.Debug;
 import com.skyblockin.voidsurvival.command.admin.Give;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import org.bukkit.command.CommandSender;
 
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import static io.papermc.paper.command.brigadier.Commands.literal;
 
@@ -22,18 +23,18 @@ public final class MainCommand {
         .then(Chest.COMMAND)
         .then(Give.COMMAND)
         .then(Debug.COMMAND)
-        .then(quickOpCommand("reload", ctx -> {
+        .then(quickOpCommand("reload", (ctx, sender) -> {
                 VoidSurvival.getInstance().reload();
-                ctx.getSource().getSender().sendRichMessage("<green>VoidSurvival reloaded!");
+                sender.sendRichMessage("<green>VoidSurvival reloaded!");
             })
         ).build();
 
-    private static LiteralArgumentBuilder<CommandSourceStack> quickOpCommand(String name, Consumer<CommandContext<CommandSourceStack>> consumer) {
+    private static LiteralArgumentBuilder<CommandSourceStack> quickOpCommand(String name, BiConsumer<CommandContext<CommandSourceStack>, CommandSender> consumer) {
 
         return literal(name)
             .requires(ctx -> ctx.getSender().isOp())
             .executes(ctx -> {
-                consumer.accept(ctx);
+                consumer.accept(ctx, ctx.getSource().getSender());
                 return 1;
             });
 

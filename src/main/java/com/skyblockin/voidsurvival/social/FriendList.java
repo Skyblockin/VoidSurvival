@@ -13,7 +13,9 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.bukkit.entity.Player;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 @JsonSerialize(using = FriendList.Serializer.class)
 @JsonDeserialize(using = FriendList.Deserializer.class)
@@ -29,6 +31,17 @@ public class FriendList extends HashSet<Friend> {
 
     public PaginatedList<Friend> asPaginatedList(int pageSize) {
         return new PaginatedList<>(this, pageSize);
+    }
+
+    public List<String> getNames() {
+
+        ArrayList<String> names = new ArrayList<>(size());
+
+        for (Friend friend : this) {
+            names.add(friend.name);
+        }
+
+        return names;
     }
 
     public static class Serializer extends StdSerializer<FriendList> {

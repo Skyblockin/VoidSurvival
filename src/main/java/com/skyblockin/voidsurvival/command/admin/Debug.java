@@ -8,6 +8,7 @@ import com.skyblockin.voidsurvival.config.Json;
 import com.skyblockin.voidsurvival.loot.LootTable;
 import com.skyblockin.voidsurvival.loot.LootUtil;
 import com.skyblockin.voidsurvival.storage.PlayerData;
+import com.skyblockin.voidsurvival.util.CommandUtil;
 import com.skyblockin.voidsurvival.util.Functions;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
@@ -25,7 +26,7 @@ public final class Debug {
         .requires(ctx -> ctx.getSender().isOp())
         .then(literal("testloot")
             .then(argument("table", StringArgumentType.word())
-                .suggests(Functions.suggest(() -> VoidSurvival.getInstance().getLootTableManager().getTableIds()))
+                .suggests(CommandUtil.suggest(() -> VoidSurvival.getInstance().getLootTableManager().getTableIds()))
                 .then(argument("loot_bonus", IntegerArgumentType.integer(0))
                     .executes(ctx -> {
 

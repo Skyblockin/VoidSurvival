@@ -8,6 +8,7 @@ import com.skyblockin.voidsurvival.social.Friend;
 import com.skyblockin.voidsurvival.social.PaginatedList;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.storage.PlayerDataException;
+import com.skyblockin.voidsurvival.util.CommandUtil;
 import com.skyblockin.voidsurvival.util.PlayerUtil;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -24,104 +25,77 @@ public final class FriendCommand {
     public static final LiteralCommandNode<CommandSourceStack> COMMAND = literal("friend")
         .then(literal("add")
             .then(argument("player", StringArgumentType.word())
-                .executes(ctx -> {
+                .executes(CommandUtil.playerCommand((ctx, player) -> {
 
                     String name = ctx.getArgument("player", String.class);
 
-                    if (ctx.getSource().getSender() instanceof Player player) {
-
-                        if (name.equalsIgnoreCase(player.getName())) {
-                            player.sendRichMessage("<#fc0202>That's wholesome, but there's no point in adding yourself to your own friend list!");
-                            return 1;
-                        }
-
-                        Player other = PlayerUtil.getOnlinePlayer(name);
-
-                        if (other != null) {
-                            VoidSurvival.getInstance().getFriendManager().createFriendRequest(player, other);
-                        } else {
-                            player.sendRichMessage("<#fc0202>No player with name " + name + " found, are they online?");
-                        }
-
+                    if (name.equalsIgnoreCase(player.getName())) {
+                        player.sendRichMessage("<#fc0202>That's wholesome, but there's no point in adding yourself to your own friend list!");
+                        return;
                     }
 
-                    return 1;
-                })
+                    Player other = PlayerUtil.getOnlinePlayer(name);
+
+                    if (other != null) {
+                        VoidSurvival.getInstance().getFriendManager().createFriendRequest(player, other);
+                    } else {
+                        player.sendRichMessage("<#fc0202>No player with name " + name + " found, are they online?");
+                    }
+                }))
             )
         )
         .then(literal("remove")
             .then(argument("player", StringArgumentType.word())
-                .executes(ctx -> {
+                .suggests(CommandUtil.suggestToPlayerSender(player -> PlayerData.of(player).getFriends().getNames()))
+                .executes(CommandUtil.playerCommand((ctx, player) -> {
 
                     String name = ctx.getArgument("player", String.class);
 
-                    if (ctx.getSource().getSender() instanceof Player player) {
-
-                        if (name.equalsIgnoreCase(player.getName())) {
-                            player.sendRichMessage("<#fc0202>Why would you do that?");
-                            return 1;
-                        }
-
-                        VoidSurvival.getInstance().getFriendManager().removeFriend(player, name);
+                    if (name.equalsIgnoreCase(player.getName())) {
+                        player.sendRichMessage("<#fc0202>Why would you do that?");
+                        return;
                     }
 
-                    return 1;
-                })
+                    VoidSurvival.getInstance().getFriendManager().removeFriend(player, name);
+                }))
             )
         )
         .then(literal("mutuals")
             .then(argument("player", StringArgumentType.word())
                 .then(argument("page", IntegerArgumentType.integer(1))
-                    .executes(ctx -> {
+                    .executes(CommandUtil.playerCommand((ctx, player) -> {
 
                         String name = ctx.getArgument("player", String.class);
                         int page = ctx.getArgument("page", Integer.class);
 
-                        if (ctx.getSource().getSender() instanceof Player player) {
-
-                            if (name.equalsIgnoreCase(player.getName())) {
-                                player.sendRichMessage("<#fc0202>I agree, you are friends with yourself, try running <yellow><click:suggest_command:/friendlist>/friend list</click></yellow> though");
-                                return 1;
-                            }
-
-                            handleMutualFriends(player, name, page);
+                        if (name.equalsIgnoreCase(player.getName())) {
+                            player.sendRichMessage("<#fc0202>I agree, you are friends with yourself, try running <yellow><click:suggest_command:/friendlist>/friend list</click></yellow> though");
+                            return;
                         }
 
-                        return 1;
-                    })
+                        handleMutualFriends(player, name, page);
+                    }))
                 )
-                .executes(ctx -> {
-
+                .executes(CommandUtil.playerCommand((ctx, player) -> {
                     String name = ctx.getArgument("player", String.class);
-
-                    if (ctx.getSource().getSender() instanceof Player player) {
-                        handleMutualFriends(player, name, 1);
-                    }
-
-                    return 1;
-                })
+                    handleMutualFriends(player, name, 1);
+                }))
             )
         )
         .then(literal("list")
             .then(argument("page", IntegerArgumentType.integer(1))
-                .executes(ctx -> {
-                    if (ctx.getSource().getSender() instanceof Player player) {
-                        int page = ctx.getArgument("page", Integer.class);
-                        player.sendMessage(renderFriendListPage("<#05fcbe>Friends (page %d of %d)",
-                            PlayerData.of(player).friendList.asPaginatedList(10), page)
-                        );
-                    }
-                    return 1;
-                })
-            )
-            .executes(ctx -> {
-                if (ctx.getSource().getSender() instanceof Player player) {
+                .executes(CommandUtil.playerCommand((ctx, player) -> {
+                    int page = ctx.getArgument("page", Integer.class);
                     player.sendMessage(renderFriendListPage("<#05fcbe>Friends (page %d of %d)",
-                        PlayerData.of(player).friendList.asPaginatedList(10), 1)
+                        new PaginatedList<>(PlayerData.of(player).getFriends()), page)
                     );
-                }
-                return 1;
-            })
+                }))
+            )
+            .executes(CommandUtil.playerCommand((ctx, player) -> {
+                player.sendMessage(renderFriendListPage("<#05fcbe>Friends (page %d of %d)",
+                    new PaginatedList<>(PlayerData.of(player).getFriends()), 1)
+                );
+            }))
         )
         .build();
 

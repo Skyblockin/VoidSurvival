@@ -120,6 +120,11 @@ public class PlayerData {
         return mutuals;
     }
 
+    @JsonIgnore
+    public FriendList getFriends() {
+        return friendList;
+    }
+
     public Friend asFriend() {
         return new Friend(uuid.toString(), lastKnownUserName);
     }

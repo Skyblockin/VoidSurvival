@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.ItemData;
+import com.skyblockin.voidsurvival.util.CommandUtil;
 import com.skyblockin.voidsurvival.util.Functions;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -26,7 +27,7 @@ public final class Give {
           .requires(ctx -> ctx.getSender().isOp())
           .then(argument("player", ArgumentTypes.players())
               .then(argument("item", StringArgumentType.word())
-                  .suggests(Functions.suggest(() -> VoidSurvival.getInstance().getItemManager().getIds()))
+                  .suggests(CommandUtil.suggest(() -> VoidSurvival.getInstance().getItemManager().getIds()))
                   .then(argument("amount", IntegerArgumentType.integer(1))
                       .executes(ctx -> {
 

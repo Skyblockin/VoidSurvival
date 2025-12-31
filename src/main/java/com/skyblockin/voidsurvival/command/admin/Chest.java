@@ -6,6 +6,7 @@ import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.loot.LootChestManager;
 import com.skyblockin.voidsurvival.loot.LootTable;
 import com.skyblockin.voidsurvival.storage.Database;
+import com.skyblockin.voidsurvival.util.CommandUtil;
 import com.skyblockin.voidsurvival.util.Functions;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.block.Block;
@@ -20,7 +21,7 @@ public final class Chest {
         .requires(ctx -> ctx.getSender().isOp())
         .then(literal("setloot")
             .then(argument("table", StringArgumentType.word())
-                .suggests(Functions.suggest(() -> VoidSurvival.getInstance().getLootTableManager().getTableIds()))
+                .suggests(CommandUtil.suggest(() -> VoidSurvival.getInstance().getLootTableManager().getTableIds()))
                 .executes(ctx -> {
 
                     if (ctx.getSource().getSender() instanceof Player player) {

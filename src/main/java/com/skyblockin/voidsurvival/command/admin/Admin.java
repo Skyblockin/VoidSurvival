@@ -5,6 +5,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.storage.PlayerData;
+import com.skyblockin.voidsurvival.util.CommandUtil;
 import com.skyblockin.voidsurvival.util.DialogUtil;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -34,56 +35,45 @@ public final class Admin {
     public static final LiteralCommandNode<CommandSourceStack> COMMAND = literal("admin")
         .requires(ctx -> ctx.getSender().isOp())
         .then(literal("setsigncommand")
-            .requires(ctx -> ctx.getExecutor() instanceof Player)
             .then(argument("command", StringArgumentType.greedyString())
-                .executes(ctx -> {
+                .executes(CommandUtil.playerCommand((ctx, player) -> {
 
                     String command = ctx.getArgument("command", String.class);
-
-                    if (ctx.getSource().getExecutor() instanceof Player player) {
-
-                        Block target = player.getTargetBlockExact(10);
-
-                        if (target != null && target.getState() instanceof Sign sign) {
-                            Accessors.SIGN_COMMAND.write(sign, command);
-                            sign.update();
-                            player.sendRichMessage("<green>Sign command set!");
-                        } else {
-                            player.sendRichMessage("<red>Could not find a valid sign in front of you!");
-                        }
-                    }
-
-                    return 1;
-                })
-            )
-        )
-        .then(literal("removesigncommand")
-            .requires(ctx -> ctx.getExecutor() instanceof Player)
-            .executes(ctx -> {
-
-                if (ctx.getSource().getExecutor() instanceof Player player) {
 
                     Block target = player.getTargetBlockExact(10);
 
                     if (target != null && target.getState() instanceof Sign sign) {
-
-                        String command = Accessors.SIGN_COMMAND.read(sign);
-
-                        if (command != null) {
-                            sign.getPersistentDataContainer().remove(VoidSurvival.createKey("sign_command"));
-                            sign.update();
-                            player.sendRichMessage("<green>Removed command <reset>'" + command + "'</reset> from the sign!");
-                        } else {
-                            player.sendRichMessage("<red>That sign does not have a command set!");
-                        }
-
+                        Accessors.SIGN_COMMAND.write(sign, command);
+                        sign.update();
+                        player.sendRichMessage("<green>Sign command set!");
                     } else {
                         player.sendRichMessage("<red>Could not find a valid sign in front of you!");
                     }
+                }))
+            )
+        )
+        .then(literal("removesigncommand")
+            .executes(CommandUtil.playerCommand((ctx, player) -> {
+
+                Block target = player.getTargetBlockExact(10);
+
+                if (target != null && target.getState() instanceof Sign sign) {
+
+                    String command = Accessors.SIGN_COMMAND.read(sign);
+
+                    if (command != null) {
+                        sign.getPersistentDataContainer().remove(VoidSurvival.createKey("sign_command"));
+                        sign.update();
+                        player.sendRichMessage("<green>Removed command <reset>'" + command + "'</reset> from the sign!");
+                    } else {
+                        player.sendRichMessage("<red>That sign does not have a command set!");
+                    }
+
+                } else {
+                    player.sendRichMessage("<red>Could not find a valid sign in front of you!");
                 }
 
-                return 1;
-            })
+            }))
         )
         .then(literal("testmsg")
             .then(argument("text", StringArgumentType.greedyString())
@@ -145,95 +135,80 @@ public final class Admin {
         )
         .then(literal("home")
             .then(argument("home", StringArgumentType.word())
-                .executes(ctx -> {
+                .executes(CommandUtil.playerCommand((ctx, player) -> {
 
                     String name = ctx.getArgument("home", String.class);
 
                     try {
 
-                        if (ctx.getSource().getSender() instanceof Player player) {
+                        PlayerData data = PlayerData.getByNameorUuid(name);
 
-                            PlayerData data = PlayerData.getByNameorUuid(name);
-
-                            if (data == null) {
-                                player.sendRichMessage("<red>No player with name or uuid '" + name + "' found!");
-                                return 1;
-                            }
-
-                            Component component = TextUtil.color("<green><bold>Homes of %s:</bold></green>", name);
-
-                            int counter = 0;
-
-                            for (Map.Entry<String, Location> entry : data.homes.entrySet()) {
-
-                                String homeName = entry.getKey();
-                                Location home = entry.getValue();
-
-                                counter++;
-
-                                component = component
-                                    .append(
-                                        TextUtil.color("\n<gray>- %d. <aqua><underline>%s</underline></aqua>", counter, homeName)
-                                            .clickEvent(ClickEvent.runCommand(String.format("/tp %f %f %f", home.getX(), home.getY(), home.getZ())))
-                                            .hoverEvent(TextUtil.color("<gray>Click to teleport to home '%s' at <white>%d, %d, %d</white>",
-                                                homeName, home.getBlockX(), home.getBlockY(), home.getBlockZ())
-                                            )
-                                    );
-                            }
-
-                            player.sendMessage(component);
-
-                        } else {
-                            ctx.getSource().getSender().sendRichMessage("<red>This command can only be executed by a player!");
+                        if (data == null) {
+                            player.sendRichMessage("<red>No player with name or uuid '" + name + "' found!");
+                            return;
                         }
+
+                        Component component = TextUtil.color("<green><bold>Homes of %s:</bold></green>", name);
+
+                        int counter = 0;
+
+                        for (Map.Entry<String, Location> entry : data.homes.entrySet()) {
+
+                            String homeName = entry.getKey();
+                            Location home = entry.getValue();
+
+                            counter++;
+
+                            component = component
+                                .append(
+                                    TextUtil.color("\n<gray>- %d. <aqua><underline>%s</underline></aqua>", counter, homeName)
+                                        .clickEvent(ClickEvent.runCommand(String.format("/tp %f %f %f", home.getX(), home.getY(), home.getZ())))
+                                        .hoverEvent(TextUtil.color("<gray>Click to teleport to home '%s' at <white>%d, %d, %d</white>",
+                                            homeName, home.getBlockX(), home.getBlockY(), home.getBlockZ())
+                                        )
+                                );
+                        }
+
+                        player.sendMessage(component);
 
                     } catch (Exception ex) {
                         VoidSurvival.logError("Failed to get homes of player '" + name + "'", ex);
                     }
 
-                    return 1;
-                })
+                }))
             )
         )
         .then(literal("homes")
             .then(argument("name", StringArgumentType.word())
                 .then(argument("home", StringArgumentType.word())
-                    .executes(ctx -> {
+                    .executes(CommandUtil.playerCommand((ctx, player) -> {
 
                         String name = ctx.getArgument("name", String.class);
                         String homeName = ctx.getArgument("home", String.class);
 
                         try {
 
-                            if (ctx.getSource().getSender() instanceof Player player) {
+                            PlayerData data = PlayerData.getByNameorUuid(name);
 
-                                PlayerData data = PlayerData.getByNameorUuid(name);
-
-                                if (data == null) {
-                                    player.sendRichMessage("<red>No player with name or uuid '" + name + "' found!");
-                                    return 1;
-                                }
-
-                                Location home = data.getHome(homeName);
-
-                                if (home == null) {
-                                    player.sendRichMessage("<red>Could not find a home with the name '" + homeName + "'.");
-                                    return 1;
-                                }
-
-                                player.teleportAsync(home);
-                                player.sendRichMessage("<green>You have been teleported to " + name + "'s home '" + homeName + "'.");
-
-                            } else {
-                                ctx.getSource().getSender().sendRichMessage("<red>This command can only be executed by a player!");
+                            if (data == null) {
+                                player.sendRichMessage("<red>No player with name or uuid '" + name + "' found!");
+                                return;
                             }
+
+                            Location home = data.getHome(homeName);
+
+                            if (home == null) {
+                                player.sendRichMessage("<red>Could not find a home with the name '" + homeName + "'.");
+                                return;
+                            }
+
+                            player.teleportAsync(home);
+                            player.sendRichMessage("<green>You have been teleported to " + name + "'s home '" + homeName + "'.");
 
                         } catch (Exception ex) {
                             VoidSurvival.logError("Failed to get homes of player '" + name + "'", ex);
                         }
-
-                        return 1;
-                    })
+                    }))
                 )
             )
         )

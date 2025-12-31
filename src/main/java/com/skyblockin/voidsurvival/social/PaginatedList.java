@@ -4,41 +4,39 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class PaginatedList<T> {
+public class PaginatedList<T> extends ArrayList<T> {
 
-    private final ArrayList<T> list;
     private final int pageSize;
+
+    public PaginatedList() {
+        this(10);
+    }
+
+    public PaginatedList(Collection<T> collection) {
+        this(collection, 10);
+    }
 
     public PaginatedList(int pageSize) {
         this.pageSize = pageSize;
-        this.list = new ArrayList<>();
     }
 
     public PaginatedList(Collection<T> collection, int pageSize) {
-        this.list = new ArrayList<>(collection);
+        super(collection);
         this.pageSize = pageSize;
     }
 
     public List<T> getPage(int page) {
         if (page >= getPageCount()) {
-            return list.subList(Math.max(0, list.size() - pageSize), list.size());
+            return subList(Math.max(0, size() - pageSize), size());
         }
         if (page < 1) {
             page = 1;
         }
-        return list.subList((page - 1) * pageSize, Math.min(page * pageSize, list.size()));
+        return subList((page - 1) * pageSize, Math.min(page * pageSize, size()));
     }
 
     public int getPageCount() {
-        return (list.size() / pageSize) + 1;
-    }
-
-    public void add(T item) {
-        list.add(item);
-    }
-
-    public boolean isEmpty() {
-        return list.isEmpty();
+        return (size() / pageSize) + 1;
     }
 
 }
