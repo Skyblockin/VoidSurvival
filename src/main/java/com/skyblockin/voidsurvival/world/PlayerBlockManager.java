@@ -3,8 +3,7 @@ package com.skyblockin.voidsurvival.world;
 import com.mojang.datafixers.util.Pair;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.region.Flags;
-import com.skyblockin.voidsurvival.storage.BlockPosition;
-import com.skyblockin.voidsurvival.storage.ChunkPosition;
+import com.skyblockin.voidsurvival.storage.*;
 import com.skyblockin.voidsurvival.util.CustomTimeUnit;
 import com.skyblockin.voidsurvival.util.Functions;
 import com.skyblockin.voidsurvival.util.PlayerUtil;
@@ -12,13 +11,14 @@ import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockType;
+import org.bukkit.block.Campfire;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockDamageEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -68,6 +68,7 @@ public class PlayerBlockManager implements Listener {
                             Block block = position.toLocation(player.getWorld()).getBlock();
                             player.sendBlockChange(block.getLocation(), block.getBlockData());
                         }
+
                         blockChanges.remove(position);
                     }
                     
@@ -103,11 +104,75 @@ public class PlayerBlockManager implements Listener {
         VoidSurvival.logInfo("Loaded ore generation with %d entries", this.regenerationTimes.size());
     }
 
+    private boolean isLocationWithinChunk(Location location, Chunk chunk) {
+        return location.getChunk().equals(chunk);
+    }
+
+    private void sendLitCampfires(Player player, Chunk chunk) {
+
+        BlockData litCampFire = BlockType.CAMPFIRE.createBlockData(campfire -> {
+            campfire.setLit(true);
+        });
+
+        List<String> invalidCampFires = new ArrayList<>();
+
+        PlayerData data = PlayerData.of(player);
+
+        data.campfires.forEach((name, location) -> {
+            if (isLocationWithinChunk(location, chunk)) {
+                if (location.getBlock().getType() == Material.CAMPFIRE) {
+                    player.sendBlockChange(location, litCampFire);
+                } else {
+                    invalidCampFires.add(name);
+                }
+            }
+        });
+
+        for (String name : invalidCampFires) {
+            data.campfires.remove(name);
+        }
+    }
+
+    @EventHandler
+    public void onCampfireInteract(PlayerInteractEvent event) {
+
+        Player player = event.getPlayer();
+        Block block = event.getClickedBlock();
+
+        if (block != null && block.getState() instanceof Campfire campfire) {
+
+            String campfireId = Accessors.CAMPFIRE_WARP_ID.read(campfire);
+            Position warpPosition = Accessors.CAMPFIRE_WARP_POSITION.read(campfire);
+
+            if (campfireId != null && warpPosition != null) {
+
+                event.setCancelled(true);
+
+                PlayerData data = PlayerData.of(player);
+                BlockData blockData = BlockType.CAMPFIRE.createBlockData(unlitCampfire -> {
+                    unlitCampfire.setLit(true);
+                });
+
+                if (!data.hasUnlockedCampfire(campfireId)) {
+                    PlayerData.of(player).unlockCampfire(campfireId, block.getLocation());
+                    VoidSurvival.getInstance().runTaskLater(() -> player.sendBlockChange(block.getLocation(), blockData), 1);
+                    player.sendRichMessage("<#05fcbe>You've unlocked this campfire and may now warp to it at any time through the <yellow>/warps</yellow> menu!</#05fcbe>");
+                } else {
+                    VoidSurvival.getInstance().runTaskLater(() -> player.sendBlockChange(block.getLocation(), blockData), 1);
+                }
+            }
+        }
+    }
+
     @EventHandler
     public void onPlayerChunkLoad(PlayerChunkLoadEvent event) {
 
         Player player = event.getPlayer();
         Chunk chunk = event.getChunk();
+
+        VoidSurvival.getInstance().runTaskLater(() -> {
+            sendLitCampfires(player, chunk);
+        }, 1);
 
         HashMap<ChunkPosition, HashMap<BlockPosition, Long>> changes = playerBlockChanges.get(event.getPlayer().getUniqueId());
 
@@ -121,6 +186,8 @@ public class PlayerBlockManager implements Listener {
             return;
         }
 
+        // The method returns false if no block changes were sent
+        // meaning we can just remove the entry altogether
         if (!sendBlockChanges(player, chunk, chunkChanges)) {
             changes.remove(ChunkPosition.ofChunk(chunk));
         }
@@ -189,6 +256,13 @@ public class PlayerBlockManager implements Listener {
             .put(BlockPosition.ofBlock(block), expirationTime);
     }
 
+    /**
+     *
+     * @param player the player to send the block changes to
+     * @param chunk the chunk the block changes will be in
+     * @param changes the map of positions and how many ticks the change will last
+     * @return {@code true} if some changes were sent, {@code false} if not.
+     */
     private boolean sendBlockChanges(Player player, Chunk chunk, HashMap<BlockPosition, Long> changes) {
 
         World world = chunk.getWorld();

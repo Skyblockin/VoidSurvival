@@ -49,7 +49,7 @@ public class StaticGui implements Gui {
 
     @Override
     public GuiItem getItem(int slot) {
-        return null;
+        return elements.get(slot);
     }
 
     @Override

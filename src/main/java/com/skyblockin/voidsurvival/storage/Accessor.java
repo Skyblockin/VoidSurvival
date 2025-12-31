@@ -78,4 +78,12 @@ public class Accessor<C> {
         container.set(key, type, value);
     }
 
+    public void remove(PersistentDataHolder holder) {
+        remove(holder.getPersistentDataContainer());
+    }
+
+    public void remove(PersistentDataContainer container) {
+        container.remove(key);
+    }
+
 }

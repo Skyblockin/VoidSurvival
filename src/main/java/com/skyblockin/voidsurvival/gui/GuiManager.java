@@ -29,7 +29,9 @@ public class GuiManager implements Listener {
     }
 
     public static GuiManager getInstance() {
-        if (isInitialized()) throw new IllegalStateException("GuiManager already initialized!");
+        if (!isInitialized()) {
+            return init();
+        }
         return INSTANCE;
     }
 
@@ -52,6 +54,7 @@ public class GuiManager implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onInventoryClick(@NotNull InventoryClickEvent event) {
+
         if (!(event.getWhoClicked() instanceof Player)) {
             return;
         }

@@ -63,6 +63,7 @@ public class VoidSurvival extends JavaPlugin {
     private ItemManager itemManager;
     private RecipeManager recipeManager;
     private FriendManager friendManager;
+    private CombatTracker combatTracker;
 
     private WorldListener worldListener;
 
@@ -104,6 +105,7 @@ public class VoidSurvival extends JavaPlugin {
         this.itemManager = new ItemManager();
         this.recipeManager = new RecipeManager();
         this.friendManager = new FriendManager();
+        this.combatTracker = new CombatTracker();
 
         try {
             Database.createDataBase();
@@ -114,7 +116,6 @@ public class VoidSurvival extends JavaPlugin {
         }
 
         this.itemManager.loadItemsFromFile();
-        //this.oreGenerator.loadMissingBlocksFromFile();
         this.playerBlockManager.reload();
         this.worldListener.loadGeneratedChunkCount();
         this.lootTableManager.loadTables();
@@ -135,7 +136,7 @@ public class VoidSurvival extends JavaPlugin {
             this.playerBlockManager,
             this.worldListener,
             this.lootTableManager,
-            new CombatTracker(),
+            this.combatTracker,
             new RegionFlagListener(),
             new EntityEquipmentHandler(),
             this.recipeManager,
@@ -233,6 +234,10 @@ public class VoidSurvival extends JavaPlugin {
 
     public @Nullable Location getInfirmaryLocation() {
         return infirmaryLocation;
+    }
+
+    public CombatTracker getCombatTracker() {
+        return combatTracker;
     }
 
     public LootChestManager getLootTableManager() {

@@ -1,5 +1,6 @@
 package com.skyblockin.voidsurvival.storage;
 
+import com.skyblockin.voidsurvival.constants.CustomPersistentDataType;
 import org.bukkit.persistence.PersistentDataType;
 
 public final class Accessors {
@@ -8,5 +9,7 @@ public final class Accessors {
     public static final Accessor<String> ITEM_ID = new Accessor<>("item_id", PersistentDataType.STRING);
     public static final Accessor<String> ITEM_REPLACEMENT = new Accessor<>("item_replacement", PersistentDataType.STRING);
     public static final Accessor<String> SIGN_COMMAND = new Accessor<>("sign_command", PersistentDataType.STRING);
+    public static final Accessor<String> CAMPFIRE_WARP_ID = new Accessor<>("campfire_warp", PersistentDataType.STRING);
+    public static final Accessor<Position> CAMPFIRE_WARP_POSITION = new Accessor<>("campfire_warp_position", CustomPersistentDataType.POSITION);
 
 }

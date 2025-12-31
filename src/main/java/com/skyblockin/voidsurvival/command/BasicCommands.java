@@ -2,27 +2,34 @@ package com.skyblockin.voidsurvival.command;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.gui.Gui;
 import com.skyblockin.voidsurvival.leaderboard.LeaderboardType;
+import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.storage.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
+import com.skyblockin.voidsurvival.storage.Position;
 import com.skyblockin.voidsurvival.util.CommandUtil;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import com.skyblockin.voidsurvival.world.IslandGenerator;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.Campfire;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemType;
 
 import java.util.List;
 
 import static io.papermc.paper.command.brigadier.Commands.argument;
 import static io.papermc.paper.command.brigadier.Commands.literal;
 
+@SuppressWarnings("UnstableApiUsage")
 public final class BasicCommands {
 
     private static Component renderLeaderboard(Component title, LeaderboardType type, List<PlayerData> leaderboard) {
@@ -111,6 +118,51 @@ public final class BasicCommands {
     }
 
     public static void register(Commands commands, YamlConfiguration aliasConfig) {
+
+        commands.register(literal("warps")
+            .executes(CommandUtil.playerCommand((ctx, player) -> {
+
+                PlayerData data = PlayerData.of(player);
+
+                if (data.campfires.isEmpty()) {
+                    player.sendRichMessage("<red>You have not unlocked any warps!");
+                    return;
+                }
+
+                Gui gui = Gui.create(player.getUniqueId(), TextUtil.color("<!i><#ffa500>Campfire Warps"), 27);
+
+                data.campfires.forEach((name, location) -> {
+                    gui.addItem(ItemType.CAMPFIRE.createItemStack(meta -> {
+                        meta.customName(TextUtil.color("<!i><#ffa500>%s", name));
+                    }), event -> {
+
+                        if (location.getWorld().getBlockAt(location).getState() instanceof Campfire campfire) {
+
+                            Position position = Accessors.CAMPFIRE_WARP_POSITION.read(campfire);
+                            String campfireName = Accessors.CAMPFIRE_WARP_ID.read(campfire);
+
+                            if (position != null) {
+
+                                Player clicker = (Player) event.getWhoClicked();
+
+                                if (!VoidSurvival.getInstance().getCombatTracker().isCombatTagged(clicker)) {
+                                    clicker.teleportAsync(position.toLocation(location.getWorld()));
+                                    clicker.sendRichMessage("<#05fcbe>You have been warped to <#ffa500>" + campfireName);
+                                } else {
+                                    clicker.sendRichMessage("<red>You can't warp in combat!");
+                                }
+
+                            }
+                        }
+
+                    });
+                });
+
+                gui.open();
+
+            }))
+            .build(), aliasConfig.getStringList("warps")
+        );
 
         commands.register(literal("killstreaktop")
             .executes(ctx -> {

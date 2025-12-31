@@ -1,17 +1,11 @@
 package com.skyblockin.voidsurvival.storage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.skyblockin.voidsurvival.config.Pair;
 import com.skyblockin.voidsurvival.social.Friend;
 import com.skyblockin.voidsurvival.social.FriendList;
-import com.skyblockin.voidsurvival.util.TagUtil;
-import io.papermc.paper.registry.keys.tags.BlockTypeTagKeys;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.block.BlockType;
 import org.bukkit.entity.Player;
 
 import java.util.*;
@@ -70,7 +64,8 @@ public class PlayerData {
     public String lastKnownUserName;
     public int kills = 0;
     public int killStreak = 0;
-    public HomeMap homes = new HomeMap();
+    public NamedLocationMap campfires = new NamedLocationMap();
+    public NamedLocationMap homes = new NamedLocationMap();
     public HashMap<Long, Long> lastChestOpenTimes = new HashMap<>();
     public FriendList friendList = new FriendList();
 
@@ -88,6 +83,14 @@ public class PlayerData {
 
     public void setHome(String name, Location location) {
         this.homes.put(name, location);
+    }
+
+    public void unlockCampfire(String name, Location location) {
+        campfires.put(name, location);
+    }
+
+    public boolean hasUnlockedCampfire(String name) {
+        return campfires.containsKey(name);
     }
 
     /**

@@ -138,16 +138,22 @@ public class CombatTracker implements Listener {
         int firstSpace = command.indexOf(' ');
         command = command.substring(0, firstSpace == -1 ? command.length() : firstSpace);
 
-        int combatTagDurationSeconds = VoidSurvival.getInstance().getCombatTagDurationSeconds();
-        Instant lastHitTime = lastEntityHitTimes.get(player.getUniqueId());
-
-        if (lastHitTime != null
-            && lastHitTime.plusSeconds(combatTagDurationSeconds).isAfter(Instant.now())
-            && VoidSurvival.getInstance().getCombatBlockedCommands().contains(command)
-        ) {
+        if (isCombatTagged(player) && isCommandBlockedInCombat(command)) {
             player.sendMessage(TextUtil.color("<red>You cannot use that command while in combat!"));
             event.setCancelled(true);
         }
+    }
+
+    public boolean isCommandBlockedInCombat(String command) {
+        return VoidSurvival.getInstance().getCombatBlockedCommands().contains(command);
+    }
+
+    public boolean isCombatTagged(Player player) {
+
+        int combatTagDurationSeconds = VoidSurvival.getInstance().getCombatTagDurationSeconds();
+        Instant lastHitTime = lastEntityHitTimes.get(player.getUniqueId());
+
+        return lastHitTime != null && lastHitTime.plusSeconds(combatTagDurationSeconds).isAfter(Instant.now());
     }
 
     @EventHandler

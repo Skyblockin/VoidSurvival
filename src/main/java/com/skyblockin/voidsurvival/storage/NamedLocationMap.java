@@ -16,22 +16,22 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-@JsonSerialize(using = HomeMap.Serializer.class)
-@JsonDeserialize(using = HomeMap.Deserializer.class)
-public class HomeMap extends HashMap<String, Location> {
+@JsonSerialize(using = NamedLocationMap.Serializer.class)
+@JsonDeserialize(using = NamedLocationMap.Deserializer.class)
+public class NamedLocationMap extends HashMap<String, Location> {
 
-    public static class Deserializer extends StdDeserializer<HomeMap> {
+    public static class Deserializer extends StdDeserializer<NamedLocationMap> {
 
         protected Deserializer() {
-            super(HomeMap.class);
+            super(NamedLocationMap.class);
         }
 
         @Override
-        public HomeMap deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
+        public NamedLocationMap deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
 
             JsonNode node = p.getCodec().readTree(p);
 
-            HomeMap map = new HomeMap();
+            NamedLocationMap map = new NamedLocationMap();
 
             node.fields().forEachRemaining(entry -> {
 
@@ -55,14 +55,14 @@ public class HomeMap extends HashMap<String, Location> {
         }
     }
 
-    public static class Serializer extends StdSerializer<HomeMap> {
+    public static class Serializer extends StdSerializer<NamedLocationMap> {
 
         protected Serializer() {
-            super(HomeMap.class);
+            super(NamedLocationMap.class);
         }
 
         @Override
-        public void serialize(HomeMap value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+        public void serialize(NamedLocationMap value, JsonGenerator gen, SerializerProvider provider) throws IOException {
 
             gen.writeStartObject();
 

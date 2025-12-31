@@ -5,22 +5,23 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.storage.PlayerData;
+import com.skyblockin.voidsurvival.storage.Position;
 import com.skyblockin.voidsurvival.util.CommandUtil;
 import com.skyblockin.voidsurvival.util.DialogUtil;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.data.dialog.DialogBase;
-import io.papermc.paper.registry.data.dialog.type.DialogType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
+import org.bukkit.block.Campfire;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.util.Collection;
 import java.util.List;
@@ -209,6 +210,72 @@ public final class Admin {
                             VoidSurvival.logError("Failed to get homes of player '" + name + "'", ex);
                         }
                     }))
+                )
+            )
+        )
+        .then(literal("createcampfirewarp")
+            .then(argument("name", StringArgumentType.greedyString())
+                .executes(CommandUtil.playerCommand((ctx, player) -> {
+
+                    Block targetBlock = player.getTargetBlockExact(10);
+
+                    if (targetBlock != null && targetBlock.getState() instanceof Campfire campfire) {
+
+                        String name = ctx.getArgument("name", String.class);
+
+                        Accessors.CAMPFIRE_WARP_ID.write(campfire, name);
+                        Accessors.CAMPFIRE_WARP_POSITION.write(campfire, Position.ofLocation(player.getLocation()));
+                        campfire.update();
+
+                        player.sendRichMessage("<green>Successfully created a new campfire with the name '" + name + "'");
+
+                    } else {
+                        player.sendRichMessage("<red>That's not a campfire!");
+                    }
+
+                }))
+            )
+        )
+        .then(literal("deletecampfirewarp")
+            .executes(CommandUtil.playerCommand((ctx, player) -> {
+
+                Block targetBlock = player.getTargetBlockExact(10);
+
+                if (targetBlock != null && targetBlock.getState() instanceof Campfire campfire) {
+
+                    String name = Accessors.CAMPFIRE_WARP_ID.read(campfire);
+
+                    if (name != null) {
+
+                        Accessors.CAMPFIRE_WARP_ID.remove(campfire);
+                        Accessors.CAMPFIRE_WARP_POSITION.remove(campfire);
+                        campfire.update();
+
+                        player.sendRichMessage("<green>Successfully deleted a campfire with the name '" + name + "'");
+                    } else {
+                        player.sendRichMessage("<red>That is a campfire, but not a special warpable campfire!");
+                    }
+
+                } else {
+                    player.sendRichMessage("<red>That's not a campfire!");
+                }
+
+            }))
+        )
+        .then(literal("removecampfireaccess")
+            .then(argument("players", ArgumentTypes.players())
+                .then(argument("name", StringArgumentType.greedyString())
+                    .executes(ctx -> {
+
+                        List<Player> players = ctx.getArgument("players", PlayerSelectorArgumentResolver.class).resolve(ctx.getSource());
+                        String warpName = ctx.getArgument("name", String.class);
+
+                        for (Player player : players) {
+                            PlayerData.of(player).campfires.remove(warpName);
+                        }
+
+                        return 1;
+                    })
                 )
             )
         )
