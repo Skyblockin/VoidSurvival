@@ -21,7 +21,7 @@ import com.skyblockin.voidsurvival.storage.*;
 import com.skyblockin.voidsurvival.util.CustomTimeUnit;
 import com.skyblockin.voidsurvival.util.FileUtil;
 import com.skyblockin.voidsurvival.world.IslandGenerator;
-import com.skyblockin.voidsurvival.world.OreGenerator;
+import com.skyblockin.voidsurvival.world.PlayerBlockManager;
 import com.skyblockin.voidsurvival.world.WorldListener;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -36,7 +36,6 @@ import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -58,7 +57,7 @@ public class VoidSurvival extends JavaPlugin {
     }
 
     private IslandGenerator islandGenerator;
-    private OreGenerator oreGenerator;
+    private PlayerBlockManager playerBlockManager;
     private LootChestManager lootTableManager;
     private LeaderboardManager leaderboardManager;
     private ItemManager itemManager;
@@ -98,7 +97,7 @@ public class VoidSurvival extends JavaPlugin {
         this.infirmaryLocation = config.getLocation("missing-home-backup-location", null);
 
         this.islandGenerator = new IslandGenerator();
-        this.oreGenerator = new OreGenerator();
+        this.playerBlockManager = new PlayerBlockManager();
         this.lootTableManager = new LootChestManager();
         this.worldListener = new WorldListener();
         this.leaderboardManager = new LeaderboardManager();
@@ -115,7 +114,8 @@ public class VoidSurvival extends JavaPlugin {
         }
 
         this.itemManager.loadItemsFromFile();
-        this.oreGenerator.loadMissingBlocksFromFile();
+        //this.oreGenerator.loadMissingBlocksFromFile();
+        this.playerBlockManager.reload();
         this.worldListener.loadGeneratedChunkCount();
         this.lootTableManager.loadTables();
         this.lootTableManager.loadChestLocations();
@@ -132,7 +132,7 @@ public class VoidSurvival extends JavaPlugin {
             GuiManager.init(),
             new ChatListener(),
             new PlayerJoinHandler(),
-            this.oreGenerator,
+            this.playerBlockManager,
             this.worldListener,
             this.lootTableManager,
             new CombatTracker(),
@@ -178,7 +178,7 @@ public class VoidSurvival extends JavaPlugin {
         this.infirmaryLocation = getConfig().getLocation("missing-home-backup-location", null);
         this.itemManager.reload();
         this.islandGenerator.reload();
-        this.oreGenerator.reload();
+        this.playerBlockManager.reload();
         this.lootTableManager.reload();
         this.recipeManager.loadRecipes();
     }
@@ -199,15 +199,13 @@ public class VoidSurvival extends JavaPlugin {
 
             saveConfig();
 
-            this.oreGenerator.writeMissingBlocksToFile();
-
             Database.savePlayers(PLAYER_DATA_MAP.values());
             Database.saveChestLocations(this.lootTableManager.getChestLootTables());
             Database.saveGlobalData();
 
             getServer().getScheduler().cancelTasks(this);
 
-        } catch (IOException | PlayerDataException e) {
+        } catch (PlayerDataException e) {
             throw new RuntimeException(e);
         }
 

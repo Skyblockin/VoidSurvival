@@ -7,6 +7,7 @@ import com.skyblockin.voidsurvival.storage.BlockPosition;
 import com.skyblockin.voidsurvival.storage.ChunkPosition;
 import com.skyblockin.voidsurvival.util.CustomTimeUnit;
 import com.skyblockin.voidsurvival.util.Functions;
+import com.skyblockin.voidsurvival.util.PlayerUtil;
 import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -17,12 +18,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDamageEvent;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -35,39 +35,45 @@ public class PlayerBlockManager implements Listener {
 
         VoidSurvival.getInstance().runTaskTimer(() -> {
 
-            playerBlockChanges.forEach((uuid, chunkChanges) -> {
-                chunkChanges.forEach((chunkPos, blockChanges) -> {
+            for (var playerEntry : playerBlockChanges.entrySet()) {
+                
+                UUID uuid = playerEntry.getKey();
+                HashMap<ChunkPosition, HashMap<BlockPosition, Long>> chunkChanges = playerEntry.getValue();                
+                
+                for (var chunkEntry : chunkChanges.entrySet()) {
 
-                    var iterator = blockChanges.entrySet().iterator();
+                    List<BlockPosition> blocksToRemove = new ArrayList<>();
+                    HashMap<BlockPosition, Long> blockChanges = chunkEntry.getValue();
 
-                    while (iterator.hasNext()) {
+                    blockChanges.replaceAll((position, ticks) -> {
 
-                        var entry = iterator.next();
-
-                        // Still allow using null as a value to mean "infinite"
-                        if (entry.getValue() == null) {
-                            continue;
+                        if (ticks == null) {
+                            return null;
                         }
 
-                        long remainingTicks = entry.getValue() - 1;
+                        long remainingTicks = ticks - 1;
 
                         if (remainingTicks <= 0) {
-
-                            // Make sure to reset the block state
-                            Player player = Bukkit.getPlayer(uuid);
-                            if (player != null) {
-                                resetBlockState(player, entry.getKey().toLocation(player.getWorld()).getBlock());
-                            }
-
-                            iterator.remove();
-                        } else {
-                            entry.setValue(remainingTicks);
+                            blocksToRemove.add(position);
                         }
 
-                    }
+                        return remainingTicks;
+                    });
 
-                });
-            });
+                    for (BlockPosition position : blocksToRemove) {
+
+                        // Make sure to reset the block state
+                        Player player = Bukkit.getPlayer(uuid);
+                        if (player != null) {
+                            Block block = position.toLocation(player.getWorld()).getBlock();
+                            player.sendBlockChange(block.getLocation(), block.getBlockData());
+                        }
+                        blockChanges.remove(position);
+                    }
+                    
+                }
+                
+            }
 
         }, 0, 1);
 
@@ -127,40 +133,60 @@ public class PlayerBlockManager implements Listener {
         Block block = event.getBlock();
 
         // Allow ops to just modify the world as they wish
-        if (player.isOp()) {
+        if (player.isOp() || !Flags.REGENERATE_BLOCKS.test(player, block)) {
             return;
         }
 
-        if (Flags.REGENERATE_BLOCKS.test(player, block)) {
+        Long currentTicks = getBlockChangeTicks(player, block);
 
-            BlockData data = block.getBlockData();
-
-            Pair<Integer, Integer> regenerationTime = regenerationTimes.get(data.getMaterial().asBlockType());
-
-            if (regenerationTime != null) {
-                long ticks = ThreadLocalRandom.current().nextLong(regenerationTime.getFirst(), regenerationTime.getSecond());
-                markBlockAsDifferent(player, block, ticks);
-            }
-
+        // Don't do stuff if the block is already on cooldown
+        if (currentTicks != null) {
+            event.setCancelled(true);
+            return;
         }
 
+        Pair<Integer, Integer> regenerationTime = regenerationTimes.get(block.getType().asBlockType());
+
+        if (regenerationTime != null) {
+
+            ItemStack tool = player.getEquipment().getItemInMainHand();
+
+            long ticks = regenerationTime.getFirst();
+            if (regenerationTime.getFirst().compareTo(regenerationTime.getSecond()) < 0) {
+                ticks = ThreadLocalRandom.current().nextLong(regenerationTime.getFirst(), regenerationTime.getSecond());
+            }
+
+            markBlockAsDifferent(player, block, ticks);
+            VoidSurvival.getInstance().runTaskLater(() -> changeBlockForPlayer(player, block), 1);
+            PlayerUtil.giveItems(player, block.getDrops(tool, player));
+
+            event.setCancelled(true);
+        }
+    }
+
+    public Long getBlockChangeTicks(Player player, Block block) {
+
+        var chunkChanges = playerBlockChanges.get(player.getUniqueId());
+        if (chunkChanges == null) return null;
+        var blockChanges = chunkChanges.get(ChunkPosition.ofChunk(block.getChunk()));
+        if (blockChanges == null) return null;
+
+        return blockChanges.get(BlockPosition.ofBlock(block));
+    }
+
+    public void changeBlockForPlayer(Player player, Block block) {
+
+        BlockData differentData = createDifferentBlockData(block);
+
+        if (differentData != null) {
+            player.sendBlockChange(block.getLocation(), differentData);
+        }
     }
 
     public void markBlockAsDifferent(Player player, Block block, @Nullable Long expirationTime) {
         playerBlockChanges.computeIfAbsent(player.getUniqueId(), k -> new HashMap<>())
             .computeIfAbsent(ChunkPosition.ofChunk(block.getChunk()), k -> new HashMap<>())
             .put(BlockPosition.ofBlock(block), expirationTime);
-    }
-
-    public void resetBlockState(Player player, Block block) {
-
-        var chunkChanges = playerBlockChanges.get(player.getUniqueId());
-        if (chunkChanges == null) return;
-        var blockChanges = chunkChanges.get(ChunkPosition.ofChunk(block.getChunk()));
-        if (blockChanges == null) return;
-
-        blockChanges.remove(BlockPosition.ofBlock(block));
-        player.sendBlockChange(block.getLocation(), block.getBlockData());
     }
 
     private boolean sendBlockChanges(Player player, Chunk chunk, HashMap<BlockPosition, Long> changes) {
