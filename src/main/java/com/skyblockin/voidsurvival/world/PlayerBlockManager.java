@@ -1,13 +1,14 @@
 package com.skyblockin.voidsurvival.world;
 
-import com.mojang.datafixers.util.Pair;
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.config.Pair;
 import com.skyblockin.voidsurvival.region.Flags;
 import com.skyblockin.voidsurvival.storage.*;
 import com.skyblockin.voidsurvival.util.CustomTimeUnit;
 import com.skyblockin.voidsurvival.util.Functions;
 import com.skyblockin.voidsurvival.util.PlayerUtil;
 import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
+import net.minecraft.core.BlockPos;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockType;
@@ -30,6 +31,7 @@ public class PlayerBlockManager implements Listener {
 
     private final HashMap<BlockType, Pair<Integer, Integer>> regenerationTimes = new HashMap<>();
     private final HashMap<UUID, HashMap<ChunkPosition, HashMap<BlockPosition, Long>>> playerBlockChanges = new HashMap<>();
+    private final HashMap<BlockPosition, Pair<String, Position>> campfireCache = new HashMap<>();
 
     public PlayerBlockManager() {
 
@@ -140,6 +142,7 @@ public class PlayerBlockManager implements Listener {
         // Exclude ops of course :D
         if (!player.isOp() && block != null && block.getState() instanceof Campfire campfire) {
 
+            // The block is loaded here anyway so it's fine to do this
             String campfireId = Accessors.CAMPFIRE_WARP_ID.read(campfire);
             Position warpPosition = Accessors.CAMPFIRE_WARP_POSITION.read(campfire);
 
@@ -150,6 +153,8 @@ public class PlayerBlockManager implements Listener {
                 PlayerData data = PlayerData.of(player);
                 BlockData blockData = BlockType.CAMPFIRE.createBlockData(unlitCampfire -> unlitCampfire.setLit(true));
 
+                campfireCache.put(BlockPosition.ofBlock(block), new Pair<>(campfireId, warpPosition));
+
                 if (!data.hasUnlockedCampfire(campfireId)) {
                     PlayerData.of(player).unlockCampfire(campfireId, block.getLocation());
                     VoidSurvival.getInstance().runTaskLater(() -> player.sendBlockChange(block.getLocation(), blockData), 1);
@@ -159,6 +164,21 @@ public class PlayerBlockManager implements Listener {
                 }
             }
         }
+    }
+
+    public Pair<String, Position> getCampfireData(Location location) {
+
+        Pair<String, Position> entry = campfireCache.get(BlockPosition.ofLocation(location));
+
+        if (entry == null && location.getBlock().getState() instanceof Campfire campfire) {
+
+            String campfireId = Accessors.CAMPFIRE_WARP_ID.read(campfire);
+            Position warpPosition = Accessors.CAMPFIRE_WARP_POSITION.read(campfire);
+
+            entry = new Pair<>(campfireId, warpPosition);
+        }
+
+        return entry;
     }
 
     @EventHandler
@@ -213,9 +233,9 @@ public class PlayerBlockManager implements Listener {
 
             ItemStack tool = player.getEquipment().getItemInMainHand();
 
-            long ticks = regenerationTime.getFirst();
-            if (regenerationTime.getFirst().compareTo(regenerationTime.getSecond()) < 0) {
-                ticks = ThreadLocalRandom.current().nextLong(regenerationTime.getFirst(), regenerationTime.getSecond());
+            long ticks = regenerationTime.left();
+            if (regenerationTime.left().compareTo(regenerationTime.right()) < 0) {
+                ticks = ThreadLocalRandom.current().nextLong(regenerationTime.left(), regenerationTime.right());
             }
 
             markBlockAsDifferent(player, block, ticks);

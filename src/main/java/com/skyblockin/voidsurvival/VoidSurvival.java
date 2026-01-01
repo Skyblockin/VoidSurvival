@@ -242,6 +242,10 @@ public class VoidSurvival extends JavaPlugin {
         return infirmaryLocation;
     }
 
+    public PlayerBlockManager getPlayerBlockManager() {
+        return playerBlockManager;
+    }
+
     public CombatTracker getCombatTracker() {
         return combatTracker;
     }

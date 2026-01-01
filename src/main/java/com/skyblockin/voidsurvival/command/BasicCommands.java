@@ -2,6 +2,7 @@ package com.skyblockin.voidsurvival.command;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.config.Pair;
 import com.skyblockin.voidsurvival.gui.Gui;
 import com.skyblockin.voidsurvival.leaderboard.LeaderboardType;
 import com.skyblockin.voidsurvival.storage.Accessors;
@@ -9,9 +10,12 @@ import com.skyblockin.voidsurvival.storage.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.storage.Position;
 import com.skyblockin.voidsurvival.util.CommandUtil;
+import com.skyblockin.voidsurvival.util.DialogUtil;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import com.skyblockin.voidsurvival.world.IslandGenerator;
 import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.registry.data.dialog.DialogBase;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -136,23 +140,19 @@ public final class BasicCommands {
                         meta.customName(TextUtil.color("<!i><#ffa500>%s", name));
                     }), event -> {
 
-                        if (location.getWorld().getBlockAt(location).getState() instanceof Campfire campfire) {
+                        Pair<String, Position> campfireData = VoidSurvival.getInstance().getPlayerBlockManager().getCampfireData(location);
 
-                            Position position = Accessors.CAMPFIRE_WARP_POSITION.read(campfire);
-                            String campfireName = Accessors.CAMPFIRE_WARP_ID.read(campfire);
+                        if (campfireData != null) {
 
-                            if (position != null) {
+                            Player clicker = (Player) event.getWhoClicked();
 
-                                Player clicker = (Player) event.getWhoClicked();
-
-                                if (!VoidSurvival.getInstance().getCombatTracker().isCombatTagged(clicker)) {
-                                    clicker.teleportAsync(position.toLocation(location.getWorld()));
-                                    clicker.sendRichMessage("<#05fcbe>You have been warped to <#ffa500>" + campfireName);
-                                } else {
-                                    clicker.sendRichMessage("<red>You can't warp in combat!");
-                                }
-
+                            if (!VoidSurvival.getInstance().getCombatTracker().isCombatTagged(clicker)) {
+                                clicker.teleportAsync(campfireData.right().toLocation(location.getWorld()));
+                                clicker.sendRichMessage("<#05fcbe>You have been warped to <#ffa500>" + campfireData.left());
+                            } else {
+                                clicker.sendRichMessage("<red>You can't warp in combat!");
                             }
+
                         }
 
                     });
@@ -204,8 +204,32 @@ public final class BasicCommands {
                 }))
             )
             .executes(CommandUtil.playerCommand((ctx, player) -> {
-                PlayerData.of(player).setHome("island", player.getLocation());
-                player.sendRichMessage("<green>Set your home at your current location.");
+
+                Dialog dialog = Dialog.create(builder -> builder.empty()
+                    .base(DialogBase.builder(TextUtil.color("Home Alert"))
+                        .body(DialogUtil.buildDialogBody(" ", " ", " ", " ", " ", " ", " ",
+                            "Are you sure you want to set your home here?"
+                        ))
+                        .build()
+                    )
+                    .type(DialogUtil.buildMultiAction(
+                        List.of(
+                            DialogUtil.buildActionButton("Yes", 100, audience -> {
+                                PlayerData.of(player).setHome("island", player.getLocation());
+                                player.sendRichMessage("<green>Set your home at your current location.");
+                            }),
+                            DialogUtil.buildActionButton("No", 100, audience -> {
+                                audience.sendMessage(TextUtil.color("<green>Your home was not set."));
+                            })
+                        ),
+                        DialogUtil.buildActionButton("Close", 100, audience -> {
+                            audience.sendMessage(TextUtil.color("<green>Your home was not set."));
+                        }),
+                        2
+                    ))
+                );
+
+                player.showDialog(dialog);
             }))
             .build(), aliasConfig.getStringList("sethome")
         );
