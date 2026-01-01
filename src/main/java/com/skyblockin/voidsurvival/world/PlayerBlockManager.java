@@ -110,9 +110,7 @@ public class PlayerBlockManager implements Listener {
 
     private void sendLitCampfires(Player player, Chunk chunk) {
 
-        BlockData litCampFire = BlockType.CAMPFIRE.createBlockData(campfire -> {
-            campfire.setLit(true);
-        });
+        BlockData litCampFire = BlockType.CAMPFIRE.createBlockData(campfire -> campfire.setLit(true));
 
         List<String> invalidCampFires = new ArrayList<>();
 
@@ -139,7 +137,8 @@ public class PlayerBlockManager implements Listener {
         Player player = event.getPlayer();
         Block block = event.getClickedBlock();
 
-        if (block != null && block.getState() instanceof Campfire campfire) {
+        // Exclude ops of course :D
+        if (!player.isOp() && block != null && block.getState() instanceof Campfire campfire) {
 
             String campfireId = Accessors.CAMPFIRE_WARP_ID.read(campfire);
             Position warpPosition = Accessors.CAMPFIRE_WARP_POSITION.read(campfire);
@@ -149,9 +148,7 @@ public class PlayerBlockManager implements Listener {
                 event.setCancelled(true);
 
                 PlayerData data = PlayerData.of(player);
-                BlockData blockData = BlockType.CAMPFIRE.createBlockData(unlitCampfire -> {
-                    unlitCampfire.setLit(true);
-                });
+                BlockData blockData = BlockType.CAMPFIRE.createBlockData(unlitCampfire -> unlitCampfire.setLit(true));
 
                 if (!data.hasUnlockedCampfire(campfireId)) {
                     PlayerData.of(player).unlockCampfire(campfireId, block.getLocation());
@@ -170,9 +167,7 @@ public class PlayerBlockManager implements Listener {
         Player player = event.getPlayer();
         Chunk chunk = event.getChunk();
 
-        VoidSurvival.getInstance().runTaskLater(() -> {
-            sendLitCampfires(player, chunk);
-        }, 1);
+        VoidSurvival.getInstance().runTaskLater(() -> sendLitCampfires(player, chunk), 1);
 
         HashMap<ChunkPosition, HashMap<BlockPosition, Long>> changes = playerBlockChanges.get(event.getPlayer().getUniqueId());
 
@@ -305,9 +300,7 @@ public class PlayerBlockManager implements Listener {
         if (type.name().toLowerCase().endsWith("ore")) {
             return BlockType.BEDROCK.createBlockData();
         } else if (type == Material.CAMPFIRE) {
-            return BlockType.CAMPFIRE.createBlockData(campfire -> {
-                campfire.setLit(true);
-            });
+            return BlockType.CAMPFIRE.createBlockData(campfire -> campfire.setLit(true));
         }
 
         return null;
