@@ -30,7 +30,6 @@ import java.util.Map;
 import static io.papermc.paper.command.brigadier.Commands.argument;
 import static io.papermc.paper.command.brigadier.Commands.literal;
 
-@SuppressWarnings("UnstableApiUsage")
 public final class Admin {
 
     public static final LiteralCommandNode<CommandSourceStack> COMMAND = literal("admin")
@@ -86,53 +85,6 @@ public final class Admin {
                     return 1;
                 })
             )
-        )
-        .then(literal("testdialog")
-            .executes(ctx -> {
-
-                Collection<? extends Player> players = Bukkit.getOnlinePlayers();
-
-                Dialog dialog = Dialog.create(builder -> builder.empty()
-                    .base(DialogBase.builder(TextUtil.color("<blue>Test Dialog"))
-                        .canCloseWithEscape(true)
-                        .body(DialogUtil.buildDialogBody(
-                            "<white>Line 1",
-                            "<blue>Line 2",
-                            "<red>Line 3"
-                        ))
-                        .inputs(List.of(
-                            DialogUtil.buildBooleanInput("firstBool", "Boolean", "No", "Yes", true),
-                            DialogUtil.buildNumberRangeInput("firstNumberRange", "Number Range", 0, 100, "%s: %s", 50, 1),
-                            DialogUtil.buildTextInput("firstTextInput", "Text Input")
-                        ))
-                        .build()
-                    )
-                    .type(DialogUtil.buildMultiAction(
-                        List.of(
-                            DialogUtil.buildActionButton("Option 1", 100,
-                                audience -> audience.sendMessage(TextUtil.color("<green>Clicked option 1!"))
-                            ),
-                            DialogUtil.buildActionButton("Option 2", 100,
-                                audience -> audience.sendMessage(TextUtil.color("<green>Clicked option 2!"))
-                            ),
-                            DialogUtil.buildActionButton("Option 3", 100,
-                                audience -> audience.sendMessage(TextUtil.color("<green>Clicked option 3!"))
-                            ),
-                            DialogUtil.buildActionButton("Option 4", 100,
-                                audience -> audience.sendMessage(TextUtil.color("<green>Clicked option 4!"))
-                            )
-                        ),
-                        DialogUtil.buildActionButton("Close", 100, audience -> audience.sendMessage(TextUtil.color("<green>Dialog closed!"))),
-                        2
-                    ))
-                );
-
-                if (ctx.getSource().getSender() instanceof Player player) {
-                    player.showDialog(dialog);
-                }
-
-                return 1;
-            })
         )
         .then(literal("home")
             .then(argument("home", StringArgumentType.word())

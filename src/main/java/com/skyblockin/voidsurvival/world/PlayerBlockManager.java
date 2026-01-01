@@ -139,8 +139,12 @@ public class PlayerBlockManager implements Listener {
         Player player = event.getPlayer();
         Block block = event.getClickedBlock();
 
-        // Exclude ops of course :D
-        if (!player.isOp() && block != null && block.getState() instanceof Campfire campfire) {
+        // Don't do anything if the opped player breaks the campfire
+        if (player.isOp() && event.getAction().isLeftClick()) {
+            return;
+        }
+
+        if (block != null && block.getState() instanceof Campfire campfire) {
 
             // The block is loaded here anyway so it's fine to do this
             String campfireId = Accessors.CAMPFIRE_WARP_ID.read(campfire);
@@ -158,8 +162,9 @@ public class PlayerBlockManager implements Listener {
                 if (!data.hasUnlockedCampfire(campfireId)) {
                     PlayerData.of(player).unlockCampfire(campfireId, block.getLocation());
                     VoidSurvival.getInstance().runTaskLater(() -> player.sendBlockChange(block.getLocation(), blockData), 1);
-                    player.sendRichMessage("<#05fcbe>You've unlocked this campfire and may now warp to it at any time through the <yellow>/warps</yellow> menu!</#05fcbe>");
+                    player.sendRichMessage("<#05fcbe>You've unlocked this campfire and may now warp to it at any time by clicking another campfire!");
                 } else {
+                    PlayerUtil.openWarpMenu(player);
                     VoidSurvival.getInstance().runTaskLater(() -> player.sendBlockChange(block.getLocation(), blockData), 1);
                 }
             }

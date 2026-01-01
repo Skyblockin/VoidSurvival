@@ -11,6 +11,7 @@ import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.storage.Position;
 import com.skyblockin.voidsurvival.util.CommandUtil;
 import com.skyblockin.voidsurvival.util.DialogUtil;
+import com.skyblockin.voidsurvival.util.PlayerUtil;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import com.skyblockin.voidsurvival.world.IslandGenerator;
 import io.papermc.paper.command.brigadier.Commands;
@@ -124,42 +125,9 @@ public final class BasicCommands {
     public static void register(Commands commands, YamlConfiguration aliasConfig) {
 
         commands.register(literal("warps")
+            .requires(ctx -> ctx.getSender().hasPermission("voidsurvival.warpanywhere"))
             .executes(CommandUtil.playerCommand((ctx, player) -> {
-
-                PlayerData data = PlayerData.of(player);
-
-                if (data.campfires.isEmpty()) {
-                    player.sendRichMessage("<red>You have not unlocked any warps!");
-                    return;
-                }
-
-                Gui gui = Gui.create(player.getUniqueId(), TextUtil.color("<!i><#ffa500>Campfire Warps"), 27);
-
-                data.campfires.forEach((name, location) -> {
-                    gui.addItem(ItemType.CAMPFIRE.createItemStack(meta -> {
-                        meta.customName(TextUtil.color("<!i><#ffa500>%s", name));
-                    }), event -> {
-
-                        Pair<String, Position> campfireData = VoidSurvival.getInstance().getPlayerBlockManager().getCampfireData(location);
-
-                        if (campfireData != null) {
-
-                            Player clicker = (Player) event.getWhoClicked();
-
-                            if (!VoidSurvival.getInstance().getCombatTracker().isCombatTagged(clicker)) {
-                                clicker.teleportAsync(campfireData.right().toLocation(location.getWorld()));
-                                clicker.sendRichMessage("<#05fcbe>You have been warped to <#ffa500>" + campfireData.left());
-                            } else {
-                                clicker.sendRichMessage("<red>You can't warp in combat!");
-                            }
-
-                        }
-
-                    });
-                });
-
-                gui.open();
-
+                PlayerUtil.openWarpMenu(player);
             }))
             .build(), aliasConfig.getStringList("warps")
         );
