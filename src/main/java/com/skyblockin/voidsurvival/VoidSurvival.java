@@ -21,6 +21,7 @@ import com.skyblockin.voidsurvival.storage.*;
 import com.skyblockin.voidsurvival.util.CustomTimeUnit;
 import com.skyblockin.voidsurvival.util.FileUtil;
 import com.skyblockin.voidsurvival.world.IslandGenerator;
+import com.skyblockin.voidsurvival.customoregen.OreGenerator;
 import com.skyblockin.voidsurvival.world.PlayerBlockManager;
 import com.skyblockin.voidsurvival.world.WorldListener;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
@@ -57,6 +58,7 @@ public class VoidSurvival extends JavaPlugin {
     }
 
     private IslandGenerator islandGenerator;
+    private OreGenerator oreGenerator;
     private PlayerBlockManager playerBlockManager;
     private LootChestManager lootTableManager;
     private LeaderboardManager leaderboardManager;
@@ -98,6 +100,7 @@ public class VoidSurvival extends JavaPlugin {
         this.infirmaryLocation = config.getLocation("missing-home-backup-location", null);
 
         this.islandGenerator = new IslandGenerator();
+        this.oreGenerator = new OreGenerator();
         this.playerBlockManager = new PlayerBlockManager();
         this.lootTableManager = new LootChestManager();
         this.worldListener = new WorldListener();
@@ -122,6 +125,7 @@ public class VoidSurvival extends JavaPlugin {
         this.lootTableManager.loadChestLocations();
         this.lootTableManager.loadCooldowns();
         this.recipeManager.loadRecipes();
+        this.oreGenerator.reload();
 
         FileUtil.createOrGetFile("mana_abilities.yml");
 
@@ -137,6 +141,7 @@ public class VoidSurvival extends JavaPlugin {
             this.worldListener,
             this.lootTableManager,
             this.combatTracker,
+            this.oreGenerator,
             new RegionFlagListener(),
             new EntityEquipmentHandler(),
             this.recipeManager,
@@ -182,6 +187,7 @@ public class VoidSurvival extends JavaPlugin {
         this.playerBlockManager.reload();
         this.lootTableManager.reload();
         this.recipeManager.loadRecipes();
+        this.oreGenerator.reload();
     }
 
     private void registerEvents(Listener... listeners) {
