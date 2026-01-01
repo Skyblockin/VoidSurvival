@@ -55,6 +55,8 @@ public class OreGenerator implements Listener {
             }
 
         }
+
+        VoidSurvival.logInfo("Loaded %d ore upgrade tiers", upgradeOrder.size());
     }
 
     @EventHandler
