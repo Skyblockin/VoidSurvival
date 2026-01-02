@@ -4,11 +4,14 @@ import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.constants.ItemIds;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.storage.Database;
+import com.skyblockin.voidsurvival.util.TextUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -42,10 +45,19 @@ public class WorldListener implements Listener {
     public void onBlockClickEvenIfCancelled(PlayerInteractEvent event) {
         if (event.getClickedBlock() != null && event.getClickedBlock().getState() instanceof Sign sign) {
 
+            Player player = event.getPlayer();
             String command = Accessors.SIGN_COMMAND.read(sign);
 
             if (command != null) {
-                event.getPlayer().performCommand(command);
+
+                if (command.startsWith("message:")) {
+                    player.sendMessage(TextUtil.color(command.substring("message:".length()), player.getName()));
+                } else if (command.startsWith("console:")) {
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), String.format(command.substring("command:".length()), player.getName()));
+                } else {
+                    event.getPlayer().performCommand(String.format(command, player.getName()));
+                }
+
                 event.setCancelled(true);
             }
         }
