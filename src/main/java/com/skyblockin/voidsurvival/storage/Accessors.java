@@ -1,6 +1,7 @@
 package com.skyblockin.voidsurvival.storage;
 
 import com.skyblockin.voidsurvival.constants.CustomPersistentDataType;
+import com.skyblockin.voidsurvival.math.Position;
 import org.bukkit.persistence.PersistentDataType;
 
 public final class Accessors {

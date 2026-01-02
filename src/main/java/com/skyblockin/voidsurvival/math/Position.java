@@ -1,4 +1,4 @@
-package com.skyblockin.voidsurvival.storage;
+package com.skyblockin.voidsurvival.math;
 
 import org.bukkit.Location;
 import org.bukkit.World;

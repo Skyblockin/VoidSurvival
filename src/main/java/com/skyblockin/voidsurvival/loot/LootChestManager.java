@@ -2,11 +2,13 @@ package com.skyblockin.voidsurvival.loot;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Json;
+import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.storage.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.util.FileUtil;
 import com.skyblockin.voidsurvival.util.Format;
 import com.skyblockin.voidsurvival.util.Functions;
+import com.skyblockin.voidsurvival.util.TextUtil;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
@@ -181,7 +183,7 @@ public class LootChestManager implements Listener {
 
         } else {
             long remainingTime = ChronoUnit.SECONDS.between(currentTime, lastTime.plusMillis(cooldown));
-            player.sendRichMessage("<red>You must wait " + Format.getFormattedTime(remainingTime) + " before opening this chest again.");
+            player.sendMessage(TextUtil.message(MessageKeys.CHEST_ON_COOLDOWN, Format.getFormattedTime(remainingTime)));
         }
     }
 

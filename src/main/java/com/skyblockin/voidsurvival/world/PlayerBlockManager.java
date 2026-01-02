@@ -2,13 +2,17 @@ package com.skyblockin.voidsurvival.world;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Pair;
+import com.skyblockin.voidsurvival.math.BlockPosition;
+import com.skyblockin.voidsurvival.math.ChunkPosition;
+import com.skyblockin.voidsurvival.math.Position;
+import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.region.Flags;
 import com.skyblockin.voidsurvival.storage.*;
 import com.skyblockin.voidsurvival.util.CustomTimeUnit;
 import com.skyblockin.voidsurvival.util.Functions;
 import com.skyblockin.voidsurvival.util.PlayerUtil;
+import com.skyblockin.voidsurvival.util.TextUtil;
 import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
-import net.minecraft.core.BlockPos;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockType;
@@ -20,7 +24,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.MainHand;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -144,6 +150,11 @@ public class PlayerBlockManager implements Listener {
             return;
         }
 
+        // Only allow clicking with main hand
+        if (event.getHand() != EquipmentSlot.HAND) {
+            return;
+        }
+
         if (block != null && block.getState() instanceof Campfire campfire) {
 
             // The block is loaded here anyway so it's fine to do this
@@ -160,9 +171,15 @@ public class PlayerBlockManager implements Listener {
                 campfireCache.put(BlockPosition.ofBlock(block), new Pair<>(campfireId, warpPosition));
 
                 if (!data.hasUnlockedCampfire(campfireId)) {
-                    PlayerData.of(player).unlockCampfire(campfireId, block.getLocation());
-                    VoidSurvival.getInstance().runTaskLater(() -> player.sendBlockChange(block.getLocation(), blockData), 1);
-                    player.sendRichMessage("<#05fcbe>You've unlocked this campfire and may now warp to it at any time by clicking another campfire!");
+
+                    if (data.campfires.size() >= data.maxCampfires) {
+                        player.sendMessage(TextUtil.message(MessageKeys.CAMPFIRE_TOO_MANY_CAMPFIRES, data.campfires.size(), data.maxCampfires));
+                    } else {
+                        PlayerData.of(player).unlockCampfire(campfireId, block.getLocation());
+                        VoidSurvival.getInstance().runTaskLater(() -> player.sendBlockChange(block.getLocation(), blockData), 1);
+                        player.sendMessage(TextUtil.message(MessageKeys.CAMPFIRE_UNLOCKED));
+                    }
+
                 } else {
                     PlayerUtil.openWarpMenu(player);
                     VoidSurvival.getInstance().runTaskLater(() -> player.sendBlockChange(block.getLocation(), blockData), 1);

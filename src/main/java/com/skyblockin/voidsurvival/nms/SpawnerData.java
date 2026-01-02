@@ -9,7 +9,6 @@ import com.skyblockin.voidsurvival.config.Json;
 import com.skyblockin.voidsurvival.util.Functions;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.world.item.component.TypedEntityData;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;

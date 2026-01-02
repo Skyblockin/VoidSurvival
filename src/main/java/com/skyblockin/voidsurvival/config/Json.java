@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer;
+import com.skyblockin.voidsurvival.VoidSurvival;
 import io.papermc.paper.block.BlockPredicate;
 import io.papermc.paper.datacomponent.item.*;
 import io.papermc.paper.datacomponent.item.blocksattacks.DamageReduction;
@@ -27,6 +28,7 @@ import org.joml.Vector3f;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.UUID;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -103,6 +105,20 @@ public class Json {
         module.addKeySerializer(Keyed.class, new StdDelegatingSerializer(JsonDeserializers.KEYED_TYPE));
 
         MAPPER.registerModule(module);
+    }
+
+    public static void writeToFileSafe(File file, Object object) {
+
+        try {
+            if (!file.exists()) {
+                Files.createDirectory(file.getParentFile().toPath());
+                Files.createFile(file.toPath());
+            }
+            writeToFile(file, object);
+        } catch (Exception ex) {
+            VoidSurvival.logError("Failed to write file " + file.getPath(), ex);
+        }
+
     }
 
     public static void writeToFile(File file, Object object) throws IOException {

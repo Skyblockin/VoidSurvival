@@ -3,10 +3,26 @@ package com.skyblockin.voidsurvival.util;
 import com.skyblockin.voidsurvival.VoidSurvival;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 public class FileUtil {
+
+    public static Path createOrGetFile(Path path) throws IOException {
+
+        Path file = VoidSurvival.getInstance().getDataFolder().toPath().resolve(path);
+
+        if (!Files.exists(path)) {
+            Files.createDirectory(file.getParent());
+            Files.createFile(file);
+            return file;
+        }
+
+        return file;
+    }
 
     public static File createOrGetFile(String fileName) {
 
@@ -14,11 +30,9 @@ public class FileUtil {
 
         if (!file.exists()) {
             try {
-                if (file.getParentFile().mkdirs() && file.createNewFile()) {
-                    return file;
-                } else {
-                    return null;
-                }
+                Files.createDirectory(file.getParentFile().toPath());
+                Files.createFile(file.toPath());
+                return file;
             } catch (Exception ex) {
                 return null;
             }

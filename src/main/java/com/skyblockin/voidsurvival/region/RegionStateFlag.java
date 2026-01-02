@@ -8,13 +8,11 @@ import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
-public class RegionStateFlag {
-
-    private final StateFlag flag;
+public class RegionStateFlag extends StateFlag {
 
     public RegionStateFlag(String name, boolean defaultValue) {
-        this.flag = new StateFlag(name, defaultValue);
-        WorldGuard.getInstance().getFlagRegistry().register(this.flag);
+        super(name, defaultValue);
+        WorldGuard.getInstance().getFlagRegistry().register(this);
     }
 
     public boolean test(Player player, Location location) {
@@ -22,7 +20,7 @@ public class RegionStateFlag {
             .getPlatform()
             .getRegionContainer()
             .createQuery()
-            .testState(BukkitAdapter.adapt(location), WorldGuardPlugin.inst().wrapPlayer(player), this.flag);
+            .testState(BukkitAdapter.adapt(location), WorldGuardPlugin.inst().wrapPlayer(player), this);
     }
 
     public boolean test(Player player, Block block) {

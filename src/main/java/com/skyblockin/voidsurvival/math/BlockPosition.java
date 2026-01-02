@@ -1,4 +1,4 @@
-package com.skyblockin.voidsurvival.storage;
+package com.skyblockin.voidsurvival.math;
 
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -28,6 +28,10 @@ public record BlockPosition(int x, int y, int z) {
 
     public Location toLocation(World world) {
         return new Location(world, x, y, z);
+    }
+
+    public BlockPosition add(int x, int y, int z) {
+        return new BlockPosition(this.x + x, this.y + y, this.z + z);
     }
 
 }

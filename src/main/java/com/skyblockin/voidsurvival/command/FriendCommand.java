@@ -111,10 +111,15 @@ public final class FriendCommand {
             PlayerData data = PlayerData.of(sender);
             PlayerData other = PlayerData.getByNameorUuid(name);
 
+            if (other == null) {
+                sender.sendMessage(TextUtil.message(MessageKeys.PLAYER_NOT_FOUND, name));
+                return;
+            }
+
             ArrayList<Friend> mutuals = data.getMutualFriends(other);
 
             if (mutuals.isEmpty()) {
-                sender.sendMessage(TextUtil.message(MessageKeys.FRIEND_MUTUALS_NO_MUTUALS));
+                sender.sendMessage(TextUtil.message(MessageKeys.FRIEND_MUTUALS_NO_MUTUALS, other.lastKnownUserName));
                 return;
             }
 

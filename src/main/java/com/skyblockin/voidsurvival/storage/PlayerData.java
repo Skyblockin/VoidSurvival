@@ -1,6 +1,7 @@
 package com.skyblockin.voidsurvival.storage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.skyblockin.voidsurvival.math.BlockPosition;
 import com.skyblockin.voidsurvival.social.Friend;
 import com.skyblockin.voidsurvival.social.FriendList;
 import org.bukkit.Bukkit;
@@ -62,6 +63,7 @@ public class PlayerData {
     public transient boolean generatingIsland = false;
     public boolean hasGeneratedIsland = false;
     public String lastKnownUserName;
+    public int maxCampfires = 9;
     public int kills = 0;
     public int killStreak = 0;
     public NamedLocationMap campfires = new NamedLocationMap();

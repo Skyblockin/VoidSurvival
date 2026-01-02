@@ -2,7 +2,9 @@ package com.skyblockin.voidsurvival.command;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.config.Pair;
 import com.skyblockin.voidsurvival.leaderboard.LeaderboardType;
+import com.skyblockin.voidsurvival.math.Position;
 import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.storage.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
@@ -169,7 +171,8 @@ public final class BasicCommands {
                 Dialog dialog = Dialog.create(builder -> builder.empty()
                     .base(DialogBase.builder(TextUtil.color("Home Alert"))
                         .body(DialogUtil.buildDialogBody(" ", " ", " ", " ", " ", " ", " ",
-                            "Are you sure you want to set your home here?"
+                            "Are you sure you want to set your home here?",
+                            "You only get one home, so moving it here means your old home will be lost!"
                         ))
                         .build()
                     )
@@ -193,6 +196,33 @@ public final class BasicCommands {
                 player.showDialog(dialog);
             }))
             .build(), aliasConfig.getStringList("sethome")
+        );
+
+        commands.register(literal("campfire")
+            .then(literal("unset")
+                .then(argument("name", StringArgumentType.greedyString())
+                    .suggests(CommandUtil.suggest(ctx -> {
+                        if (ctx.getSource().getSender() instanceof Player player) {
+                            return PlayerData.of(player).campfires.keySet();
+                        }
+                        return List.of();
+                    }))
+                    .executes(CommandUtil.playerCommand((ctx, player) -> {
+
+                        String name = ctx.getArgument("name", String.class);
+                        PlayerData data = PlayerData.of(player);
+
+                        if (data.campfires.containsKey(name)) {
+                            data.campfires.remove(name);
+                            player.sendMessage(TextUtil.message(MessageKeys.CAMPFIRE_DELETED, name));
+                        } else {
+                            player.sendMessage(TextUtil.message(MessageKeys.CAMPFIRE_NOT_FOUND, name));
+                        }
+
+                    }))
+                )
+            )
+            .build(), aliasConfig.getStringList("campfire")
         );
 
         commands.register(literal("createisland")

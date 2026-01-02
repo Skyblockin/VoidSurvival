@@ -1,5 +1,7 @@
 package com.skyblockin.voidsurvival.entity;
 
+import com.skyblockin.voidsurvival.message.MessageKeys;
+import com.skyblockin.voidsurvival.util.TextUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
@@ -18,7 +20,7 @@ public class PlayerListener implements Listener {
 
             ConsoleCommandSender sender = Bukkit.getServer().getConsoleSender();
             Bukkit.dispatchCommand(sender, "spawn " + player.getName());
-            Bukkit.dispatchCommand(sender, "msg " + player.getName() + " Woops! That was a close one!");
+            player.sendMessage(TextUtil.message(MessageKeys.CLOSE_ONE));
 
             player.setFallDistance(0);
         }

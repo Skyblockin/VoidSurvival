@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Json;
 import com.skyblockin.voidsurvival.leaderboard.LeaderboardType;
+import com.skyblockin.voidsurvival.math.BlockPosition;
 import com.skyblockin.voidsurvival.social.FriendList;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

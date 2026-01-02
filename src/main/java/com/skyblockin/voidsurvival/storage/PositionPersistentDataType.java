@@ -1,5 +1,6 @@
 package com.skyblockin.voidsurvival.storage;
 
+import com.skyblockin.voidsurvival.math.Position;
 import org.bukkit.persistence.PersistentDataAdapterContext;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;

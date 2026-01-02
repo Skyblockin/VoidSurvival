@@ -4,6 +4,7 @@ import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.constants.DamageTypes;
 import com.skyblockin.voidsurvival.constants.Enchantments;
 import com.skyblockin.voidsurvival.constants.ItemIds;
+import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.util.TagUtil;
@@ -139,7 +140,7 @@ public class CombatTracker implements Listener {
         command = command.substring(0, firstSpace == -1 ? command.length() : firstSpace);
 
         if (isCombatTagged(player) && isCommandBlockedInCombat(command)) {
-            player.sendMessage(TextUtil.color("<red>You cannot use that command while in combat!"));
+            player.sendMessage(TextUtil.message(MessageKeys.COMBAT_COMMAND_BLOCKED_IN_COMBAT));
             event.setCancelled(true);
         }
     }
@@ -313,7 +314,7 @@ public class CombatTracker implements Listener {
             data.killStreak++;
 
             if (data.killStreak % 10 == 0) {
-                Bukkit.broadcast(TextUtil.color("%s has reached a kill streak of %s!", player.getName(), data.killStreak));
+                Bukkit.broadcast(TextUtil.message(MessageKeys.COMBAT_KILLSTREAK_REACHED, player.getName(), data.killStreak));
             }
         }
 
@@ -321,7 +322,7 @@ public class CombatTracker implements Listener {
         PlayerData data = PlayerData.of(event.getPlayer());
 
         if (data.killStreak >= 10 && source.getCausingEntity() instanceof Player player) {
-            Bukkit.broadcast(TextUtil.color("%s has ended %s's kill streak of %d!", player.getName(), event.getPlayer().getName(), data.killStreak));
+            Bukkit.broadcast(TextUtil.message(MessageKeys.COMBAT_KILLSTREAK_ENDED, player.getName(), event.getPlayer().getName(), data.killStreak));
         }
 
         data.killStreak = 0;

@@ -43,5 +43,25 @@ public final class MessageKeys {
     public static final String HOME_OBSTRUCTED = "command.home.obstructed";
     public static final String HOME_TELEPORTED = "command.home.teleported";
 
+    // Chest stuff
+    public static final String CHEST_ON_COOLDOWN = "chest.on-cooldown";
+
+    // Campfire stuff
+    public static final String CAMPFIRE_UNLOCKED = "campfire.unlocked";
+    public static final String CAMPFIRE_TOO_MANY_CAMPFIRES = "campfire.too-many-campfires";
+    public static final String CAMPFIRE_DELETED = "campfire.deleted";
+    public static final String CAMPFIRE_NOT_FOUND = "campfire.not-found";
+    public static final String CAMPFIRE_NONE_UNLOCKED = "campfire.none-unlocked";
+    public static final String CAMPFIRE_NO_COMBAT_WARP = "campfire.combat-warp-blocked";
+    public static final String CAMPFIRE_WARPED = "campfire.warped";
+    public static final String CAMPFIRE_ALREADY_AT_CAMPFIRE = "campfire.already-at-campfire";
+
+    // Combat stuff
+    public static final String COMBAT_COMMAND_BLOCKED_IN_COMBAT = "combat.command-blocked-in-combat";
+    public static final String COMBAT_KILLSTREAK_REACHED = "combat.killstreak-reached";
+    public static final String COMBAT_KILLSTREAK_ENDED = "combat.killstreak-ended";
+
+    // Miscellaneous stuff
     public static final String PLAYER_NOT_FOUND = "command.player-not-found";
+    public static final String CLOSE_ONE = "saved-from-void";
 }
