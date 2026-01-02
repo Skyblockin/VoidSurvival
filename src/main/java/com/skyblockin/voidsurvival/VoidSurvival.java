@@ -13,6 +13,7 @@ import com.skyblockin.voidsurvival.entity.PlayerListener;
 import com.skyblockin.voidsurvival.gui.GuiManager;
 import com.skyblockin.voidsurvival.leaderboard.LeaderboardManager;
 import com.skyblockin.voidsurvival.loot.LootChestManager;
+import com.skyblockin.voidsurvival.message.MessageManager;
 import com.skyblockin.voidsurvival.recipe.RecipeManager;
 import com.skyblockin.voidsurvival.region.Flags;
 import com.skyblockin.voidsurvival.region.RegionFlagListener;
@@ -57,6 +58,7 @@ public class VoidSurvival extends JavaPlugin {
         return INSTANCE;
     }
 
+    private MessageManager messageManager;
     private IslandGenerator islandGenerator;
     private OreGenerator oreGenerator;
     private PlayerBlockManager playerBlockManager;
@@ -99,6 +101,7 @@ public class VoidSurvival extends JavaPlugin {
         this.debug = config.getBoolean("debug");
         this.infirmaryLocation = config.getLocation("missing-home-backup-location", null);
 
+        this.messageManager = new MessageManager();
         this.islandGenerator = new IslandGenerator();
         this.oreGenerator = new OreGenerator();
         this.playerBlockManager = new PlayerBlockManager();
@@ -118,6 +121,7 @@ public class VoidSurvival extends JavaPlugin {
             return;
         }
 
+        this.messageManager.reload();
         this.itemManager.loadItemsFromFile();
         this.playerBlockManager.reload();
         this.worldListener.loadGeneratedChunkCount();
@@ -182,6 +186,7 @@ public class VoidSurvival extends JavaPlugin {
         this.combatTagDurationSeconds = (int) getTimeFromYaml(getConfig(), "combat-tag-duration-seconds", 10, CustomTimeUnit.SECONDS);
         this.combatBlockedCommands = getConfig().getStringList("blocked-commands");
         this.infirmaryLocation = getConfig().getLocation("missing-home-backup-location", null);
+        this.messageManager.reload();
         this.itemManager.reload();
         this.islandGenerator.reload();
         this.playerBlockManager.reload();
@@ -224,6 +229,10 @@ public class VoidSurvival extends JavaPlugin {
 
     public List<String> getCombatBlockedCommands() {
         return combatBlockedCommands;
+    }
+
+    public MessageManager getMessageManager() {
+        return messageManager;
     }
 
     public FriendManager getFriendManager() {
@@ -301,6 +310,14 @@ public class VoidSurvival extends JavaPlugin {
         }
 
         return islandDirectory.listFiles();
+    }
+
+    public File getFile(Path path) {
+        return getDataPath().resolve(path).toFile();
+    }
+
+    public File getFile(String first, String... others) {
+        return getDataPath().resolve(Path.of(first, others)).toFile();
     }
 
     public static void logInfo(String message, Object... objects) {

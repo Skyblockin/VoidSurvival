@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.social.Friend;
 import com.skyblockin.voidsurvival.social.PaginatedList;
 import com.skyblockin.voidsurvival.storage.PlayerData;
@@ -30,7 +31,7 @@ public final class FriendCommand {
                     String name = ctx.getArgument("player", String.class);
 
                     if (name.equalsIgnoreCase(player.getName())) {
-                        player.sendRichMessage("<#fc0202>That's wholesome, but there's no point in adding yourself to your own friend list!");
+                        player.sendMessage(TextUtil.message(MessageKeys.FRIEND_ADD_SELF));
                         return;
                     }
 
@@ -39,7 +40,7 @@ public final class FriendCommand {
                     if (other != null) {
                         VoidSurvival.getInstance().getFriendManager().createFriendRequest(player, other);
                     } else {
-                        player.sendRichMessage("<#fc0202>No player with name " + name + " found, are they online?");
+                        player.sendMessage(TextUtil.message(MessageKeys.PLAYER_NOT_FOUND, name));
                     }
                 }))
             )
@@ -52,7 +53,7 @@ public final class FriendCommand {
                     String name = ctx.getArgument("player", String.class);
 
                     if (name.equalsIgnoreCase(player.getName())) {
-                        player.sendRichMessage("<#fc0202>Why would you do that?");
+                        player.sendMessage(TextUtil.message(MessageKeys.FRIEND_REMOVE_SELF));
                         return;
                     }
 
@@ -69,7 +70,7 @@ public final class FriendCommand {
                         int page = ctx.getArgument("page", Integer.class);
 
                         if (name.equalsIgnoreCase(player.getName())) {
-                            player.sendRichMessage("<#fc0202>I agree, you are friends with yourself, try running <yellow><click:suggest_command:/friendlist>/friend list</click></yellow> though");
+                            player.sendMessage(TextUtil.message(MessageKeys.FRIEND_MUTUALS_SELF));
                             return;
                         }
 
@@ -86,17 +87,21 @@ public final class FriendCommand {
             .then(argument("page", IntegerArgumentType.integer(1))
                 .executes(CommandUtil.playerCommand((ctx, player) -> {
                     int page = ctx.getArgument("page", Integer.class);
-                    player.sendMessage(renderFriendListPage("<#05fcbe>Friends (page %d of %d)",
+                    player.sendMessage(renderFriendListPage(MessageKeys.FRIEND_LIST_HEADER, MessageKeys.FRIEND_LIST_ENTRY,
                         new PaginatedList<>(PlayerData.of(player).getFriends()), page)
                     );
                 }))
             )
             .executes(CommandUtil.playerCommand((ctx, player) -> {
-                player.sendMessage(renderFriendListPage("<#05fcbe>Friends (page %d of %d)",
+                player.sendMessage(renderFriendListPage(MessageKeys.FRIEND_LIST_HEADER, MessageKeys.FRIEND_LIST_ENTRY,
                     new PaginatedList<>(PlayerData.of(player).getFriends()), 1)
                 );
             }))
         )
+        .executes(ctx -> {
+            ctx.getSource().getSender().sendMessage(TextUtil.message(MessageKeys.FRIEND_FEEDBACK));
+            return 1;
+        })
         .build();
 
     private static void handleMutualFriends(Player sender, String name, int page) {
@@ -109,30 +114,30 @@ public final class FriendCommand {
             ArrayList<Friend> mutuals = data.getMutualFriends(other);
 
             if (mutuals.isEmpty()) {
-                sender.sendRichMessage("<#fc0202>You have no mutual friends with " + name + "!");
+                sender.sendMessage(TextUtil.message(MessageKeys.FRIEND_MUTUALS_NO_MUTUALS));
                 return;
             }
 
             PaginatedList<Friend> list = new PaginatedList<>(mutuals, 10);
-            sender.sendMessage(renderFriendListPage("<#05fcbe>Mutual friends with " + name + " (page %d of %d)", list, page));
+            sender.sendMessage(renderFriendListPage(MessageKeys.FRIEND_MUTUALS_FRIEND_LIST_HEADER, MessageKeys.FRIEND_MUTUALS_FRIEND_LIST_ENTRY, list, page));
 
         } catch (PlayerDataException e) {
-            sender.sendRichMessage("<#fc0202>No player with name or uuid " + name + " found!");
+            sender.sendMessage(TextUtil.message(MessageKeys.PLAYER_NOT_FOUND, name));
         }
 
     }
 
-    private static Component renderFriendListPage(String title, PaginatedList<Friend> list, int page) {
+    private static Component renderFriendListPage(String headerMessageKey, String entryMessageKey, PaginatedList<Friend> list, int page) {
 
         if (list.isEmpty()) {
-            return TextUtil.color("<#fc0202>You don't have any friends! Maybe make some?");
+            return TextUtil.message(MessageKeys.FRIEND_LIST_NO_FRIENDS);
         }
 
-        Component header = TextUtil.color(title, Math.clamp(page, 1, list.getPageCount()), list.getPageCount());
+        Component header = TextUtil.message(headerMessageKey, Math.clamp(page, 1, list.getPageCount()), list.getPageCount());
 
         for (Friend friend : list.getPage(page)) {
             header = header.appendNewline()
-                .append(TextUtil.color("  <#05fcbe>%s", friend.name));
+                .append(TextUtil.message(entryMessageKey, friend.name));
         }
 
         return header;

@@ -1,6 +1,7 @@
 package com.skyblockin.voidsurvival.social;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.storage.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.util.TextUtil;
@@ -28,7 +29,8 @@ public class FriendManager {
         HashSet<UUID> recipientRequests = pendingFriendRequests.computeIfAbsent(recipient.getUniqueId(), k -> new HashSet<>());
 
         if (senderRequests.contains(recipient.getUniqueId())) {
-            sender.sendRichMessage("<#fc0202>You have already sent this person a friend request!");
+            sender.sendMessage(TextUtil.message(MessageKeys.FRIEND_ADD_REQUEST_ALREADY_SENT, recipient.getName()));
+            //sender.sendRichMessage("<#fc0202>You have already sent this person a friend request!");
             return;
         }
 
@@ -41,14 +43,16 @@ public class FriendManager {
 
         if (!senderData.friendList.contains(recipient)) {
             senderRequests.add(recipient.getUniqueId());
-            sender.sendMessage(TextUtil.color("<#05fcbe>Sent a friend request to <yellow>%s</yellow>! Wait for them to accept.", recipient.getName()));
+            sender.sendMessage(TextUtil.message(MessageKeys.FRIEND_ADD_SENDER, recipient.getName()));
+            //sender.sendMessage(TextUtil.color("<#05fcbe>Sent a friend request to <yellow>%s</yellow>! Wait for them to accept.", recipient.getName()));
             recipient.sendMessage(
-                TextUtil.color("<#05fcbe>%s has sent you a friend request! Run <yellow><click:suggest_command:/friend add %s>/friend add %s</click></yellow> to accept!</green>",
+                TextUtil.message(MessageKeys.FRIEND_ADD_RECIPIENT,
                     sender.getName(), sender.getName(), sender.getName()
                 )
             );
         } else {
-            sender.sendRichMessage("<#fc0202>" + recipient.getName() + " is already on your friends list!");
+            sender.sendMessage(TextUtil.message(MessageKeys.FRIEND_ADD_ALREADY_FRIENDS, recipient.getName()));
+            //sender.sendRichMessage("<#fc0202>" + recipient.getName() + " is already on your friends list!");
         }
 
         // Some cleanup just because why not
@@ -69,7 +73,8 @@ public class FriendManager {
             PlayerData removedData = PlayerData.getByNameorUuid(name);
 
             if (removedData == null) {
-                sender.sendRichMessage("<#fc0202>Could not find a player with the name or uuid " + name + "!");
+                sender.sendMessage(TextUtil.message(MessageKeys.PLAYER_NOT_FOUND, name));
+                //sender.sendRichMessage("<#fc0202>Could not find a player with the name or uuid " + name + "!");
                 return;
             }
 
@@ -77,11 +82,13 @@ public class FriendManager {
                 senderData.friendList.remove(removedData.asFriend());
                 removedData.friendList.remove(senderData.asFriend());
 
-                sender.sendRichMessage("<#05fcbe>Removed " + name + " from your friends list!");
+                sender.sendMessage(TextUtil.message(MessageKeys.FRIEND_REMOVE_SENDER, name));
+                //sender.sendRichMessage("<#05fcbe>Removed " + name + " from your friends list!");
 
                 Player player = Bukkit.getPlayer(removedData.uuid);
                 if (player != null) {
-                    player.sendRichMessage("<#05fcbe>" + sender.getName() + " removed you from their friends list!");
+                    player.sendMessage(TextUtil.message(MessageKeys.FRIEND_REMOVE_RECIPIENT));
+                    //player.sendRichMessage("<#05fcbe>" + sender.getName() + " removed you from their friends list!");
                 }
 
                 try {
@@ -91,11 +98,13 @@ public class FriendManager {
                 }
 
             } else {
-                sender.sendRichMessage("<#fc0202>" + name + " is not on your friends list!");
+                sender.sendMessage(TextUtil.message(MessageKeys.FRIEND_REMOVE_NOT_FRIENDS));
+                //sender.sendRichMessage("<#fc0202>" + name + " is not on your friends list!");
             }
 
         } catch (Exception ex) {
-            sender.sendRichMessage("<#fc0202>Could not find a player with the name or uuid " + name + "!");
+            sender.sendMessage(TextUtil.message(MessageKeys.PLAYER_NOT_FOUND, name));
+            //sender.sendRichMessage("<#fc0202>Could not find a player with the name or uuid " + name + "!");
         }
 
     }
@@ -114,8 +123,10 @@ public class FriendManager {
              senderData.friendList.add(recipient);
              recipientData.friendList.add(sender);
 
-             recipient.sendMessage(TextUtil.color("<#05fcbe>%s has been added to your friend list!", sender.getName()));
-             sender.sendMessage(TextUtil.color("<#05fcbe>%s has accepted your friend request!", recipient.getName()));
+             recipient.sendMessage(TextUtil.message(MessageKeys.FRIEND_ADD_ACCEPT_RECIPIENT, sender.getName()));
+             sender.sendMessage(TextUtil.message(MessageKeys.FRIEND_ADD_ACCEPT_SENDER, recipient.getName()));
+             //recipient.sendMessage(TextUtil.color("<#05fcbe>%s has been added to your friend list!", sender.getName()));
+             //sender.sendMessage(TextUtil.color("<#05fcbe>%s has accepted your friend request!", recipient.getName()));
 
              uuidSet.remove(recipient.getUniqueId());
 

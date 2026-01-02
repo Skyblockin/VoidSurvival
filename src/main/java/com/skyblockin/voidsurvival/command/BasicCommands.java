@@ -2,13 +2,10 @@ package com.skyblockin.voidsurvival.command;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.skyblockin.voidsurvival.VoidSurvival;
-import com.skyblockin.voidsurvival.config.Pair;
-import com.skyblockin.voidsurvival.gui.Gui;
 import com.skyblockin.voidsurvival.leaderboard.LeaderboardType;
-import com.skyblockin.voidsurvival.storage.Accessors;
+import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.storage.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
-import com.skyblockin.voidsurvival.storage.Position;
 import com.skyblockin.voidsurvival.util.CommandUtil;
 import com.skyblockin.voidsurvival.util.DialogUtil;
 import com.skyblockin.voidsurvival.util.PlayerUtil;
@@ -18,16 +15,11 @@ import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.data.dialog.DialogBase;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.Campfire;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemType;
 
 import java.util.List;
 
@@ -44,7 +36,8 @@ public final class BasicCommands {
         for (PlayerData data : leaderboard) {
             counter++;
             title = title.appendNewline()
-                .append(TextUtil.color("<!b>%s%d. %s: %d",
+                //"<!b>%s%d. %s: %d"
+                .append(TextUtil.message(MessageKeys.LEADERBOARD_ENTRY,
                     getRankingColor(counter), counter, data.lastKnownUserName, type == LeaderboardType.KILLS ? data.kills : data.killStreak)
                 );
         }
@@ -68,7 +61,7 @@ public final class BasicCommands {
 
         List<PlayerData> leaderboard = VoidSurvival.getInstance().getLeaderboardManager().getLeaderboard(type, limit);
 
-        return renderLeaderboard(Component.text("Top " + type.getDisplayName(), NamedTextColor.GOLD, TextDecoration.BOLD), type, leaderboard);
+        return renderLeaderboard(TextUtil.message(MessageKeys.LEADERBOARD_HEADER, type.getDisplayName()), type, leaderboard);
     }
 
     private static void handlePlayerHome(Player player, String homeName) {
@@ -78,9 +71,9 @@ public final class BasicCommands {
 
         if (home == null) {
             if (homeName.equals("island")) {
-                player.sendRichMessage("<red>Your default home has not been set. You can set it by running <dark_red>/sethome");
+                player.sendMessage(TextUtil.message(MessageKeys.HOME_DEFAULT_NOT_SET));
             } else {
-                player.sendRichMessage("<red>Could not find a home with the name '" + homeName + "'. You can set it by running <dark_red>/sethome " + homeName);
+                player.sendMessage(TextUtil.message(MessageKeys.HOME_NOT_FOUND, homeName));
             }
             return;
         }
@@ -89,7 +82,7 @@ public final class BasicCommands {
 
         // Check for suffocation
         if (home.getWorld().getBlockAt(home.getBlockX(), (int) (home.getY() + eyeHeight), home.getBlockZ()).isSuffocating()) {
-            player.sendRichMessage("<red>Your home location is no longer supported by solid blocks or became obstructed.");
+            player.sendMessage(TextUtil.message(MessageKeys.HOME_OBSTRUCTED));
             return;
         }
 
@@ -98,11 +91,11 @@ public final class BasicCommands {
         if (block.isSolid()) {
             if (block.getRelative(BlockFace.DOWN).isSolid()) {
                 player.teleportAsync(home).thenAccept(success -> {
-                    player.sendRichMessage("<green>You have been teleported to your home.");
+                    player.sendMessage(TextUtil.message(MessageKeys.HOME_TELEPORTED));
                 });
             } else {
                 player.teleportAsync(home.add(0, 1, 0)).thenAccept(success -> {
-                    player.sendRichMessage("<green>You have been teleported to your home.");
+                    player.sendMessage(TextUtil.message(MessageKeys.HOME_TELEPORTED));
                 });
             }
         } else {
@@ -112,12 +105,12 @@ public final class BasicCommands {
             }
 
             if (block.getY() == block.getWorld().getMinHeight()) {
-                player.sendRichMessage("<red>Your home location is no longer supported by solid blocks or became obstructed.");
+                player.sendMessage(TextUtil.message(MessageKeys.HOME_OBSTRUCTED));
                 return;
             }
 
             player.teleportAsync(home).thenAccept(success -> {
-                player.sendRichMessage("<green>You have been teleported to your home.");
+                player.sendMessage(TextUtil.message(MessageKeys.HOME_TELEPORTED));
             });
         }
     }
@@ -184,14 +177,14 @@ public final class BasicCommands {
                         List.of(
                             DialogUtil.buildActionButton("Yes", 100, audience -> {
                                 PlayerData.of(player).setHome("island", player.getLocation());
-                                player.sendRichMessage("<green>Set your home at your current location.");
+                                player.sendMessage(TextUtil.message(MessageKeys.HOME_SET));
                             }),
                             DialogUtil.buildActionButton("No", 100, audience -> {
-                                audience.sendMessage(TextUtil.color("<green>Your home was not set."));
+                                audience.sendMessage(TextUtil.message(MessageKeys.HOME_NOT_SET));
                             })
                         ),
                         DialogUtil.buildActionButton("Close", 100, audience -> {
-                            audience.sendMessage(TextUtil.color("<green>Your home was not set."));
+                            audience.sendMessage(TextUtil.message(MessageKeys.HOME_NOT_SET));
                         }),
                         2
                     ))
@@ -209,16 +202,12 @@ public final class BasicCommands {
                 PlayerData data = PlayerData.of(player);
 
                 if (data.hasGeneratedIsland) {
-                    player.sendRichMessage("<red>You made an island already. " +
-                        "If you somehow lost it and you're screwed, say something in the Discord server, " +
-                        "maybe an admin will feel nice and give you a helping hand! " +
-                        "If you did not lose it, simply try running <dark_red>/home</dark_red>!"
-                    );
+                    player.sendMessage(TextUtil.message(MessageKeys.ISLAND_ALREADY_CREATED));
                     return;
                 }
 
                 if (data.generatingIsland) {
-                    player.sendRichMessage("<red>Hey chill, we're already generating an island for you!");
+                    player.sendMessage(TextUtil.message(MessageKeys.ISLAND_ALREADY_GENERATING));
                     return;
                 }
 
@@ -229,7 +218,7 @@ public final class BasicCommands {
                 IslandGenerator generator = VoidSurvival.getInstance()
                     .getIslandGenerator();
 
-                player.sendRichMessage("<green>Generating your island, please wait...");
+                player.sendMessage(TextUtil.message(MessageKeys.ISLAND_GENERATING));
 
                 generator.findChunkForIsland(player.getWorld())
                     .thenAccept(chunk -> VoidSurvival.getInstance().runTask(() -> {
@@ -248,11 +237,11 @@ public final class BasicCommands {
                                 long elapsedTime = System.currentTimeMillis() - start;
 
                                 if (elapsedTime > 3000) {
-                                    player.sendRichMessage("<green>Woah! That took a while, sorry about that. You have been teleported to your island.");
+                                    player.sendMessage(TextUtil.message(MessageKeys.ISLAND_TELEPORT_LONG_WAIT));
                                 } else if (elapsedTime > 1000) {
-                                    player.sendRichMessage("<green>Sorry about the wait. You have been teleported to your island.");
+                                    player.sendMessage(TextUtil.message(MessageKeys.ISLAND_TELEPORT_SMALL_WAIT));
                                 } else {
-                                    player.sendRichMessage("<green>You have been teleported to your island.");
+                                    player.sendMessage(TextUtil.message(MessageKeys.ISLAND_TELEPORT));
                                 }
 
                             });
