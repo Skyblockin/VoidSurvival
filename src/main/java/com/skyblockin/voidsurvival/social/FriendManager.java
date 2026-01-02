@@ -87,7 +87,7 @@ public class FriendManager {
 
                 Player player = Bukkit.getPlayer(removedData.uuid);
                 if (player != null) {
-                    player.sendMessage(TextUtil.message(MessageKeys.FRIEND_REMOVE_RECIPIENT));
+                    player.sendMessage(TextUtil.message(MessageKeys.FRIEND_REMOVE_RECIPIENT, sender.getName()));
                     //player.sendRichMessage("<#05fcbe>" + sender.getName() + " removed you from their friends list!");
                 }
 
@@ -98,7 +98,7 @@ public class FriendManager {
                 }
 
             } else {
-                sender.sendMessage(TextUtil.message(MessageKeys.FRIEND_REMOVE_NOT_FRIENDS));
+                sender.sendMessage(TextUtil.message(MessageKeys.FRIEND_REMOVE_NOT_FRIENDS, name));
                 //sender.sendRichMessage("<#fc0202>" + name + " is not on your friends list!");
             }
 
