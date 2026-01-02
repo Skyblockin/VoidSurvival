@@ -1,29 +1,28 @@
 package com.skyblockin.voidsurvival.command.admin;
 
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.storage.PlayerData;
-import com.skyblockin.voidsurvival.storage.Position;
+import com.skyblockin.voidsurvival.math.Position;
 import com.skyblockin.voidsurvival.util.CommandUtil;
-import com.skyblockin.voidsurvival.util.DialogUtil;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
-import io.papermc.paper.dialog.Dialog;
-import io.papermc.paper.registry.data.dialog.DialogBase;
+import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Campfire;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -32,8 +31,47 @@ import static io.papermc.paper.command.brigadier.Commands.literal;
 
 public final class Admin {
 
+    private static final List<String> VALID_STATISTIC_NAMES;
+
+    static {
+        VALID_STATISTIC_NAMES = Arrays.stream(Statistic.values())
+            .map(Enum::name)
+            .toList();
+    }
+
     public static final LiteralCommandNode<CommandSourceStack> COMMAND = literal("admin")
         .requires(ctx -> ctx.getSender().isOp())
+        .then(literal("setstatistic")
+            .then(argument("players", ArgumentTypes.players())
+                .then(argument("statistic", StringArgumentType.word())
+                    .suggests(CommandUtil.suggest(() -> VALID_STATISTIC_NAMES))
+                    .then(argument("material", ArgumentTypes.namespacedKey())
+                        .then(argument("value", IntegerArgumentType.integer(0))
+                            .executes(ctx -> {
+
+                                Statistic statistic = Statistic.valueOf(ctx.getArgument("statistic", String.class).toUpperCase());
+                                NamespacedKey materialKey = ctx.getArgument("material", NamespacedKey.class);
+                                Material material = Registry.MATERIAL.get(materialKey);
+                                int value = ctx.getArgument("value", Integer.class);
+
+                                if (material == null) {
+                                    ctx.getSource().getSender().sendRichMessage("<red>That is not a valid material!");
+                                    return 1;
+                                }
+
+                                List<Player> players = ctx.getArgument("players", PlayerSelectorArgumentResolver.class).resolve(ctx.getSource());
+
+                                for (Player player : players) {
+                                    player.setStatistic(statistic, material, value);
+                                }
+
+                                return 1;
+                            })
+                        )
+                    )
+                )
+            )
+        )
         .then(literal("setsigncommand")
             .then(argument("command", StringArgumentType.greedyString())
                 .executes(CommandUtil.playerCommand((ctx, player) -> {
