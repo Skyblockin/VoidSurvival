@@ -8,6 +8,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.Objects;
 
 public class MessageManager {
 
@@ -43,6 +44,10 @@ public class MessageManager {
 
         if (message == null) {
             return Component.text(messageKey);
+        }
+
+        for (int i = 0; i < objects.length; i++) {
+            message = message.replace("{" + i + "}", Objects.toString(objects[i]));
         }
 
         return TextUtil.color(message, objects);
