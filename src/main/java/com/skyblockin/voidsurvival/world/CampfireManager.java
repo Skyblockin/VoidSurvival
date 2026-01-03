@@ -38,7 +38,6 @@ import java.util.UUID;
 public class CampfireManager implements Listener {
 
     private final HashMap<UUID, ArrayList<UUID>> campfireHolograms = new HashMap<>();
-    public static final HashMap<BlockPosition, Pair<String, Position>> CAMPFIRE_CACHE = new HashMap<>();
 
     @EventHandler
     public void onCampfireLoad(CampfireLoadEvent event) {
@@ -171,7 +170,6 @@ public class CampfireManager implements Listener {
 
             if (campfireId != null && warpPosition != null) {
                 event.setCancelled(true);
-                CAMPFIRE_CACHE.put(BlockPosition.ofBlock(block), new Pair<>(campfireId, warpPosition));
                 CampfireClickEvent.callEvent(player, block, campfireId);
             }
         }
@@ -194,17 +192,15 @@ public class CampfireManager implements Listener {
 
     public static Pair<String, Position> getCampfireData(Location location) {
 
-        Pair<String, Position> entry = CAMPFIRE_CACHE.get(BlockPosition.ofLocation(location));
-
-        if (entry == null && location.getBlock().getState() instanceof Campfire campfire) {
+        if (location.getBlock().getState() instanceof Campfire campfire) {
 
             String campfireId = Accessors.CAMPFIRE_WARP_ID.read(campfire);
             Position warpPosition = Accessors.CAMPFIRE_WARP_POSITION.read(campfire);
 
-            entry = new Pair<>(campfireId, warpPosition);
+            return new Pair<>(campfireId, warpPosition);
         }
 
-        return entry;
+        return null;
     }
 
     private void deleteCampfireHologram(Player player, String campfireId) {

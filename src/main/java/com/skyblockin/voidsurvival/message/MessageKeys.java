@@ -53,6 +53,7 @@ public final class MessageKeys {
     public static final String CAMPFIRE_NOT_FOUND = "campfire.not-found";
     public static final String CAMPFIRE_NONE_UNLOCKED = "campfire.none-unlocked";
     public static final String CAMPFIRE_NO_COMBAT_WARP = "campfire.combat-warp-blocked";
+    public static final String CAMPFIRE_INVALID = "campfire.invalid-campfire";
     public static final String CAMPFIRE_WARPED = "campfire.warped";
     public static final String CAMPFIRE_ALREADY_AT_CAMPFIRE = "campfire.already-at-campfire";
 

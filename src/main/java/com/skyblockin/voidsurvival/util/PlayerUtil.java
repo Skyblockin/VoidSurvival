@@ -10,6 +10,7 @@ import com.skyblockin.voidsurvival.math.Position;
 import com.skyblockin.voidsurvival.world.CampfireManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
@@ -18,9 +19,7 @@ import org.bukkit.inventory.ItemType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.UUID;
+import java.util.*;
 
 @SuppressWarnings("UnstableApiUsage")
 public class PlayerUtil {
@@ -77,30 +76,31 @@ public class PlayerUtil {
 
         for (var entry : data.campfires.entrySet()) {
 
-            String warpName = entry.getKey();
-            Location warpLocation = entry.getValue();
+            String campfireName = entry.getKey();
+            Location campfireLocation = entry.getValue();
 
             gui.addItem(ItemType.CAMPFIRE.createItemStack(meta -> {
-                meta.customName(TextUtil.color("<!i><#ffa500>%s", warpName));
+                meta.customName(TextUtil.color("<!i><#ffa500>%s", campfireName));
             }), event -> {
 
-                Pair<String, Position> campfireData = CampfireManager.getCampfireData(warpLocation);
+                Pair<String, Position> campfireData = CampfireManager.getCampfireData(campfireLocation);
+                Player clicker = (Player) event.getWhoClicked();
 
                 if (campfireData == null) {
+                    data.campfires.remove(campfireName);
+                    clicker.sendMessage(TextUtil.message(MessageKeys.CAMPFIRE_INVALID, campfireName));
                     return;
                 }
-
-                Player clicker = (Player) event.getWhoClicked();
 
                 if (VoidSurvival.getInstance().getCombatTracker().isCombatTagged(clicker)) {
                     clicker.sendMessage(TextUtil.message(MessageKeys.CAMPFIRE_NO_COMBAT_WARP));
                     return;
                 }
 
-                String campfireName = campfireData.left();
-                Location campfireLocation = campfireData.right().toLocation(warpLocation.getWorld());
+                String warpName = campfireData.left();
+                Location warpLocation = campfireData.right().toLocation(campfireLocation.getWorld());
 
-                warpToCampfire(campfireName, campfireLocation, player);
+                warpToCampfire(warpName, warpLocation, clicker);
             });
         }
 
