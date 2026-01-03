@@ -5,7 +5,6 @@ import com.skyblockin.voidsurvival.config.Pair;
 import com.skyblockin.voidsurvival.event.CampfireClickEvent;
 import com.skyblockin.voidsurvival.event.CampfireLoadEvent;
 import com.skyblockin.voidsurvival.event.CampfireUnloadEvent;
-import com.skyblockin.voidsurvival.math.BlockPosition;
 import com.skyblockin.voidsurvival.math.Position;
 import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.storage.Accessors;
