@@ -48,7 +48,7 @@ public class CampfireManager implements Listener {
         Location center = event.getLocation().add(0.5, 0, 0.5);
 
         if (!data.hasUnlockedCampfire(campfireId)) {
-            createCampfireHologram("<gray>Unlit Campfire [ʀɪɢʜᴛ-ᴄʟɪᴄᴋ]", player, center, campfireId);
+            createCampfireHologram("<dark_gray>Unlit Campfire [ʀɪɢʜᴛ-ᴄʟɪᴄᴋ]", player, center, campfireId);
         } else {
             createCampfireHologram("<gradient:#c10529:#f64510>Campfire</gradient>", player, center, campfireId);
             BlockData litCampFire = BlockType.CAMPFIRE.createBlockData(campfire -> campfire.setLit(true));

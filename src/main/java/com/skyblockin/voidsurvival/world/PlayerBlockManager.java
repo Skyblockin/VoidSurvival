@@ -104,33 +104,6 @@ public class PlayerBlockManager implements Listener {
         VoidSurvival.logInfo("Loaded ore generation with %d entries", this.regenerationTimes.size());
     }
 
-    private boolean isLocationWithinChunk(Location location, Chunk chunk) {
-        return location.getChunk().equals(chunk);
-    }
-
-    private void sendLitCampfires(Player player, Chunk chunk) {
-
-        BlockData litCampFire = BlockType.CAMPFIRE.createBlockData(campfire -> campfire.setLit(true));
-
-        List<String> invalidCampFires = new ArrayList<>();
-
-        PlayerData data = PlayerData.of(player);
-
-        data.campfires.forEach((name, location) -> {
-            if (isLocationWithinChunk(location, chunk)) {
-                if (location.getBlock().getType() == Material.CAMPFIRE) {
-                    player.sendBlockChange(location, litCampFire);
-                } else {
-                    invalidCampFires.add(name);
-                }
-            }
-        });
-
-        for (String name : invalidCampFires) {
-            data.campfires.remove(name);
-        }
-    }
-
     @EventHandler
     public void onPlayerChunkLoad(PlayerChunkLoadEvent event) {
 

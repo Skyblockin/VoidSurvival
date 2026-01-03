@@ -229,32 +229,6 @@ public final class Admin {
                 }))
             )
         )
-        .then(literal("deletecampfirewarp")
-            .executes(CommandUtil.playerCommand((ctx, player) -> {
-
-                Block targetBlock = player.getTargetBlockExact(10);
-
-                if (targetBlock != null && targetBlock.getState() instanceof Campfire campfire) {
-
-                    String name = Accessors.CAMPFIRE_WARP_ID.read(campfire);
-
-                    if (name != null) {
-
-                        Accessors.CAMPFIRE_WARP_ID.remove(campfire);
-                        Accessors.CAMPFIRE_WARP_POSITION.remove(campfire);
-                        campfire.update();
-
-                        player.sendRichMessage("<green>Successfully deleted a campfire with the name '" + name + "'");
-                    } else {
-                        player.sendRichMessage("<red>That is a campfire, but not a special warpable campfire!");
-                    }
-
-                } else {
-                    player.sendRichMessage("<red>That's not a campfire!");
-                }
-
-            }))
-        )
         .then(literal("removecampfireaccess")
             .then(argument("players", ArgumentTypes.players())
                 .then(argument("name", StringArgumentType.greedyString())
