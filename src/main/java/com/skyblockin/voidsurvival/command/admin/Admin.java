@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.event.CampfireLoadEvent;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.math.Position;
@@ -216,6 +217,8 @@ public final class Admin {
                         Accessors.CAMPFIRE_WARP_ID.write(campfire, name);
                         Accessors.CAMPFIRE_WARP_POSITION.write(campfire, Position.ofLocation(player.getLocation()));
                         campfire.update();
+
+                        CampfireLoadEvent.callEvent(player, name, targetBlock.getLocation());
 
                         player.sendRichMessage("<green>Successfully created a new campfire with the name '" + name + "'");
 

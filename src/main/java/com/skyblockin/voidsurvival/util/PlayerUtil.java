@@ -7,9 +7,11 @@ import com.skyblockin.voidsurvival.gui.GuiItem;
 import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.math.Position;
+import com.skyblockin.voidsurvival.world.CampfireManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Sound;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
@@ -82,7 +84,7 @@ public class PlayerUtil {
                 meta.customName(TextUtil.color("<!i><#ffa500>%s", warpName));
             }), event -> {
 
-                Pair<String, Position> campfireData = VoidSurvival.getInstance().getPlayerBlockManager().getCampfireData(warpLocation);
+                Pair<String, Position> campfireData = CampfireManager.getCampfireData(warpLocation);
 
                 if (campfireData == null) {
                     return;

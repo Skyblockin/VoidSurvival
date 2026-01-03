@@ -4,29 +4,22 @@ import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Pair;
 import com.skyblockin.voidsurvival.math.BlockPosition;
 import com.skyblockin.voidsurvival.math.ChunkPosition;
-import com.skyblockin.voidsurvival.math.Position;
-import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.region.Flags;
 import com.skyblockin.voidsurvival.storage.*;
 import com.skyblockin.voidsurvival.util.CustomTimeUnit;
 import com.skyblockin.voidsurvival.util.Functions;
 import com.skyblockin.voidsurvival.util.PlayerUtil;
-import com.skyblockin.voidsurvival.util.TextUtil;
 import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockType;
-import org.bukkit.block.Campfire;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.MainHand;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -37,7 +30,6 @@ public class PlayerBlockManager implements Listener {
 
     private final HashMap<BlockType, Pair<Integer, Integer>> regenerationTimes = new HashMap<>();
     private final HashMap<UUID, HashMap<ChunkPosition, HashMap<BlockPosition, Long>>> playerBlockChanges = new HashMap<>();
-    private final HashMap<BlockPosition, Pair<String, Position>> campfireCache = new HashMap<>();
 
     public PlayerBlockManager() {
 
@@ -140,76 +132,10 @@ public class PlayerBlockManager implements Listener {
     }
 
     @EventHandler
-    public void onCampfireInteract(PlayerInteractEvent event) {
-
-        Player player = event.getPlayer();
-        Block block = event.getClickedBlock();
-
-        // Don't do anything if the opped player breaks the campfire
-        if (player.isOp() && event.getAction().isLeftClick()) {
-            return;
-        }
-
-        // Only allow clicking with main hand
-        if (event.getHand() != EquipmentSlot.HAND) {
-            return;
-        }
-
-        if (block != null && block.getState() instanceof Campfire campfire) {
-
-            // The block is loaded here anyway so it's fine to do this
-            String campfireId = Accessors.CAMPFIRE_WARP_ID.read(campfire);
-            Position warpPosition = Accessors.CAMPFIRE_WARP_POSITION.read(campfire);
-
-            if (campfireId != null && warpPosition != null) {
-
-                event.setCancelled(true);
-
-                PlayerData data = PlayerData.of(player);
-                BlockData blockData = BlockType.CAMPFIRE.createBlockData(unlitCampfire -> unlitCampfire.setLit(true));
-
-                campfireCache.put(BlockPosition.ofBlock(block), new Pair<>(campfireId, warpPosition));
-
-                if (!data.hasUnlockedCampfire(campfireId)) {
-
-                    if (data.campfires.size() >= data.maxCampfires) {
-                        player.sendMessage(TextUtil.message(MessageKeys.CAMPFIRE_TOO_MANY_CAMPFIRES, data.campfires.size(), data.maxCampfires));
-                    } else {
-                        PlayerData.of(player).unlockCampfire(campfireId, block.getLocation());
-                        VoidSurvival.getInstance().runTaskLater(() -> player.sendBlockChange(block.getLocation(), blockData), 1);
-                        player.sendMessage(TextUtil.message(MessageKeys.CAMPFIRE_UNLOCKED));
-                    }
-
-                } else {
-                    PlayerUtil.openWarpMenu(player);
-                    VoidSurvival.getInstance().runTaskLater(() -> player.sendBlockChange(block.getLocation(), blockData), 1);
-                }
-            }
-        }
-    }
-
-    public Pair<String, Position> getCampfireData(Location location) {
-
-        Pair<String, Position> entry = campfireCache.get(BlockPosition.ofLocation(location));
-
-        if (entry == null && location.getBlock().getState() instanceof Campfire campfire) {
-
-            String campfireId = Accessors.CAMPFIRE_WARP_ID.read(campfire);
-            Position warpPosition = Accessors.CAMPFIRE_WARP_POSITION.read(campfire);
-
-            entry = new Pair<>(campfireId, warpPosition);
-        }
-
-        return entry;
-    }
-
-    @EventHandler
     public void onPlayerChunkLoad(PlayerChunkLoadEvent event) {
 
         Player player = event.getPlayer();
         Chunk chunk = event.getChunk();
-
-        VoidSurvival.getInstance().runTaskLater(() -> sendLitCampfires(player, chunk), 1);
 
         HashMap<ChunkPosition, HashMap<BlockPosition, Long>> changes = playerBlockChanges.get(event.getPlayer().getUniqueId());
 

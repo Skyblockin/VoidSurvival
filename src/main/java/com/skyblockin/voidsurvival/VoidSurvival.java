@@ -21,6 +21,7 @@ import com.skyblockin.voidsurvival.social.FriendManager;
 import com.skyblockin.voidsurvival.storage.*;
 import com.skyblockin.voidsurvival.util.CustomTimeUnit;
 import com.skyblockin.voidsurvival.util.FileUtil;
+import com.skyblockin.voidsurvival.world.CampfireManager;
 import com.skyblockin.voidsurvival.world.IslandGenerator;
 import com.skyblockin.voidsurvival.customoregen.OreGenerator;
 import com.skyblockin.voidsurvival.world.PlayerBlockManager;
@@ -150,7 +151,8 @@ public class VoidSurvival extends JavaPlugin {
             new EntityEquipmentHandler(),
             this.recipeManager,
             new AbilityListener(),
-            new PlayerListener()
+            new PlayerListener(),
+            new CampfireManager()
         );
 
         this.allowJoins = true;

@@ -11,7 +11,9 @@ import com.skyblockin.voidsurvival.social.FriendList;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.intellij.lang.annotations.Language;
 
+import javax.swing.plaf.nimbus.State;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -338,6 +340,29 @@ public class Database {
 
         } catch (Exception ex) {
             throw new PlayerDataException("Failed to load player data: " + ex.getMessage(), ex);
+        }
+
+    }
+
+    public static void deleteCampfireFromEveryoneById(String campfireId) {
+
+        PlayerData.PLAYER_DATA_MAP.forEach((id, data) -> {
+            data.campfires.remove(campfireId);
+        });
+
+        try {
+
+            PreparedStatement statement = getConnection().prepareStatement(
+                 "UPDATE players SET player_data = JSON_REMOVE(player_data, CONCAT('$.campfires.', ?, ')'))"
+            );
+
+            statement.setString(1, campfireId);
+            statement.executeUpdate();
+
+            statement.close();
+
+        } catch (Exception ex) {
+            VoidSurvival.logError("Failed to delete campfire data for campfireId '" + campfireId + "'", ex);
         }
 
     }
