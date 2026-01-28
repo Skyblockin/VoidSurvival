@@ -7,6 +7,7 @@ import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Json;
 import com.skyblockin.voidsurvival.leaderboard.LeaderboardType;
 import com.skyblockin.voidsurvival.math.BlockPosition;
+import com.skyblockin.voidsurvival.math.Position;
 import com.skyblockin.voidsurvival.social.FriendList;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -49,6 +50,15 @@ public class Database {
                 world TEXT,
                 table_id TEXT,
                 PRIMARY KEY (location, world)
+            )
+            """;
+
+        String createCampfireTable =
+            """
+            CREATE TABLE IF NOT EXISTS campfires (
+                id TEXT PRIMARY KEY,
+                location TEXT,
+                warp_location TEXT
             )
             """;
 
@@ -224,6 +234,26 @@ public class Database {
         return null;
     }
 
+    public static void saveCampfire(String campfireId, Location campfireLocation, Location campfireWarpLocation) {
+
+        try {
+
+            PreparedStatement statement = getConnection().prepareStatement("INSERT INTO campfires (id, location, warp_location) VALUES (?, ?, ?)");
+
+            statement.setString(1, campfireId);
+            statement.setString(2, Json.toString(campfireLocation));
+            statement.setString(3, Json.toString(campfireWarpLocation));
+
+            statement.executeUpdate();
+
+            statement.close();
+
+        } catch (Exception ex) {
+            VoidSurvival.logError("Failed to save campfire with id '" + campfireId + "': ", ex);
+        }
+
+    }
+
     public static void saveIsland(int x, int z) {
 
         try {
@@ -377,6 +407,7 @@ public class Database {
         data.lastKnownUserName = playerData.path("lastKnownUserName").asText();
         data.kills = playerData.path("kills").asInt(0);
         data.killStreak = playerData.path("killStreak").asInt(0);
+        data.chestsLooted = playerData.path("chestsLooted").asInt(0);
         data.friendList = Json.convert(playerData.path("friendList"), FriendList.class, new FriendList());
         data.lastChestOpenTimes = Json.convert(playerData.path("lastChestOpenTimes"), new TypeReference<>() {}, new HashMap<>());
         data.homes = Json.convert(playerData.path("homes"), NamedLocationMap.class, new NamedLocationMap());

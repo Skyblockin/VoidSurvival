@@ -66,6 +66,7 @@ public class PlayerData {
     public int maxCampfires = 9;
     public int kills = 0;
     public int killStreak = 0;
+    public int chestsLooted = 0;
     public NamedLocationMap campfires = new NamedLocationMap();
     public NamedLocationMap homes = new NamedLocationMap();
     public HashMap<Long, Long> lastChestOpenTimes = new HashMap<>();

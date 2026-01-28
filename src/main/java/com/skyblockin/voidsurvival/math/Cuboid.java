@@ -1,17 +1,25 @@
 package com.skyblockin.voidsurvival.math;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.google.common.base.Preconditions;
+import com.google.gson.annotations.SerializedName;
 import org.bukkit.Location;
 
 import java.io.IOException;
+import java.io.Serial;
 
 @JsonDeserialize(using = Cuboid.Deserializer.class)
+@JsonSerialize(using = Cuboid.Serializer.class)
 public class Cuboid {
 
     private final int minX;
@@ -41,10 +49,12 @@ public class Cuboid {
         this(min.x(), min.y(), min.z(), max.x(), max.y(), max.z());
     }
 
+    @JsonIgnore
     public BlockPosition getMin() {
         return new BlockPosition(minX, minY, minZ);
     }
 
+    @JsonIgnore
     public BlockPosition getMax() {
         return new BlockPosition(maxX, maxY, maxZ);
     }
@@ -61,6 +71,27 @@ public class Cuboid {
         return new Cuboid(this.minX + x, this.minY + y, this.minZ + z, this.maxX + x, this.maxY + y, this.maxZ + z);
     }
 
+    public static class Serializer extends StdSerializer<Cuboid> {
+
+        protected Serializer() {
+            super(Cuboid.class);
+        }
+
+        @Override
+        public void serialize(Cuboid cuboid, JsonGenerator gen, SerializerProvider serializerProvider) throws IOException {
+
+            gen.writeStartArray();
+            gen.writeNumber(cuboid.minX);
+            gen.writeNumber(cuboid.minY);
+            gen.writeNumber(cuboid.minZ);
+            gen.writeNumber(cuboid.maxX);
+            gen.writeNumber(cuboid.maxY);
+            gen.writeNumber(cuboid.maxZ);
+            gen.writeEndArray();
+
+        }
+    }
+
     public static class Deserializer extends StdDeserializer<Cuboid> {
 
         protected Deserializer() {
@@ -68,7 +99,7 @@ public class Cuboid {
         }
 
         @Override
-        public Cuboid deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
+        public Cuboid deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
 
             JsonNode node = p.getCodec().readTree(p);
 

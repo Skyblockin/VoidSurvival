@@ -4,10 +4,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.skyblockin.voidsurvival.math.BlockPosition;
 import com.skyblockin.voidsurvival.math.Cuboid;
 import com.skyblockin.voidsurvival.math.Position;
 import com.skyblockin.voidsurvival.region.Flags;
 import com.skyblockin.voidsurvival.region.MobCapMap;
+import org.bukkit.block.Block;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,11 +19,13 @@ import java.util.Set;
 public class DungeonVariables {
 
     public String schematic;
+    public Cuboid outerCuboid;
     public Cuboid spawnCuboid;
     public ArrayList<Cuboid> oreCuboids = new ArrayList<>();
     public RegionFlags spawnFlags = new RegionFlags();
     public RegionFlags regionFlags = new RegionFlags();
     public ArrayList<RegionFlags> oreFlags = new ArrayList<>();
+    public ArrayList<ChestLocation> lootChests = new ArrayList<>();
 
     public Position teleportLocation;
 
@@ -87,5 +91,7 @@ public class DungeonVariables {
         }
 
     }
+
+    public record ChestLocation(String id, int x, int y, int z) {}
 
 }

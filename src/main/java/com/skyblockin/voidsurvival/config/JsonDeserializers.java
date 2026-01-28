@@ -1,5 +1,6 @@
 package com.skyblockin.voidsurvival.config;
 
+import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -108,6 +109,7 @@ public class JsonDeserializers {
     public static final DeathProtectionDeserializer DEATH_PROTECTION = new DeathProtectionDeserializer();
     public static final UseCooldownDeserializer USE_COOLDOWN = new UseCooldownDeserializer();
     public static final EntityTypeKeyDeserializer ENTITY_TYPE_KEY = new EntityTypeKeyDeserializer();
+    public static final LocationDeserializer LOCATION = new LocationDeserializer();
 
 
     private static <T> StdDelegatingDeserializer<T> delegate(Converter<?, T> converter) {
@@ -968,6 +970,35 @@ public class JsonDeserializers {
             List<ConsumeEffect> effects = Json.convert(p.getCodec().readTree(p), new TypeReference<>() {});
 
             return DeathProtection.deathProtection(effects);
+        }
+    }
+
+    public static class LocationDeserializer extends StdDeserializer<Location> {
+
+        protected LocationDeserializer() {
+            super(Location.class);
+        }
+
+        @Override
+        public Location deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+
+            JsonNode node = p.getCodec().readTree(p);
+
+            String worldName = node.get("world").asText();
+
+            World world = Bukkit.getWorld(worldName);
+
+            if (world == null) {
+                return null;
+            }
+
+            double x = node.get("x").asDouble();
+            double y = node.get("y").asDouble();
+            double z = node.get("z").asDouble();
+            float yaw = (float) node.get("yaw").asDouble();
+            float pitch = (float) node.get("pitch").asDouble();
+
+            return new Location(world, x, y, z, yaw, pitch);
         }
     }
 }

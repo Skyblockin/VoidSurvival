@@ -2,7 +2,9 @@ package com.skyblockin.voidsurvival.command.admin;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import com.sk89q.worldedit.WorldEditException;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.event.CampfireLoadEvent;
 import com.skyblockin.voidsurvival.storage.Accessors;
@@ -10,9 +12,13 @@ import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.math.Position;
 import com.skyblockin.voidsurvival.util.CommandUtil;
 import com.skyblockin.voidsurvival.util.TextUtil;
+import com.skyblockin.voidsurvival.world.WorldEditUtil;
+import com.skyblockin.voidsurvival.world.WorldGuardUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
+import io.papermc.paper.math.BlockPosition;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -22,6 +28,7 @@ import org.bukkit.block.Campfire;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,6 +37,7 @@ import java.util.Map;
 import static io.papermc.paper.command.brigadier.Commands.argument;
 import static io.papermc.paper.command.brigadier.Commands.literal;
 
+@SuppressWarnings("UnstableApiUsage")
 public final class Admin {
 
     private static final List<String> VALID_STATISTIC_NAMES;
@@ -243,6 +251,45 @@ public final class Admin {
 
                         return 1;
                     })
+                )
+            )
+        )
+        .then(literal("savedungeon")
+            .then(argument("region", StringArgumentType.word())
+                .suggests(CommandUtil.suggestToPlayerSender(player -> WorldGuardUtil.getAllRegionsInWorld(player.getWorld())))
+                .executes(CommandUtil.playerCommand((ctx, player) -> {
+
+                    String regionId = ctx.getArgument("region", String.class);
+
+                    try {
+                        Location location = player.getLocation();
+
+                        WorldEditUtil.saveDungeon(player.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), regionId);
+                    } catch (IOException | WorldEditException e) {
+                        VoidSurvival.logError("Failed to save dungeon: ", e);
+                    }
+
+                }))
+            )
+        )
+        .then(literal("pastedungeon")
+            .then(argument("pos", ArgumentTypes.blockPosition())
+                .then(argument("name", StringArgumentType.word())
+                    .then(argument("schematic", StringArgumentType.word())
+                        .executes(CommandUtil.playerCommand((ctx, player) -> {
+
+                            String name = ctx.getArgument("name", String.class);
+                            String schematic = ctx.getArgument("schematic", String.class);
+
+                            try {
+                                BlockPosition position = ctx.getArgument("pos", BlockPositionResolver.class).resolve(ctx.getSource());
+                                WorldEditUtil.pasteDungeonAt(name, schematic, player.getWorld(), position.blockX(), position.blockY(), position.blockZ());
+                            } catch (CommandSyntaxException e) {
+                                VoidSurvival.logError("Failed to paste dungeon: ", e);
+                            }
+
+                        }))
+                    )
                 )
             )
         )

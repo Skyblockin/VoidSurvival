@@ -1,5 +1,6 @@
 package com.skyblockin.voidsurvival.math;
 
+import net.minecraft.core.BlockPos;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -32,6 +33,18 @@ public record BlockPosition(int x, int y, int z) {
 
     public BlockPosition add(int x, int y, int z) {
         return new BlockPosition(this.x + x, this.y + y, this.z + z);
+    }
+
+    public BlockPosition add(BlockPosition other) {
+        return new BlockPosition(other.x() + x, other.y() + y, other.z() + z);
+    }
+
+    public Position add(Position other) {
+        return new Position(other.x() + x, other.y() + y, other.z() + z, other.yaw(), other.pitch());
+    }
+
+    public BlockPosition withY(int y) {
+        return new BlockPosition(this.x, y, this.z);
     }
 
 }

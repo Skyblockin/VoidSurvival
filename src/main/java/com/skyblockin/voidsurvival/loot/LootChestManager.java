@@ -43,6 +43,10 @@ public class LootChestManager implements Listener {
         return chestLootTables.remove(location) != null;
     }
 
+    public String getTableId(Location location) {
+        return chestLootTables.get(location);
+    }
+
     public Set<String> getTableIds() {
         return tables.keySet();
     }
@@ -157,33 +161,33 @@ public class LootChestManager implements Listener {
             cooldown = 0L;
         }
 
-        if (currentTime.isAfter(lastTime.plusMillis(cooldown))) {
-
-            LootTable table = tables.get(tableId);
-
-            if (table != null) {
-
-                double lootBonus = Math.clamp(ChronoUnit.HOURS.between(lastTime, currentTime), 0, 72);
-
-                LootUtil.openInventory(block, player, table, Functions.tableIdToName(tableId), lootBonus);
-
-                this.chestViewers.computeIfAbsent(block, k -> new ArrayList<>()).add(player.getUniqueId());
-
-                if (block.getState() instanceof Chest chest && !chest.isOpen()) {
-                    chest.open();
-                }
-
-                data.setLastChestOpenTime(block, currentTime.toEpochMilli());
-
-            } else {
-                VoidSurvival.logError("%s tried to open loot table '%s' for chest at %d %d %d, but no such table exists.",
-                    player.getName(), tableId, block.getX(), block.getY(), block.getZ()
-                );
-            }
-
-        } else {
+        if (currentTime.isBefore(lastTime.plusMillis(cooldown))) {
             long remainingTime = ChronoUnit.SECONDS.between(currentTime, lastTime.plusMillis(cooldown));
             player.sendMessage(TextUtil.message(MessageKeys.CHEST_ON_COOLDOWN, Format.getFormattedTime(remainingTime)));
+            return;
+        }
+
+        LootTable table = tables.get(tableId);
+
+        if (table != null) {
+
+            double lootBonus = Math.clamp(ChronoUnit.HOURS.between(lastTime, currentTime), 0, 72);
+
+            LootUtil.openInventory(block, player, table, Functions.tableIdToName(tableId), lootBonus);
+
+            this.chestViewers.computeIfAbsent(block, k -> new ArrayList<>()).add(player.getUniqueId());
+
+            if (block.getState() instanceof Chest chest && !chest.isOpen()) {
+                chest.open();
+            }
+
+            data.setLastChestOpenTime(block, currentTime.toEpochMilli());
+            data.chestsLooted++;
+
+        } else {
+            VoidSurvival.logError("%s tried to open loot table '%s' for chest at %d %d %d, but no such table exists.",
+                player.getName(), tableId, block.getX(), block.getY(), block.getZ()
+            );
         }
     }
 

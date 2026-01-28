@@ -20,9 +20,25 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class WorldGuardUtil {
+
+    public static Set<String> getAllRegionsInWorld(World world) {
+        RegionManager manager = WorldGuard.getInstance()
+            .getPlatform()
+            .getRegionContainer()
+            .get(BukkitAdapter.adapt(world));
+
+        if (manager == null) {
+            return new HashSet<>(0);
+        }
+
+        return manager.getRegions()
+            .keySet();
+    }
 
     public static RegionQuery createRegionQuery() {
         return WorldGuard.getInstance()

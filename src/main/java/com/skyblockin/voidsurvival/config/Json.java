@@ -94,6 +94,7 @@ public class Json {
         module.addDeserializer(ItemRarity.class, JsonDeserializers.ITEM_RARITY);
         module.addDeserializer(DeathProtection.class, JsonDeserializers.DEATH_PROTECTION);
         module.addDeserializer(UseCooldown.class, JsonDeserializers.USE_COOLDOWN);
+        module.addDeserializer(Location.class, JsonDeserializers.LOCATION);
 
         module.addKeyDeserializer(EquipmentSlot.class, JsonDeserializers.EQUIPMENT_SLOT_KEY);
         module.addKeyDeserializer(NamespacedKey.class, JsonDeserializers.NAMESPACED_KEY);
@@ -104,16 +105,24 @@ public class Json {
         module.addSerializer(Keyed.class, new StdDelegatingSerializer(JsonDeserializers.KEYED_TYPE));
         module.addKeySerializer(Keyed.class, new StdDelegatingSerializer(JsonDeserializers.KEYED_TYPE));
 
+        module.addSerializer(Location.class, JsonSerializers.LOCATION);
+
         MAPPER.registerModule(module);
+    }
+
+    public static void writeToFileSafeAndPretty(File file, Object object) {
+
+        try {
+            MAPPER.writerWithDefaultPrettyPrinter().writeValue(file, object);
+        } catch (Exception ex) {
+            VoidSurvival.logError("Failed to write file " + file.getPath(), ex);
+        }
+
     }
 
     public static void writeToFileSafe(File file, Object object) {
 
         try {
-            if (!file.exists()) {
-                Files.createDirectory(file.getParentFile().toPath());
-                Files.createFile(file.toPath());
-            }
             writeToFile(file, object);
         } catch (Exception ex) {
             VoidSurvival.logError("Failed to write file " + file.getPath(), ex);

@@ -15,26 +15,23 @@ import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldguard.WorldGuard;
-import com.sk89q.worldguard.protection.flags.Flag;
-import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Json;
+import com.skyblockin.voidsurvival.loot.LootChestManager;
 import com.skyblockin.voidsurvival.math.BlockPosition;
 import com.skyblockin.voidsurvival.math.Cuboid;
 import com.skyblockin.voidsurvival.math.Position;
 import com.skyblockin.voidsurvival.region.Flags;
-import com.skyblockin.voidsurvival.util.FileUtil;
-import net.kyori.adventure.text.BlockNBTComponent;
 import org.bukkit.World;
+import org.bukkit.block.Chest;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 
@@ -51,14 +48,39 @@ public class WorldEditUtil {
                 return null;
             }
 
-            ClipboardReader reader = format.getReader(new FileInputStream(file));
+            Clipboard clipboard = null;
 
-            return reader.read();
+            try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
+                clipboard = reader.read();
+            }
+
+            return clipboard;
 
         } catch (Exception ex) {
             VoidSurvival.logError("Caught error while loading schematic '%s': %s", file.getName(), ex.getMessage());
             return null;
         }
+    }
+
+    public static Clipboard saveSchematic(Path path, World world, BlockVector3 origin, BlockVector3 min, BlockVector3 max) throws IOException, WorldEditException {
+
+        CuboidRegion selection = new CuboidRegion(min, max);
+        BlockArrayClipboard clipboard = new BlockArrayClipboard(selection);
+        clipboard.setOrigin(origin);
+
+        ForwardExtentCopy forwardExtentCopy = new ForwardExtentCopy(
+            BukkitAdapter.adapt(world), selection, clipboard, min
+        );
+
+        Operations.complete(forwardExtentCopy);
+
+        File schematicFile = VoidSurvival.getInstance().getFile(path);
+
+        try (ClipboardWriter writer = BuiltInClipboardFormat.SPONGE_V3_SCHEMATIC.getWriter(new FileOutputStream(schematicFile))) {
+            writer.write(clipboard);
+        }
+
+        return clipboard;
     }
 
     public static void pasteClipboardAt(Clipboard clipboard, World world, int x, int y, int z, boolean ignoreAir) throws WorldEditException {
@@ -78,23 +100,25 @@ public class WorldEditUtil {
         editSession.close();
     }
 
-    public static void pasteDungeonAt(String dungeonId, World world, int x, int y, int z) {
+    public static void pasteDungeonAt(String name, String dungeonId, World world, int x, int y, int z) {
 
         DungeonVariables variables;
 
         try {
-            Path path = FileUtil.createOrGetFile(Path.of("dungeons", dungeonId + ".json"));
-            variables = Json.readFromFile(path.toFile(), DungeonVariables.class);
+            File file = VoidSurvival.getInstance().getFile("dungeons", dungeonId + ".json");
+            variables = Json.readFromFile(file, DungeonVariables.class);
         } catch (Exception ex) {
             VoidSurvival.logError("Failed to read config file from dungeons/" + dungeonId + ".json", ex);
             return;
         }
 
-        Clipboard clipboard = loadSchematic(VoidSurvival.getInstance().getFile("schematics", variables.schematic));
+        Clipboard clipboard = loadSchematic(VoidSurvival.getInstance().getFile("dungeons", variables.schematic));
 
         if (clipboard == null) {
             return;
         }
+
+        BlockPosition origin = new BlockPosition(x, y, z);
 
         try {
             pasteClipboardAt(clipboard, world, x, y, z, true);
@@ -103,21 +127,12 @@ public class WorldEditUtil {
             return;
         }
 
-        BlockVector3 origin = clipboard.getOrigin();
-        BlockVector3 min = clipboard.getMinimumPoint();
-        BlockVector3 max = clipboard.getMaximumPoint();
-
-        ProtectedCuboidRegion dungeonRegion = new ProtectedCuboidRegion(
-            dungeonId + "_outer",
-            BlockVector3.at(min.x() + x, Math.clamp(min.y() + y, world.getMinHeight(), world.getMaxHeight()), min.z() + z),
-            BlockVector3.at(max.x() + x, Math.clamp(max.y() + y, world.getMinHeight(), world.getMaxHeight()), max.z() + z)
-        );
-
-        ProtectedCuboidRegion spawnRegion = createOriginOffsetRegion(dungeonId + "_spawn", origin, variables.spawnCuboid.add(x, y, z));
+        ProtectedCuboidRegion dungeonRegion = createOriginOffsetRegion(name + "_outer", origin, variables.outerCuboid);
+        ProtectedCuboidRegion spawnRegion = createOriginOffsetRegion(name + "_spawn", origin, variables.spawnCuboid);
         ArrayList<ProtectedCuboidRegion> oreRegions = new ArrayList<>(variables.oreCuboids.size());
 
         for (int i = 0; i < variables.oreCuboids.size(); i++) {
-            oreRegions.add(createOriginOffsetRegion(dungeonId + "_ore" + i, origin, variables.oreCuboids.get(i)));
+            oreRegions.add(createOriginOffsetRegion(name + "_ore" + i, origin, variables.oreCuboids.get(i)));
         }
 
         RegionManager manager = WorldGuard.getInstance()
@@ -135,45 +150,25 @@ public class WorldEditUtil {
         manager.addRegion(spawnRegion);
         variables.spawnFlags.setFlags(spawnRegion);
 
+        spawnRegion.setFlag(
+            com.sk89q.worldguard.protection.flags.Flags.TELE_LOC,
+            BukkitAdapter.adapt(origin.add(variables.teleportLocation).toLocation(world))
+        );
+
         for (int i = 0; i < oreRegions.size(); i++) {
             ProtectedCuboidRegion oreRegion = oreRegions.get(i);
             manager.addRegion(oreRegion);
             variables.oreFlags.get(i).setFlags(oreRegion);
         }
+
+        LootChestManager lootManager = VoidSurvival.getInstance().getLootTableManager();
+
+        variables.lootChests.forEach(chest -> {
+            lootManager.setChestLoot(origin.add(chest.x(), chest.y(), chest.z()).toLocation(world), chest.id());
+        });
     }
 
-    private static ProtectedCuboidRegion createOriginOffsetRegion(String id, BlockVector3 origin, Cuboid cuboid) {
-
-        BlockPosition min = cuboid.getMin().add(origin.x(), origin.y(), origin.z());
-        BlockPosition max = cuboid.getMax().add(origin.x(), origin.y(), origin.z());
-
-        return WorldGuardUtil.createRegion(id, min, max);
-    }
-
-    public static void saveSchematic(Path path, World world, BlockVector3 min, BlockVector3 max) throws IOException, WorldEditException {
-
-        CuboidRegion selection = new CuboidRegion(min, max);
-        BlockArrayClipboard clipboard = new BlockArrayClipboard(selection);
-
-        ForwardExtentCopy forwardExtentCopy = new ForwardExtentCopy(
-            BukkitAdapter.adapt(world), selection, clipboard, min
-        );
-
-        Operations.complete(forwardExtentCopy);
-
-        File schematicFile = VoidSurvival.getInstance().getFile(path);
-
-        if (!schematicFile.exists()) {
-            Files.createDirectory(schematicFile.getParentFile().toPath());
-            Files.createFile(schematicFile.toPath());
-        }
-
-        ClipboardWriter writer = BuiltInClipboardFormat.SPONGE_V3_SCHEMATIC.getWriter(new FileOutputStream(schematicFile));
-        writer.write(clipboard);
-
-    }
-
-    public static void saveDungeon(World world, String outerDungeonRegionId) {
+    public static void saveDungeon(World world, int x, int y, int z, String outerDungeonRegionId) throws IOException, WorldEditException {
 
         RegionManager manager = WorldGuardUtil.getRegionManager(world);
         ProtectedRegion region = manager.getRegion(outerDungeonRegionId);
@@ -182,6 +177,10 @@ public class WorldEditUtil {
             VoidSurvival.logError("Failed to save dungeon from region " + outerDungeonRegionId + ": region does not exist");
             return;
         }
+
+        Clipboard clipboard = saveSchematic(Path.of("dungeons", outerDungeonRegionId + ".schem"),
+            world, BlockVector3.at(x, y, z), region.getMinimumPoint(), region.getMaximumPoint()
+        );
 
         ProtectedRegion spawnRegion = null;
         ArrayList<ProtectedRegion> oreRegions = new ArrayList<>();
@@ -199,19 +198,25 @@ public class WorldEditUtil {
             return;
         }
 
-        Location location = spawnRegion.getFlag(com.sk89q.worldguard.protection.flags.Flags.TELE_LOC);
+        Location tpLocation = spawnRegion.getFlag(com.sk89q.worldguard.protection.flags.Flags.TELE_LOC);
 
-        if (location == null) {
+        if (tpLocation == null) {
             VoidSurvival.logError("Failed to save dungeon from region " + outerDungeonRegionId + ": region must contain a subregion with a teleport location set!");
             return;
         }
 
-        BlockPosition origin = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        BlockVector3 sqOrigin = clipboard.getOrigin();
+        BlockPosition origin = new BlockPosition(sqOrigin.x(), sqOrigin.y(), sqOrigin.z());
 
         DungeonVariables variables = new DungeonVariables();
 
-        variables.teleportLocation = new Position(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+        variables.schematic = outerDungeonRegionId + ".schem";
+        variables.teleportLocation = new Position(
+            tpLocation.getX() - origin.x(), tpLocation.getY() - origin.y(), tpLocation.getZ() - origin.z(),
+            tpLocation.getYaw(), tpLocation.getPitch()
+        );
         variables.regionFlags = DungeonVariables.RegionFlags.ofRegion(spawnRegion);
+        variables.outerCuboid = createOffsetCuboid(origin, region.getMinimumPoint(), region.getMaximumPoint());
         variables.spawnCuboid = createOffsetCuboid(origin, spawnRegion.getMinimumPoint(), spawnRegion.getMaximumPoint());
         variables.spawnFlags = DungeonVariables.RegionFlags.ofRegion(spawnRegion);
 
@@ -220,12 +225,25 @@ public class WorldEditUtil {
             variables.oreFlags.add(DungeonVariables.RegionFlags.ofRegion(oreRegion));
         }
 
+        LootChestManager lootManager = VoidSurvival.getInstance().getLootTableManager();
+
+        WorldUtil.getTileEntitiesInRegion(world, new Cuboid(
+                BukkitAdapter.adapt(world, region.getMinimumPoint()),
+                BukkitAdapter.adapt(world, region.getMaximumPoint())
+            ), tile -> tile.getState() instanceof Chest)
+            .forEach(state -> {
+
+                BlockPosition point = createOffsetPosition(origin, BlockPosition.ofBlock(state.getBlock()));
+                String tableId = lootManager.getTableId(state.getLocation());
+
+                variables.lootChests.add(new DungeonVariables.ChestLocation(tableId, point.x(), point.y(), point.z()));
+            });
+
         try {
 
-            saveSchematic(Path.of("dungeons", outerDungeonRegionId + ".schem"), world, region.getMinimumPoint(), region.getMaximumPoint());
             File dungeonFile = VoidSurvival.getInstance().getFile("dungeons", outerDungeonRegionId + ".json");
 
-            Json.writeToFileSafe(dungeonFile, variables);
+            Json.writeToFileSafeAndPretty(dungeonFile, variables);
 
         } catch (Exception ex) {
             VoidSurvival.logError("Failed to save dungeon from region " + outerDungeonRegionId + ": ", ex);
@@ -233,10 +251,25 @@ public class WorldEditUtil {
 
     }
 
+    private static BlockPosition createOffsetPosition(BlockPosition origin, BlockVector3 point) {
+        return new BlockPosition(point.x() - origin.x(), point.y() - origin.y(), point.z() - origin.z());
+    }
+
+    private static BlockPosition createOffsetPosition(BlockPosition origin, BlockPosition point) {
+        return new BlockPosition(point.x() - origin.x(), point.y() - origin.y(), point.z() - origin.z());
+    }
+
     private static Cuboid createOffsetCuboid(BlockPosition origin, BlockVector3 min, BlockVector3 max) {
         return new Cuboid(
-            origin.x() + min.x(), origin.y() + min.y(), origin.z() + min.z(),
-            origin.x() + max.x(), origin.y() + max.y(), origin.z() + max.z()
+            createOffsetPosition(origin, min),
+            createOffsetPosition(origin, max)
+        );
+    }
+
+    private static ProtectedCuboidRegion createOriginOffsetRegion(String id, BlockPosition origin, Cuboid cuboid) {
+        return WorldGuardUtil.createRegion(id,
+            origin.add(cuboid.getMin()),
+            origin.add(cuboid.getMax())
         );
     }
 
