@@ -8,10 +8,7 @@ import com.skyblockin.voidsurvival.math.Position;
 import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.storage.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
-import com.skyblockin.voidsurvival.util.CommandUtil;
-import com.skyblockin.voidsurvival.util.DialogUtil;
-import com.skyblockin.voidsurvival.util.PlayerUtil;
-import com.skyblockin.voidsurvival.util.TextUtil;
+import com.skyblockin.voidsurvival.util.*;
 import com.skyblockin.voidsurvival.world.IslandGenerator;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.dialog.Dialog;
@@ -23,6 +20,8 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 import static io.papermc.paper.command.brigadier.Commands.argument;
@@ -256,6 +255,10 @@ public final class BasicCommands {
                         Location island = generator.generateIsland(chunk);
 
                         Database.saveIsland(island.getChunk().getX(), island.getChunk().getZ());
+                        FileUtil.writeLogLine("islands.log", "%s %s %d %d %d",
+                            ZonedDateTime.now().toString(), player.getName(), island.getBlockX(), island.getBlockY(), island.getBlockZ()
+                        );
+
                         data.setHome("island", island.toCenterLocation());
                         data.hasGeneratedIsland = true;
                         data.generatingIsland = false;

@@ -4,6 +4,7 @@ import com.skyblockin.voidsurvival.ability.Abilities;
 import com.skyblockin.voidsurvival.ability.AbilityListener;
 import com.skyblockin.voidsurvival.chat.ChatListener;
 import com.skyblockin.voidsurvival.combat.CombatTracker;
+import com.skyblockin.voidsurvival.combat.FallTracker;
 import com.skyblockin.voidsurvival.command.BasicCommands;
 import com.skyblockin.voidsurvival.command.FriendCommand;
 import com.skyblockin.voidsurvival.command.MainCommand;
@@ -69,6 +70,7 @@ public class VoidSurvival extends JavaPlugin {
     private RecipeManager recipeManager;
     private FriendManager friendManager;
     private CombatTracker combatTracker;
+    private FallTracker fallTracker;
 
     private WorldListener worldListener;
 
@@ -113,6 +115,7 @@ public class VoidSurvival extends JavaPlugin {
         this.recipeManager = new RecipeManager();
         this.friendManager = new FriendManager();
         this.combatTracker = new CombatTracker();
+        this.fallTracker = new FallTracker();
 
         try {
             Database.createDataBase();
@@ -146,6 +149,7 @@ public class VoidSurvival extends JavaPlugin {
             this.worldListener,
             this.lootTableManager,
             this.combatTracker,
+            this.fallTracker,
             this.oreGenerator,
             new RegionFlagListener(),
             new EntityEquipmentHandler(),
@@ -332,6 +336,10 @@ public class VoidSurvival extends JavaPlugin {
 
     public static void logError(String message, Throwable throwable) {
         LOGGER.log(Level.SEVERE, message, throwable);
+    }
+
+    public static void logError(String message, Throwable throwable, Object... objects) {
+        LOGGER.log(Level.SEVERE, String.format(message, objects), throwable);
     }
 
     public static void logDebug(String message, Object... objects) {

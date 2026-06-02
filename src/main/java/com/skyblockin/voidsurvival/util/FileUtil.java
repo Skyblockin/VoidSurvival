@@ -2,14 +2,32 @@ package com.skyblockin.voidsurvival.util;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 public class FileUtil {
+
+    public static void writeLogLine(String logName, String line, Object... objects) {
+
+         try {
+             File file = VoidSurvival.getInstance().getFile("logs", logName);
+
+             if (!file.exists()) {
+                 file.getParentFile().mkdirs();
+             }
+
+             BufferedWriter writer = new BufferedWriter(new FileWriter(file, true));
+             writer.write(String.format(line, objects));
+             writer.newLine();
+             writer.close();
+         } catch (Exception ex) {
+             VoidSurvival.logError("Failed to write log line to file logs/%s", ex, logName);
+         }
+
+    }
 
     public static Path createOrGetFile(Path path) throws IOException {
 

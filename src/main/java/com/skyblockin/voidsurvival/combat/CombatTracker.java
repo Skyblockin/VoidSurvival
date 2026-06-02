@@ -12,6 +12,7 @@ import com.skyblockin.voidsurvival.util.TextUtil;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemAttributeModifiers;
 import io.papermc.paper.registry.keys.tags.EntityTypeTagKeys;
+import io.papermc.paper.registry.keys.tags.ItemTypeTagKeys;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
@@ -30,6 +31,7 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ItemType;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -46,9 +48,13 @@ public class CombatTracker implements Listener {
     private final HashMap<UUID, Long> lastDamageTimes = new HashMap<>();
     private final HashMap<UUID, Instant> lastEntityHitTimes = new HashMap<>();
 
+    private final StanceManager stanceManager;
+
     public CombatTracker() {
 
         Server server = VoidSurvival.getInstance().getServer();
+
+        this.stanceManager = new StanceManager();
 
         VoidSurvival.getInstance().runTaskTimer(() -> {
 

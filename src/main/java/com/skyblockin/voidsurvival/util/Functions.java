@@ -1,27 +1,24 @@
 package com.skyblockin.voidsurvival.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.suggestion.SuggestionProvider;
-import com.mojang.brigadier.suggestion.Suggestions;
-import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import io.papermc.paper.command.brigadier.CommandSourceStack;
+import com.google.common.collect.AbstractIterator;
+import com.skyblockin.voidsurvival.math.BlockPosition;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.registry.set.RegistrySet;
 import io.papermc.paper.registry.tag.TagKey;
+import net.minecraft.core.BlockPos;
 import org.bukkit.Keyed;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.function.Supplier;
 
 public class Functions {
 
@@ -33,6 +30,43 @@ public class Functions {
                 throw new CompletionException(e);
             }
         });
+    }
+
+    public static Iterable<BlockPosition> between(Vector min, Vector max) {
+        return between(min.getBlockX(), min.getBlockY(), min.getBlockZ(), max.getBlockX(), max.getBlockY(), max.getBlockZ());
+    }
+
+    public static Iterable<BlockPosition> between(BlockPosition min, BlockPosition max) {
+        return between(min.x(), min.y(), min.z(), max.x(), max.y(), max.z());
+    }
+
+    public static Iterable<BlockPosition> between(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+
+        int xSize = maxX - minX + 1;
+        int ySize = maxY - minY + 1;
+        int zSize = maxZ - minZ + 1;
+        int volume = xSize * ySize * zSize;
+
+        return () -> new Iterator<>() {
+
+            int index = 0;
+
+            @Override
+            public boolean hasNext() {
+                return this.index < volume;
+            }
+
+            @Override
+            public BlockPosition next() {
+                int x = this.index % xSize;
+                int i = this.index / xSize;
+                int y = i % ySize;
+                int z = i / ySize;
+                this.index++;
+                return new BlockPosition(minX + x, minY + y, minZ + z);
+            }
+
+        };
     }
 
     public static <T> T randomChoice(List<T> elements) {

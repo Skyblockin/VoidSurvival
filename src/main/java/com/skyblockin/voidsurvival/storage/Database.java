@@ -223,6 +223,44 @@ public class Database {
 
     }
 
+    public static List<Island> getIslandsInRange(int x, int z, long range, int limit) {
+
+        try {
+
+            List<Island> islands = new ArrayList<>();
+
+            PreparedStatement statement = getConnection().prepareStatement(
+                """
+                    WITH const AS (SELECT ? AS x1, ? AS z1)
+                    SELECT id, x, z FROM const, islands WHERE
+                    	((const.x1 - x) * (const.x1 - x) + (const.z1 - z) * (const.z1 - z)) <= ?
+                    ORDER BY ((const.x1 - x) * (const.x1 - x) + (const.z1 - z) * (const.z1 - z))
+                    LIMIT ?
+                    """
+            );
+
+            statement.setInt(1, x);
+            statement.setInt(2, z);
+            statement.setLong(3, range * range);
+            statement.setInt(4, limit);
+
+            ResultSet rs = statement.executeQuery();
+
+            while (rs.next()) {
+                islands.add(new Island(rs.getInt(1), rs.getInt(2), rs.getInt(3)));
+            }
+
+            statement.close();
+
+            return islands;
+
+        } catch (Exception e) {
+            VoidSurvival.logError("Failed to get islands in range %d from chunk %d, %d: ", e, range, x, z);
+            return new ArrayList<>(0);
+        }
+
+    }
+
     public static <T> T runQuery(Callable<T> callable, Consumer<Exception> exceptionConsumer) {
 
         try {

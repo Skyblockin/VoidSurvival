@@ -12,5 +12,6 @@ public final class Accessors {
     public static final Accessor<String> SIGN_COMMAND = new Accessor<>("sign_command", PersistentDataType.STRING);
     public static final Accessor<String> CAMPFIRE_WARP_ID = new Accessor<>("campfire_warp", PersistentDataType.STRING);
     public static final Accessor<Position> CAMPFIRE_WARP_POSITION = new Accessor<>("campfire_warp_position", CustomPersistentDataType.POSITION);
+    public static final Accessor<String> STANCE_ID = new Accessor<>("stance_id", PersistentDataType.STRING);
 
 }

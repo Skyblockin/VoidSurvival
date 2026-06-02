@@ -10,6 +10,9 @@ import org.jetbrains.annotations.NotNull;
 public class TagUtil {
 
     public static <T extends Keyed> boolean isTagged(TagKey<@NotNull T> key, Keyed keyed) {
+        if (keyed == null) {
+            return false;
+        }
         return RegistryAccess.registryAccess()
             .getRegistry(key.registryKey())
             .getTag(key)

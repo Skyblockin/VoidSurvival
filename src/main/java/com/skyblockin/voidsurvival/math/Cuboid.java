@@ -13,14 +13,18 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.google.common.base.Preconditions;
 import com.google.gson.annotations.SerializedName;
+import com.skyblockin.voidsurvival.util.Functions;
 import org.bukkit.Location;
+import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.Serial;
+import java.util.Iterator;
 
 @JsonDeserialize(using = Cuboid.Deserializer.class)
 @JsonSerialize(using = Cuboid.Serializer.class)
-public class Cuboid {
+public class Cuboid implements Iterable<BlockPosition> {
 
     private final int minX;
     private final int maxX;
@@ -28,6 +32,22 @@ public class Cuboid {
     private final int maxY;
     private final int minZ;
     private final int maxZ;
+
+    public static Cuboid between(BlockPosition min, BlockPosition max) {
+        return new Cuboid(min, max);
+    }
+
+    public static Cuboid between(Vector min, Vector max) {
+        return new Cuboid(min, max);
+    }
+
+    public static Cuboid between(Location min, Location max) {
+        return new Cuboid(min, max);
+    }
+
+    public Cuboid(Vector start, Vector end) {
+        this(start.getBlockX(), start.getBlockY(), start.getBlockZ(), end.getBlockX(), end.getBlockY(), end.getBlockZ());
+    }
 
     public Cuboid(Location start, Location end) {
         this(start.getBlockX(), start.getBlockY(), start.getBlockZ(), end.getBlockX(), end.getBlockY(), end.getBlockZ());
@@ -69,6 +89,11 @@ public class Cuboid {
 
     public Cuboid add(int x, int y, int z) {
         return new Cuboid(this.minX + x, this.minY + y, this.minZ + z, this.maxX + x, this.maxY + y, this.maxZ + z);
+    }
+
+    @Override
+    public @NotNull Iterator<BlockPosition> iterator() {
+        return Functions.between(minX, minY, minZ, maxX, maxY, maxZ).iterator();
     }
 
     public static class Serializer extends StdSerializer<Cuboid> {

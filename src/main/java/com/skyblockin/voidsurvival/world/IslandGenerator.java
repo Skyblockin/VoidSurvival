@@ -56,7 +56,7 @@ public class IslandGenerator {
                 x = random.nextInt(-chunkRange, chunkRange);
                 z = random.nextInt(-chunkRange, chunkRange);
                 chunk = world.getChunkAt(x, z, false);
-            } while (chunk.isGenerated() && chunk.getInhabitedTime() > (20 * 30));
+            } while (chunk.isGenerated() && chunk.getInhabitedTime() > (20 * 30) && !Database.getIslandsInRange(x, z, 32, 1).isEmpty());
 
             return chunk;
         });

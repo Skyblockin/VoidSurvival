@@ -90,6 +90,8 @@ public final class ItemData {
     public ItemAdventurePredicate canPlaceOn = null;
     public ItemAdventurePredicate canBreak = null;
 
+    public int stanceDamage = 1;
+
     public SpawnerData spawnerData = null;
 
     // Extra JsonNode for storing any "item_specific" data that doesn't make sense to parse here
