@@ -74,7 +74,6 @@ public class FileUtil {
             } else {
                 VoidSurvival.logError("The " + directory.getName() + " folder was missing, and it could not be created. Is the plugin folder read-only?");
             }
-
             return new ArrayList<>();
         }
 

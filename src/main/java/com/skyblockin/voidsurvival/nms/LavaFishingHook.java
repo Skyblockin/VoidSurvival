@@ -1,6 +1,6 @@
 package com.skyblockin.voidsurvival.nms;
 
-import net.minecraft.advancements.CriteriaTriggers;
+import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.particles.SimpleParticleType;
@@ -26,8 +26,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -75,7 +73,7 @@ public class LavaFishingHook extends FishingHook {
     public boolean skyInfluenced = true;
 
     public LavaFishingHook(Level level, int luck, int lureSpeed) {
-        super(EntityType.FISHING_BOBBER, level);
+        super(EntityTypes.FISHING_BOBBER, level);
         this.luck = luck;
         this.lureSpeed = lureSpeed;
     }

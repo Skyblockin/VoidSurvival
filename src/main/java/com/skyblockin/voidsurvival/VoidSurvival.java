@@ -2,13 +2,16 @@ package com.skyblockin.voidsurvival;
 
 import com.skyblockin.voidsurvival.ability.Abilities;
 import com.skyblockin.voidsurvival.ability.AbilityListener;
+import com.skyblockin.voidsurvival.block.BlockListener;
+import com.skyblockin.voidsurvival.block.CustomBlock;
 import com.skyblockin.voidsurvival.chat.ChatListener;
 import com.skyblockin.voidsurvival.combat.CombatTracker;
 import com.skyblockin.voidsurvival.combat.FallTracker;
 import com.skyblockin.voidsurvival.command.BasicCommands;
 import com.skyblockin.voidsurvival.command.FriendCommand;
 import com.skyblockin.voidsurvival.command.MainCommand;
-import com.skyblockin.voidsurvival.config.ItemManager;
+import com.skyblockin.voidsurvival.gathering.GatheringNodeManager;
+import com.skyblockin.voidsurvival.item.ItemManager;
 import com.skyblockin.voidsurvival.entity.EntityEquipmentHandler;
 import com.skyblockin.voidsurvival.entity.PlayerListener;
 import com.skyblockin.voidsurvival.gui.GuiManager;
@@ -20,6 +23,8 @@ import com.skyblockin.voidsurvival.region.Flags;
 import com.skyblockin.voidsurvival.region.RegionFlagListener;
 import com.skyblockin.voidsurvival.social.FriendManager;
 import com.skyblockin.voidsurvival.storage.*;
+import com.skyblockin.voidsurvival.storage.database.*;
+import com.skyblockin.voidsurvival.trigger.TriggerManager;
 import com.skyblockin.voidsurvival.util.CustomTimeUnit;
 import com.skyblockin.voidsurvival.util.FileUtil;
 import com.skyblockin.voidsurvival.world.CampfireManager;
@@ -60,6 +65,8 @@ public class VoidSurvival extends JavaPlugin {
         return INSTANCE;
     }
 
+    private Database database;
+
     private MessageManager messageManager;
     private IslandGenerator islandGenerator;
     private OreGenerator oreGenerator;
@@ -69,6 +76,8 @@ public class VoidSurvival extends JavaPlugin {
     private ItemManager itemManager;
     private RecipeManager recipeManager;
     private FriendManager friendManager;
+    private GatheringNodeManager gatheringNodeManager;
+    private TriggerManager triggerManager;
     private CombatTracker combatTracker;
     private FallTracker fallTracker;
 
@@ -107,18 +116,33 @@ public class VoidSurvival extends JavaPlugin {
         this.messageManager = new MessageManager();
         this.islandGenerator = new IslandGenerator();
         this.oreGenerator = new OreGenerator();
-        this.playerBlockManager = new PlayerBlockManager();
+        try {
+            this.playerBlockManager = new PlayerBlockManager();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         this.lootTableManager = new LootChestManager();
         this.worldListener = new WorldListener();
         this.leaderboardManager = new LeaderboardManager();
         this.itemManager = new ItemManager();
         this.recipeManager = new RecipeManager();
         this.friendManager = new FriendManager();
+        this.gatheringNodeManager = new GatheringNodeManager();
+        this.triggerManager = new TriggerManager();
         this.combatTracker = new CombatTracker();
         this.fallTracker = new FallTracker();
 
         try {
-            Database.createDataBase();
+
+            this.database = new Database();
+
+            this.database.addTable(PlayerDataTable.class);
+            this.database.addTable(IslandDataTable.class);
+            this.database.addTable(GlobalDataTable.class);
+            this.database.addTable(ChestDataTable.class);
+
+            this.database.initialize();
+
         } catch (SQLException e) {
             logError("Failed to create database. Disabling plugin...", e);
             getServer().getPluginManager().disablePlugin(this);
@@ -133,7 +157,9 @@ public class VoidSurvival extends JavaPlugin {
         this.lootTableManager.loadChestLocations();
         this.lootTableManager.loadCooldowns();
         this.recipeManager.loadRecipes();
+        this.gatheringNodeManager.load();
         this.oreGenerator.reload();
+        CustomBlock.load();
 
         FileUtil.createOrGetFile("mana_abilities.yml");
 
@@ -149,11 +175,14 @@ public class VoidSurvival extends JavaPlugin {
             this.worldListener,
             this.lootTableManager,
             this.combatTracker,
+            this.gatheringNodeManager,
+            this.triggerManager,
             this.fallTracker,
             this.oreGenerator,
             new RegionFlagListener(),
             new EntityEquipmentHandler(),
             this.recipeManager,
+            new BlockListener(),
             new AbilityListener(),
             new PlayerListener(),
             new CampfireManager()
@@ -179,10 +208,11 @@ public class VoidSurvival extends JavaPlugin {
 
                 commands.registrar().register(MainCommand.COMMAND);
                 commands.registrar().register(FriendCommand.COMMAND);
+                
                 BasicCommands.register(commands.registrar(), config);
 
             } catch (Exception ex) {
-                ex.printStackTrace();
+                logError("Failed to register commands", ex);
             }
         });
     }
@@ -198,10 +228,13 @@ public class VoidSurvival extends JavaPlugin {
         this.playerBlockManager.reload();
         this.lootTableManager.reload();
         this.recipeManager.loadRecipes();
+        this.gatheringNodeManager.load();
+        this.triggerManager.load();
         this.oreGenerator.reload();
+        CustomBlock.load();
     }
 
-    private void registerEvents(Listener... listeners) {
+    public void registerEvents(Listener... listeners) {
 
         PluginManager manager = getServer().getPluginManager();
 
@@ -217,13 +250,18 @@ public class VoidSurvival extends JavaPlugin {
 
             saveConfig();
 
-            Database.savePlayers(PLAYER_DATA_MAP.values());
-            Database.saveChestLocations(this.lootTableManager.getChestLootTables());
-            Database.saveGlobalData();
+            this.database.getTable(PlayerDataTable.class).savePlayers(PLAYER_DATA_MAP);
+            this.database.getTable(ChestDataTable.class).saveChestLocations(this.lootTableManager.getChestLootTables());
+            this.database.getTable(GlobalDataTable.class).saveGlobalData();
+
+            // Wait for all tasks before shutting down (waitForAllTasksAndShutdown?), I don't know, weird names
+            this.database.waitForAllTasksAndShutdown();
+
+            this.gatheringNodeManager.save();
 
             getServer().getScheduler().cancelTasks(this);
 
-        } catch (PlayerDataException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
@@ -281,6 +319,14 @@ public class VoidSurvival extends JavaPlugin {
         return this.leaderboardManager;
     }
 
+    public GatheringNodeManager getGatheringNodeManager() {
+        return gatheringNodeManager;
+    }
+
+    public TriggerManager getTriggerManager() {
+        return triggerManager;
+    }
+
     public boolean isAllowingJoins() {
         return allowJoins;
     }
@@ -324,6 +370,30 @@ public class VoidSurvival extends JavaPlugin {
 
     public File getFile(String first, String... others) {
         return getDataPath().resolve(Path.of(first, others)).toFile();
+    }
+
+    public static Database getDatabase() {
+        return VoidSurvival.getInstance().database;
+    }
+
+    public static <T extends SQLiteTable> T getTable(Class<T> clazz) {
+        return getDatabase().getTable(clazz);
+    }
+
+    public static PlayerDataTable getPlayerTable() {
+        return getDatabase().getTable(PlayerDataTable.class);
+    }
+
+    public static IslandDataTable getIslandTable() {
+        return getDatabase().getTable(IslandDataTable.class);
+    }
+
+    public static ChestDataTable getChestTable() {
+        return getDatabase().getTable(ChestDataTable.class);
+    }
+
+    public static GlobalDataTable getGlobalTable() {
+        return getDatabase().getTable(GlobalDataTable.class);
     }
 
     public static void logInfo(String message, Object... objects) {

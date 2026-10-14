@@ -11,6 +11,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.component.TypedEntityData;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.BlockEntityTypes;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
 
@@ -91,7 +92,7 @@ public class SpawnerData {
         tag.put("SpawnData", spawnData);
         //tag.put("SpawnPotentials", spawnPotentials);
 
-        TypedEntityData<BlockEntityType<?>> data = TypedEntityData.of(BlockEntityType.MOB_SPAWNER, tag);
+        TypedEntityData<BlockEntityType<?>> data = TypedEntityData.of(BlockEntityTypes.MOB_SPAWNER, tag);
 
         nmsStack.set(DataComponents.BLOCK_ENTITY_DATA, data);
 

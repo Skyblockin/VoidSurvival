@@ -1,11 +1,14 @@
 package com.skyblockin.voidsurvival.config;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdDelegatingSerializer;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import io.papermc.paper.block.BlockPredicate;
 import io.papermc.paper.datacomponent.item.*;
@@ -29,6 +32,7 @@ import org.joml.Vector3f;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.UUID;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -37,13 +41,23 @@ public class Json {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     static {
+
+        MAPPER.configure(SerializationFeature.INDENT_OUTPUT, true);
+        MAPPER.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+        MAPPER.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+        MAPPER.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+        MAPPER.configure(JsonReadFeature.ALLOW_TRAILING_COMMA.mappedFeature(), true);
         MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         MAPPER.configure(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES, false);
+
+        MAPPER.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 
         MAPPER.setVisibility(
             MAPPER.getDeserializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
         );
+
+        MAPPER.registerModule(new ParameterNamesModule());
 
         SimpleModule module = new SimpleModule();
 
@@ -95,6 +109,8 @@ public class Json {
         module.addDeserializer(DeathProtection.class, JsonDeserializers.DEATH_PROTECTION);
         module.addDeserializer(UseCooldown.class, JsonDeserializers.USE_COOLDOWN);
         module.addDeserializer(Location.class, JsonDeserializers.LOCATION);
+        module.addDeserializer(World.class, JsonDeserializers.WORLD);
+        module.addDeserializer(CustomModelData.class, JsonDeserializers.CUSTOM_MODEL_DATA);
 
         module.addKeyDeserializer(EquipmentSlot.class, JsonDeserializers.EQUIPMENT_SLOT_KEY);
         module.addKeyDeserializer(NamespacedKey.class, JsonDeserializers.NAMESPACED_KEY);
@@ -139,7 +155,11 @@ public class Json {
     }
 
     public static <T> T readFromFile(File file, Class<T> reference) throws IOException {
-        return MAPPER.reader().readValue(file, reference);
+        return MAPPER.readValue(file, reference);
+    }
+
+    public static <T> T readFromFile(File file, TypeReference<T> reference) throws IOException {
+        return MAPPER.readValue(file, reference);
     }
 
     public static <T> T convert(Object node, Class<T> type) {
@@ -155,6 +175,21 @@ public class Json {
         }
 
         return value;
+    }
+
+    public static <T> List<T> listFromJson(File file, Class<T> clazz) throws IOException {
+        JavaType type = MAPPER.getTypeFactory().constructCollectionType(List.class, clazz);
+        return MAPPER.readValue(file, type);
+    }
+
+    public static <T> List<T> listFromJson(JsonParser p, Class<T> clazz) throws IOException {
+        JavaType type = MAPPER.getTypeFactory().constructCollectionType(List.class, clazz);
+        return MAPPER.readValue(p, type);
+    }
+
+    public static <T> List<T> listFromJson(JsonNode node, Class<T> clazz) throws JsonProcessingException {
+        JavaType type = MAPPER.getTypeFactory().constructCollectionType(List.class, clazz);
+        return MAPPER.treeToValue(node, type);
     }
 
     public static <T> T convert(Object node, TypeReference<T> type) {

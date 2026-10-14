@@ -2,12 +2,11 @@ package com.skyblockin.voidsurvival.command;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.skyblockin.voidsurvival.VoidSurvival;
-import com.skyblockin.voidsurvival.config.Pair;
 import com.skyblockin.voidsurvival.leaderboard.LeaderboardType;
-import com.skyblockin.voidsurvival.math.Position;
 import com.skyblockin.voidsurvival.message.MessageKeys;
-import com.skyblockin.voidsurvival.storage.Database;
+import com.skyblockin.voidsurvival.storage.database.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
+import com.skyblockin.voidsurvival.storage.database.IslandDataTable;
 import com.skyblockin.voidsurvival.util.*;
 import com.skyblockin.voidsurvival.world.IslandGenerator;
 import io.papermc.paper.command.brigadier.Commands;
@@ -20,7 +19,6 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -254,7 +252,8 @@ public final class BasicCommands {
 
                         Location island = generator.generateIsland(chunk);
 
-                        Database.saveIsland(island.getChunk().getX(), island.getChunk().getZ());
+                        VoidSurvival.getTable(IslandDataTable.class).saveIsland(island.getChunk().getX(), island.getChunk().getZ()).join();
+
                         FileUtil.writeLogLine("islands.log", "%s %s %d %d %d",
                             ZonedDateTime.now().toString(), player.getName(), island.getBlockX(), island.getBlockY(), island.getBlockZ()
                         );

@@ -7,23 +7,22 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.skyblockin.voidsurvival.VoidSurvival;
-import com.skyblockin.voidsurvival.config.ItemData;
+import com.skyblockin.voidsurvival.item.ItemData;
 import com.skyblockin.voidsurvival.config.Json;
-import com.skyblockin.voidsurvival.util.TextUtil;
-import io.papermc.paper.adventure.AdventureComponent;
-import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
-import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.ValueInput;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
@@ -73,7 +72,16 @@ public class EntityData {
 
         ServerLevel level = ((CraftWorld) world).getHandle();
 
-        net.minecraft.world.entity.Entity mob = EntityType.loadEntityRecursive(getEntityTag(), level, EntitySpawnReason.COMMAND, entity -> {
+        var nmsServer = ((CraftServer) Bukkit.getServer()).getHandle().getServer();
+        var registryAccess = nmsServer.registryAccess();
+
+        ValueInput input = TagValueInput.create(
+            ProblemReporter.DISCARDING,
+            registryAccess,
+            getEntityTag()
+        );
+
+        net.minecraft.world.entity.Entity mob = EntityType.loadEntityRecursive(input, level, EntitySpawnReason.COMMAND, entity -> {
             entity.snapTo(location.getX(), location.getY(), location.getZ());
             return entity;
         });

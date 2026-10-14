@@ -8,8 +8,9 @@ import com.skyblockin.voidsurvival.event.CampfireUnloadEvent;
 import com.skyblockin.voidsurvival.math.Position;
 import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.storage.Accessors;
-import com.skyblockin.voidsurvival.storage.Database;
+import com.skyblockin.voidsurvival.storage.database.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
+import com.skyblockin.voidsurvival.storage.database.PlayerDataTable;
 import com.skyblockin.voidsurvival.util.PlayerUtil;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
@@ -184,7 +185,7 @@ public class CampfireManager implements Listener {
             String id = Accessors.CAMPFIRE_WARP_ID.read(campfire);
             if (id != null) {
                 deleteCampfireHologram(player, id);
-                Database.deleteCampfireFromEveryoneById(id);
+                VoidSurvival.getTable(PlayerDataTable.class).deleteCampfireFromEveryoneById(id);
             }
         }
     }

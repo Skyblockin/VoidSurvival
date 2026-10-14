@@ -1,4 +1,4 @@
-package com.skyblockin.voidsurvival.constants;
+package com.skyblockin.voidsurvival.item;
 
 import com.skyblockin.voidsurvival.storage.PositionPersistentDataType;
 

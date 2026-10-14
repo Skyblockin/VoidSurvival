@@ -1,4 +1,4 @@
-package com.skyblockin.voidsurvival.constants;
+package com.skyblockin.voidsurvival.combat;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;

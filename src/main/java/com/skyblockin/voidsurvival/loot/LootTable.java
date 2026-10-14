@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import com.skyblockin.voidsurvival.config.ItemData;
+import com.skyblockin.voidsurvival.item.ItemData;
 import com.skyblockin.voidsurvival.config.Json;
 import org.bukkit.inventory.ItemStack;
 

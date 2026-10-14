@@ -1,8 +1,6 @@
 package com.skyblockin.voidsurvival;
 
-import com.skyblockin.voidsurvival.command.BasicCommands;
-import com.skyblockin.voidsurvival.command.MainCommand;
-import com.skyblockin.voidsurvival.constants.CustomEnchantments;
+import com.skyblockin.voidsurvival.item.CustomEnchantments;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
@@ -12,17 +10,13 @@ import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.event.RegistryEvents;
 import io.papermc.paper.registry.keys.DamageTypeKeys;
 import io.papermc.paper.registry.keys.tags.DamageTypeTagKeys;
-import io.papermc.paper.registry.keys.tags.ItemTypeTagKeys;
 import net.kyori.adventure.key.Key;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageScaling;
 import org.bukkit.damage.DamageType;
 import org.bukkit.damage.DeathMessageType;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.nio.file.Files;
 import java.util.List;
 
 @SuppressWarnings("UnstableApiUsage")

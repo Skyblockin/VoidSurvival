@@ -1,15 +1,11 @@
 package com.skyblockin.voidsurvival.world;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
-import com.skyblockin.voidsurvival.constants.ItemIds;
 import com.skyblockin.voidsurvival.storage.Accessors;
-import com.skyblockin.voidsurvival.storage.Database;
+import com.skyblockin.voidsurvival.storage.database.Database;
+import com.skyblockin.voidsurvival.storage.database.GlobalDataTable;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -18,6 +14,8 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.ItemStack;
+
+import java.util.concurrent.ExecutionException;
 
 public class WorldListener implements Listener {
 
@@ -63,41 +61,17 @@ public class WorldListener implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
-    public void onBlockClick(PlayerInteractEvent event) {
-
-        ItemStack item = event.getItem();
-        Block block = event.getClickedBlock();
-
-        if (item == null || block == null) {
-            return;
-        }
-
-        if (Accessors.ITEM_ID.equals(item, ItemIds.GRASS_SEEDS)) {
-            if (block.getType() == Material.DIRT && block.getRelative(BlockFace.UP).isEmpty()) {
-                block.setType(Material.GRASS_BLOCK);
-                if (!event.getPlayer().getGameMode().equals(GameMode.CREATIVE)) {
-                    item.subtract();
-                }
-            } else {
-                event.setCancelled(true);
-            }
-        }
-
-    }
-
     public long getGeneratedChunkCount() {
         return this.generatedChunkCount;
     }
 
     public void loadGeneratedChunkCount() {
 
-        this.generatedChunkCount = Database.getChunkCount();
-
-        if (this.generatedChunkCount != -1) {
+        try {
+            this.generatedChunkCount = VoidSurvival.getTable(GlobalDataTable.class).getChunkCount().get();
             VoidSurvival.logInfo("%d chunks have been generated and tracked so far", this.generatedChunkCount);
-        } else {
-            VoidSurvival.logError("Something went wrong while loading the tracked chunks. The counter has been set to 0");
+        } catch (Exception ex) {
+            VoidSurvival.logError("Something went wrong while loading the tracked chunks. The counter has been set to 0", ex);
             this.generatedChunkCount = 0;
         }
 

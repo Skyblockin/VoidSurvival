@@ -1,7 +1,7 @@
 package com.skyblockin.voidsurvival.loot;
 
 import com.skyblockin.voidsurvival.storage.Accessors;
-import com.skyblockin.voidsurvival.constants.ItemIds;
+import com.skyblockin.voidsurvival.item.ItemIds;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;

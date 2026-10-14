@@ -11,6 +11,7 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockDestructionPacket;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
+import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.LivingEntity;
@@ -50,6 +51,10 @@ public class NMSUtil {
 
     public static void resetBlockCrack(Iterable<Player> audience, BlockPosition position) {
         broadcastBlockCrack(audience, position, -1);
+    }
+
+    public static void broadcastBlockCrack(Block block, int stage) {
+        broadcastBlockCrack(block.getWorld().getNearbyPlayers(block.getLocation(), 50), BlockPosition.ofBlock(block), stage);
     }
 
     public static void broadcastBlockCrack(Iterable<Player> audience, BlockPosition position, float progress) {

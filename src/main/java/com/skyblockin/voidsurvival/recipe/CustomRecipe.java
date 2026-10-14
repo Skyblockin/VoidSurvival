@@ -2,17 +2,15 @@ package com.skyblockin.voidsurvival.recipe;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
-import com.skyblockin.voidsurvival.config.ItemData;
+import com.skyblockin.voidsurvival.item.ItemData;
 import com.skyblockin.voidsurvival.config.Json;
+import com.skyblockin.voidsurvival.item.ItemManager;
 import com.skyblockin.voidsurvival.util.Functions;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import org.bukkit.NamespacedKey;
-import org.bukkit.inventory.ItemType;
-import org.bukkit.inventory.Recipe;
-import org.bukkit.inventory.ShapedRecipe;
-import org.bukkit.inventory.ShapelessRecipe;
+import org.bukkit.inventory.*;
 import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -35,7 +33,29 @@ public class CustomRecipe {
         String type = node.get("type").asText();
         ItemData result = Json.convert(node.get("result"), ItemData.class);
 
-        if ("shaped".equalsIgnoreCase(type)) {
+        if ("blasting".equalsIgnoreCase(type)) {
+
+            ItemData source = Json.convert(node.get("source"), ItemData.class);
+            int cookingTime = node.get("time").asInt();
+            float experience = (float) node.path("experience").asDouble(0);
+
+            return new BlastingRecipe(key, result.createItem(),
+                RecipeChoice.exactChoice(source.createItem()),
+                experience, cookingTime
+            );
+
+        } else if ("furnace".equalsIgnoreCase(type)) {
+
+            ItemData source = Json.convert(node.get("source"), ItemData.class);
+            int cookingTime = node.get("time").asInt();
+            float experience = (float) node.path("experience").asDouble(0);
+
+            return new FurnaceRecipe(key, result.createItem(),
+                RecipeChoice.exactChoice(source.createItem()),
+                experience, cookingTime
+            );
+
+        } else if ("shaped".equalsIgnoreCase(type)) {
 
             ShapedRecipe shapedRecipe = new ShapedRecipe(key, result.createItem());
 
@@ -48,13 +68,13 @@ public class CustomRecipe {
                 shape.get(2).asText()
             );
 
-            ingredients.fields().forEachRemaining(entry -> {
+            ingredients.properties().forEach(entry -> {
 
                 char ingredientKey = entry.getKey().charAt(0);
                 JsonNode value = entry.getValue();
 
                 try {
-                    shapedRecipe.setIngredient(ingredientKey, Json.convert(value, ItemData.class).createItem());
+                    shapedRecipe.setIngredient(ingredientKey, RecipeChoice.exactChoice(Json.convert(value, ItemData.class).createItem()));
                 } catch (Exception ex) {
                     VoidSurvival.logError(String.format("Failed to parse recipe '%s' ingredient '%c'", key, ingredientKey), ex);
                 }
@@ -70,7 +90,7 @@ public class CustomRecipe {
             JsonNode ingredients = node.get("ingredients");
 
             ingredients.elements().forEachRemaining(ingredient ->
-                shapelessRecipe.addIngredient(Json.convert(ingredient, ItemData.class).createItem())
+                shapelessRecipe.addIngredient(RecipeChoice.exactChoice(Json.convert(ingredient, ItemData.class).createItem()))
             );
 
             return shapelessRecipe;

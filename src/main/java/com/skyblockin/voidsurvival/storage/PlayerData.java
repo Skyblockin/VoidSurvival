@@ -1,9 +1,12 @@
 package com.skyblockin.voidsurvival.storage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.math.BlockPosition;
 import com.skyblockin.voidsurvival.social.Friend;
 import com.skyblockin.voidsurvival.social.FriendList;
+import com.skyblockin.voidsurvival.storage.database.Database;
+import com.skyblockin.voidsurvival.storage.database.PlayerDataTable;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -18,6 +21,8 @@ public class PlayerData {
 
     public static PlayerData getByNameorUuid(String text) throws PlayerDataException {
 
+        PlayerDataTable table = VoidSurvival.getTable(PlayerDataTable.class);
+
         // By name
         if (text.length() <= 16) {
 
@@ -27,7 +32,7 @@ public class PlayerData {
             if (player != null) {
                 return PLAYER_DATA_MAP.get(player.getUniqueId());
             } else {
-                return Database.loadPlayerByName(text);
+                return table.loadPlayerByName(text).join();
             }
 
         // By uuid
@@ -40,7 +45,7 @@ public class PlayerData {
                 return data;
             // Maybe the player is not online, let's try the database
             } else {
-                return Database.loadPlayer(uuid);
+                return table.loadPlayer(text).join();
             }
 
         }
@@ -59,7 +64,7 @@ public class PlayerData {
         return new HashSet<>(PLAYER_DATA_MAP.values().stream().sorted(comparator).limit(limit).toList());
     }
 
-    public final transient UUID uuid;
+    public transient UUID uuid;
     public transient boolean generatingIsland = false;
     public boolean hasGeneratedIsland = false;
     public String lastKnownUserName;
@@ -75,6 +80,8 @@ public class PlayerData {
     public PlayerData(UUID uuid) {
         this.uuid = uuid;
     }
+
+    public PlayerData() {}
 
     public void setLastChestOpenTime(Block block, long time) {
         lastChestOpenTimes.put(BlockPosition.ofBlock(block).asLong(), time);

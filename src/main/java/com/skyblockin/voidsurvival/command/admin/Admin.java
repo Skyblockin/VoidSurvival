@@ -7,6 +7,9 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.sk89q.worldedit.WorldEditException;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.event.CampfireLoadEvent;
+import com.skyblockin.voidsurvival.gathering.GatheringNode;
+import com.skyblockin.voidsurvival.gathering.GatheringNodeManager;
+import com.skyblockin.voidsurvival.gathering.GatheringNodeType;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.math.Position;
@@ -120,6 +123,28 @@ public final class Admin {
                     player.sendRichMessage("<red>Could not find a valid sign in front of you!");
                 }
 
+            }))
+        )
+        .then(literal("creategathernode")
+            .then(argument("id", StringArgumentType.string())
+                .executes(CommandUtil.playerCommand((ctx, player) -> {
+
+                    Block target = player.getTargetBlockExact(10);
+                    String id = ctx.getArgument("id", String.class);
+
+                    if (target != null) {
+                        GatheringNodeManager manager = VoidSurvival.getInstance().getGatheringNodeManager();
+                        GatheringNodeType type = manager.getGatheringNodeType(id);
+                        manager.addNode(new GatheringNode(target.getLocation(), type));
+                    }
+                })))
+        ).then(literal("destroygathernode")
+            .executes(CommandUtil.playerCommand((ctx, player) -> {
+                Block target = player.getTargetBlockExact(10);
+                if (target != null) {
+                    GatheringNodeManager manager = VoidSurvival.getInstance().getGatheringNodeManager();
+                    manager.removeNode(com.skyblockin.voidsurvival.math.BlockPosition.ofBlock(target));
+                }
             }))
         )
         .then(literal("testmsg")

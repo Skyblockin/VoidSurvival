@@ -1,4 +1,4 @@
-package com.skyblockin.voidsurvival.constants;
+package com.skyblockin.voidsurvival.item;
 
 public final class ItemIds {
 

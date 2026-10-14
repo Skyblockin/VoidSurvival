@@ -3,6 +3,8 @@ package com.skyblockin.voidsurvival.storage;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.protection.flags.Flags;
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.storage.database.Database;
+import com.skyblockin.voidsurvival.storage.database.PlayerDataTable;
 import com.skyblockin.voidsurvival.world.WorldGuardUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -13,6 +15,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+
+import java.util.List;
 
 public class PlayerJoinHandler implements Listener {
 
@@ -49,13 +53,13 @@ public class PlayerJoinHandler implements Listener {
 
         try {
 
-            PlayerData data = Database.loadPlayer(event.getUniqueId());
+            PlayerData data = VoidSurvival.getTable(PlayerDataTable.class).loadPlayer(event.getUniqueId().toString()).join();
 
             data.lastKnownUserName = event.getPlayerProfile().getName();
 
             PlayerData.put(data);
 
-        } catch (PlayerDataException exception) {
+        } catch (Exception exception) {
             event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, Component.text("Failed to load your data!", NamedTextColor.RED));
             VoidSurvival.logError("Failed to load data for " + event.getName(), exception);
         }
@@ -69,9 +73,13 @@ public class PlayerJoinHandler implements Listener {
 
             PlayerData data = PlayerData.of(event.getPlayer());
 
-            Database.savePlayer(data);
+            VoidSurvival.getTable(PlayerDataTable.class).savePlayers(List.of(data))
+                .exceptionally(throwable -> {
+                    VoidSurvival.logError("Encountered error while saving player data", throwable);
+                    return null;
+                });
 
-        } catch (PlayerDataException exception) {
+        } catch (Exception exception) {
             VoidSurvival.logError("Encountered error while saving player data", exception);
         }
 

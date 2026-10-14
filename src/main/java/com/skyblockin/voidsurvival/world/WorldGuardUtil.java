@@ -5,6 +5,7 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.flags.LocationFlag;
@@ -12,6 +13,7 @@ import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.math.BlockPosition;
@@ -101,6 +103,20 @@ public class WorldGuardUtil {
             .get(BukkitAdapter.adapt(world));
     }
 
+    public static boolean testBuild(Location location, Player player) {
+
+        LocalPlayer localPlayer = null;
+
+        if (player != null) {
+            localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
+        }
+
+        return createRegionQuery().testBuild(
+            BukkitAdapter.adapt(location),
+            localPlayer
+        );
+    }
+
     public static boolean testFlag(Location location, Player player, StateFlag... flags) {
 
         LocalPlayer localPlayer = null;
@@ -112,6 +128,27 @@ public class WorldGuardUtil {
         return createRegionQuery().testState(
             BukkitAdapter.adapt(location), localPlayer, flags
         );
+    }
+
+    public static boolean isLocationInRegion(Location loc, String regionId) {
+
+        RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+        RegionManager regions = container.get(BukkitAdapter.adapt(loc.getWorld()));
+
+        if (regions == null) {
+            return false;
+        }
+
+        BlockVector3 vector = BukkitAdapter.asBlockVector(loc);
+        ApplicableRegionSet set = regions.getApplicableRegions(vector);
+
+        for (ProtectedRegion setRegion : set) {
+            if (setRegion.getId().equalsIgnoreCase(regionId)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }

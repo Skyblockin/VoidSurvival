@@ -1,4 +1,4 @@
-package com.skyblockin.voidsurvival.config;
+package com.skyblockin.voidsurvival.item;
 
 
 import com.destroystokyo.paper.profile.PlayerProfile;
@@ -9,6 +9,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.config.Gettable;
+import com.skyblockin.voidsurvival.config.Json;
+import com.skyblockin.voidsurvival.config.RangedValue;
 import com.skyblockin.voidsurvival.enchantment.ItemEnchantmentMap;
 import com.skyblockin.voidsurvival.nms.SpawnerData;
 import com.skyblockin.voidsurvival.storage.Accessors;
@@ -35,7 +38,7 @@ import java.util.UUID;
 public final class ItemData {
 
     public transient ItemType id = null;
-    public RangedValue amount = null;
+    public RangedValue amount = new RangedValue(1);
     public Integer maxStackSize = null;
 
     // Durability
@@ -90,7 +93,12 @@ public final class ItemData {
     public ItemAdventurePredicate canPlaceOn = null;
     public ItemAdventurePredicate canBreak = null;
 
+    public CustomModelData customModelData = null;
+
     public int stanceDamage = 1;
+    public int toolPower = -1;
+    public int toolTier = -1;
+    public int toolType = -1;
 
     public SpawnerData spawnerData = null;
 
@@ -156,6 +164,8 @@ public final class ItemData {
         setData(item, DataComponentTypes.EQUIPPABLE, equippable);
         setFlag(item, DataComponentTypes.GLIDER, glider);
         setFlag(item, DataComponentTypes.INTANGIBLE_PROJECTILE, intangibleProjectile);
+
+        setData(item, DataComponentTypes.CUSTOM_MODEL_DATA, customModelData);
 
         if (!placeable) {
             Accessors.CAN_PLACE.write(item, false);
@@ -283,6 +293,11 @@ public final class ItemData {
                 data = new ItemData();
                 data.id = Json.convert(node.get("id"), ItemType.class, ItemType.STONE);
             }
+
+            data.stanceDamage = node.path("stance_damage").asInt(1);
+            data.toolPower = node.path("tool_power").asInt(-1);
+            data.toolTier = node.path("tool_tier").asInt(-1);
+            data.toolType = node.path("tool_type").asInt(-1);
 
             setAllFields(data, node);
             data.rawData = node;

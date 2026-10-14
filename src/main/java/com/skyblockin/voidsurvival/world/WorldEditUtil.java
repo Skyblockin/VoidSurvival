@@ -11,6 +11,7 @@ import com.sk89q.worldedit.function.operation.ForwardExtentCopy;
 import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.math.transform.AffineTransform;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.util.Location;
@@ -34,6 +35,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class WorldEditUtil {
 
@@ -273,7 +275,87 @@ public class WorldEditUtil {
         );
     }
 
+    private static final HashMap<String, Clipboard> SCHEMATIC_CACHE = new HashMap<>();
 
+    public static void reload() {
+        SCHEMATIC_CACHE.clear();
+    }
+
+    public static Clipboard loadSchematic(String schematic, boolean forceLoad) {
+
+        if (!forceLoad) {
+            Clipboard clipboard = SCHEMATIC_CACHE.get(schematic);
+            if (clipboard != null) {
+                return clipboard;
+            }
+        }
+
+        Path path = VoidSurvival.getInstance().getDataPath().resolve("schematics", schematic);
+
+        ClipboardFormat format = ClipboardFormats.findByPath(path);
+
+        if (format == null) {
+            return null;
+        }
+
+        try (ClipboardReader reader = format.getReader(new FileInputStream(path.toFile()))) {
+
+            Clipboard result = reader.read();
+
+            SCHEMATIC_CACHE.put(schematic, result);
+
+            return result;
+
+        } catch (Exception e) {
+            VoidSurvival.logError("Error while loading schematic", e);
+            return null;
+        }
+    }
+
+    public static Clipboard copyClipboard(Clipboard clipboard) throws WorldEditException {
+
+        BlockArrayClipboard copiedClipboard = new BlockArrayClipboard(clipboard.getRegion());
+        copiedClipboard.setOrigin(clipboard.getOrigin());
+
+        ForwardExtentCopy copyOperation = new ForwardExtentCopy(
+            clipboard, clipboard.getRegion(), copiedClipboard, clipboard.getRegion().getMinimumPoint()
+        );
+
+        Operations.complete(copyOperation);
+
+        return copiedClipboard;
+    }
+
+    public static void pasteSchematic(String id, World world, BlockPosition at, AffineTransform transform) {
+
+        Clipboard clipboard = loadSchematic(id, false);
+
+        if (clipboard == null) {
+            return;
+        }
+
+        try (EditSession session = WorldEdit.getInstance().newEditSession(BukkitAdapter.adapt(world))) {
+
+            ClipboardHolder holder = new ClipboardHolder(clipboard);
+
+            if (transform != null) {
+                holder = new ClipboardHolder(copyClipboard(clipboard));
+                holder.setTransform(transform);
+            }
+
+            Operation operation = holder
+                .createPaste(session)
+                .ignoreAirBlocks(false)
+                .to(BlockVector3.at(at.x(), at.y(), at.z()))
+                .build();
+
+            Operations.complete(operation);
+
+        } catch (Exception e) {
+            VoidSurvival.logError("Error while pasting schematic", e);
+        }
+
+    }
 
 
 }

@@ -26,6 +26,13 @@ import java.util.Iterator;
 @JsonSerialize(using = Cuboid.Serializer.class)
 public class Cuboid implements Iterable<BlockPosition> {
 
+    public static Cuboid of(Location location, int x, int y, int z) {
+        return Cuboid.between(
+            location.clone().subtract(x, y, z),
+            location.clone().add(x, y, z)
+        );
+    }
+
     private final int minX;
     private final int maxX;
     private final int minY;

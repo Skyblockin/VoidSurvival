@@ -1,17 +1,16 @@
 package com.skyblockin.voidsurvival.combat;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
-import com.skyblockin.voidsurvival.config.ItemData;
+import com.skyblockin.voidsurvival.item.ItemData;
 import com.skyblockin.voidsurvival.config.Json;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.util.FileUtil;
 import com.skyblockin.voidsurvival.util.TagUtil;
 import com.skyblockin.voidsurvival.util.TextUtil;
+import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.registry.keys.tags.ItemTypeTagKeys;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
@@ -19,6 +18,7 @@ import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +29,7 @@ public class StanceManager {
 
     private final HashMap<UUID, Integer> remainingStanceHealths = new HashMap<>();
     private final HashMap<String, Integer> stanceHealths = new HashMap<>();
-    private final HashMap<UUID, Long> staggeredMobs = new HashMap<>();
+    private final HashMap<UUID, BukkitTask> staggeredMobs = new HashMap<>();
 
     /**
      * Get the stance damage the given entity would deal if it were to attack in its current state
@@ -89,6 +89,10 @@ public class StanceManager {
         return remainingStance;
     }
 
+    public boolean isStanceBroken(LivingEntity entity) {
+        return this.staggeredMobs.containsKey(entity.getUniqueId());
+    }
+
     public void updateStance(LivingEntity attacker, LivingEntity target) {
 
         // No stance system for players
@@ -106,7 +110,7 @@ public class StanceManager {
         remainingStance -= getStanceDamage(attacker);
 
         if (remainingStance <= 0) {
-            // TODO: Play stance break effect and stun the mob?
+            stunEntity(target);
             remainingStanceHealths.remove(target.getUniqueId());
         } else {
             remainingStanceHealths.put(target.getUniqueId(), remainingStance);
@@ -114,13 +118,18 @@ public class StanceManager {
 
     }
 
-    private void stunEntity(LivingEntity entity) {
+    public void stunEntity(LivingEntity entity) {
 
         TextDisplay display = entity.getWorld().spawn(entity.getEyeLocation().add(0, 0.5, 0), TextDisplay.class, d -> {
             d.text(TextUtil.color("<blue>STUNNED!   <yellow>5.0s"));
         });
 
-        new BukkitRunnable() {
+        entity.setAI(false);
+
+        Location lookPos = entity.getLocation().add(entity.getLocation().getDirection().multiply(entity.getHeight() * 1.5));
+        entity.lookAt(lookPos.x(), lookPos.y(), lookPos.z(), LookAnchor.EYES);
+
+        BukkitTask task = new BukkitRunnable() {
 
             int stunTicks = 20 * 5;
 
@@ -129,7 +138,7 @@ public class StanceManager {
 
                 if (stunTicks <= 0) {
                     display.remove();
-                    cancel();
+                    unstunEntity(entity);
                 } else {
 
                     if (stunTicks % 2 == 0) {
@@ -141,6 +150,18 @@ public class StanceManager {
             }
         }.runTaskTimer(VoidSurvival.getInstance(), 0, 1);
 
+        this.staggeredMobs.put(entity.getUniqueId(), task);
+    }
+
+    public void unstunEntity(LivingEntity entity) {
+
+        BukkitTask task = this.staggeredMobs.remove(entity.getUniqueId());
+
+        if (task != null) {
+            task.cancel();
+        }
+
+        entity.setAI(true);
     }
 
     public void reload() throws IOException {

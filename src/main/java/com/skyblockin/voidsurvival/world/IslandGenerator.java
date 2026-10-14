@@ -2,7 +2,9 @@ package com.skyblockin.voidsurvival.world;
 
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.skyblockin.voidsurvival.VoidSurvival;
-import com.skyblockin.voidsurvival.storage.Database;
+import com.skyblockin.voidsurvival.storage.database.Database;
+import com.skyblockin.voidsurvival.storage.database.GlobalDataTable;
+import com.skyblockin.voidsurvival.storage.database.IslandDataTable;
 import com.skyblockin.voidsurvival.util.Functions;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -56,7 +58,11 @@ public class IslandGenerator {
                 x = random.nextInt(-chunkRange, chunkRange);
                 z = random.nextInt(-chunkRange, chunkRange);
                 chunk = world.getChunkAt(x, z, false);
-            } while (chunk.isGenerated() && chunk.getInhabitedTime() > (20 * 30) && !Database.getIslandsInRange(x, z, 32, 1).isEmpty());
+            } while (chunk.isGenerated() && chunk.getInhabitedTime() > (20 * 30) &&
+                !VoidSurvival.getTable(IslandDataTable.class).getIslandsInRange(x, z, 32, 1)
+                    .join()
+                    .isEmpty()
+            );
 
             return chunk;
         });
@@ -91,7 +97,7 @@ public class IslandGenerator {
     // 400 islands -> 20000
     private int getIslandGenerationRange() {
 
-        int count = Database.getIslandCount();
+        int count = VoidSurvival.getTable(IslandDataTable.class).getIslandCount().join();
         int range = (int) Math.sqrt(count * 500000) + 100;
 
         VoidSurvival.logDebug("Generated island range %d with %d islands", range, count);

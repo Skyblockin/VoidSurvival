@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.util.Converter;
 import com.fasterxml.jackson.databind.util.StdConverter;
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.item.ItemData;
 import com.skyblockin.voidsurvival.util.Functions;
 import io.papermc.paper.block.BlockPredicate;
 import io.papermc.paper.datacomponent.DataComponentType;
@@ -24,7 +25,6 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.registry.set.RegistrySet;
-import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -110,7 +110,8 @@ public class JsonDeserializers {
     public static final UseCooldownDeserializer USE_COOLDOWN = new UseCooldownDeserializer();
     public static final EntityTypeKeyDeserializer ENTITY_TYPE_KEY = new EntityTypeKeyDeserializer();
     public static final LocationDeserializer LOCATION = new LocationDeserializer();
-
+    public static final WorldDeserializer WORLD = new WorldDeserializer();
+    public static final CustomModelDataDeserializer CUSTOM_MODEL_DATA = new CustomModelDataDeserializer();
 
     private static <T> StdDelegatingDeserializer<T> delegate(Converter<?, T> converter) {
         return new StdDelegatingDeserializer<>(converter);
@@ -698,7 +699,7 @@ public class JsonDeserializers {
 
         @Override
         public DamageResistant deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-            return DamageResistant.damageResistant(TagKey.create(RegistryKey.DAMAGE_TYPE, p.getValueAsString()));
+            return DamageResistant.damageResistant(Functions.parseRegistryKeySet(RegistryKey.DAMAGE_TYPE, p.getCodec().readTree(p)));
         }
     }
 
@@ -970,6 +971,43 @@ public class JsonDeserializers {
             List<ConsumeEffect> effects = Json.convert(p.getCodec().readTree(p), new TypeReference<>() {});
 
             return DeathProtection.deathProtection(effects);
+        }
+    }
+
+    public static class CustomModelDataDeserializer extends StdDeserializer<CustomModelData> {
+
+        protected CustomModelDataDeserializer() {
+            super(CustomModelData.class);
+        }
+
+        @Override
+        public CustomModelData deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
+
+            JsonNode node = p.getCodec().readTree(p);
+
+            List<Boolean> flags = node.has("flags") ? Json.listFromJson(node.get("flags"), Boolean.class) : List.of();
+            List<Float> floats = node.has("floats") ? Json.listFromJson(node.get("floats"), Float.class) : List.of();
+            List<Color> colors = node.has("colors") ? Json.listFromJson(node.get("colors"), Color.class) : List.of();
+            List<String> strings = node.has("strings") ? Json.listFromJson(node.get("strings"), String.class) : List.of();
+
+            return CustomModelData.customModelData()
+                .addFlags(flags)
+                .addFloats(floats)
+                .addColors(colors)
+                .addStrings(strings)
+                .build();
+        }
+    }
+
+    public static class WorldDeserializer extends StdDeserializer<World> {
+
+        protected WorldDeserializer() {
+            super(World.class);
+        }
+
+        @Override
+        public World deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+            return Bukkit.getWorld(p.getValueAsString());
         }
     }
 

@@ -13,7 +13,6 @@ import org.bukkit.enchantments.Enchantment;
 import java.io.IOException;
 import java.util.HashMap;
 
-@SuppressWarnings("UnstableApiUsage")
 @JsonDeserialize(using = ItemEnchantmentMap.Deserializer.class)
 public class ItemEnchantmentMap implements Gettable<ItemEnchantments> {
 

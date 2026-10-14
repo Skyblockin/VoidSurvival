@@ -1,7 +1,9 @@
 package com.skyblockin.voidsurvival.leaderboard;
 
-import com.skyblockin.voidsurvival.storage.Database;
+import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.storage.database.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
+import com.skyblockin.voidsurvival.storage.database.PlayerDataTable;
 
 import java.util.*;
 
@@ -9,7 +11,7 @@ public class LeaderboardManager {
 
     public List<PlayerData> getLeaderboard(LeaderboardType type, int limit) {
 
-        Set<PlayerData> leaderboard = Database.getLeaderboard(type, limit);
+        Set<PlayerData> leaderboard = VoidSurvival.getTable(PlayerDataTable.class).getLeaderboard(type, limit).join();
 
         if (leaderboard == null) {
             return null;

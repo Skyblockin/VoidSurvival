@@ -1,7 +1,7 @@
 package com.skyblockin.voidsurvival.entity;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
-import com.skyblockin.voidsurvival.config.ItemData;
+import com.skyblockin.voidsurvival.item.ItemData;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;

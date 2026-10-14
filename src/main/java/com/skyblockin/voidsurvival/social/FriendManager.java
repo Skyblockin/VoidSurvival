@@ -2,8 +2,9 @@ package com.skyblockin.voidsurvival.social;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.message.MessageKeys;
-import com.skyblockin.voidsurvival.storage.Database;
+import com.skyblockin.voidsurvival.storage.database.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
+import com.skyblockin.voidsurvival.storage.database.PlayerDataTable;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -85,11 +86,12 @@ public class FriendManager {
                     player.sendMessage(TextUtil.message(MessageKeys.FRIEND_REMOVE_RECIPIENT, sender.getName()));
                 }
 
-                try {
-                    Database.savePlayers(List.of(senderData, removedData));
-                } catch (Exception ex) {
-                    VoidSurvival.logError("Encountered error while saving players after friend remove: ", ex);
-                }
+
+                VoidSurvival.getPlayerTable().savePlayers(List.of(senderData, removedData))
+                    .exceptionally(throwable -> {
+                        VoidSurvival.logError("Encountered error while saving players after friend remove: ", throwable);
+                        return null;
+                    });
 
             } else {
                 sender.sendMessage(TextUtil.message(MessageKeys.FRIEND_REMOVE_NOT_FRIENDS, name));
@@ -120,11 +122,11 @@ public class FriendManager {
 
              uuidSet.remove(recipient.getUniqueId());
 
-             try {
-                 Database.savePlayers(List.of(senderData, recipientData));
-             } catch (Exception ex) {
-                 VoidSurvival.logError("Encountered error while saving players after friend accept: ", ex);
-             }
+             VoidSurvival.getPlayerTable().savePlayers(List.of(senderData, recipientData))
+                 .exceptionally(throwable -> {
+                     VoidSurvival.logError("Encountered error while saving players after friend accept: ", throwable);
+                     return null;
+                 });
 
              if (uuidSet.isEmpty()) {
                  pendingFriendRequests.remove(sender.getUniqueId());

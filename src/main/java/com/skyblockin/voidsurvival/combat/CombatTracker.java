@@ -1,26 +1,18 @@
 package com.skyblockin.voidsurvival.combat;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
-import com.skyblockin.voidsurvival.constants.DamageTypes;
-import com.skyblockin.voidsurvival.constants.Enchantments;
-import com.skyblockin.voidsurvival.constants.ItemIds;
+import com.skyblockin.voidsurvival.combat.status.BleedStatusManager;
+import com.skyblockin.voidsurvival.item.ItemIds;
 import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.util.TagUtil;
 import com.skyblockin.voidsurvival.util.TextUtil;
-import io.papermc.paper.datacomponent.DataComponentTypes;
-import io.papermc.paper.datacomponent.item.ItemAttributeModifiers;
 import io.papermc.paper.registry.keys.tags.EntityTypeTagKeys;
-import io.papermc.paper.registry.keys.tags.ItemTypeTagKeys;
-import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import org.bukkit.*;
-import org.bukkit.block.BlockType;
 import org.bukkit.damage.DamageSource;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -29,25 +21,19 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.ItemType;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-@SuppressWarnings("UnstableApiUsage")
 public class CombatTracker implements Listener {
 
-    private final HashMap<UUID, Double> bleedMap = new HashMap<>();
-    private final HashMap<UUID, BossBar> bleedingBars = new HashMap<>();
-    // First is for bleed only lol
-    private final HashMap<UUID, Long> lastDamageTimes = new HashMap<>();
+    private final HashMap<UUID, Instant> lastDamageTimes = new HashMap<>();
     private final HashMap<UUID, Instant> lastEntityHitTimes = new HashMap<>();
 
+    private final List<StatusManager> statusManagers;
     private final StanceManager stanceManager;
 
     public CombatTracker() {
@@ -55,6 +41,7 @@ public class CombatTracker implements Listener {
         Server server = VoidSurvival.getInstance().getServer();
 
         this.stanceManager = new StanceManager();
+        this.statusManagers = List.of(new BleedStatusManager());
 
         VoidSurvival.getInstance().runTaskTimer(() -> {
 
@@ -71,52 +58,9 @@ public class CombatTracker implements Listener {
 
         // Let bleeding decay by 5 points every half a second, meaning 10 seconds to decay from a full bar
         VoidSurvival.getInstance().runTaskTimer(() -> {
-
-            List<UUID> keysToRemove = new ArrayList<>();
-
-            bleedMap.replaceAll((uuid, value) -> {
-
-                Player player = Bukkit.getPlayer(uuid);
-
-                // Play a "bleeding" effect around the player
-                if (player != null) {
-                    player.getWorld().spawnParticle(Particle.BLOCK_CRUMBLE,
-                        player.getBoundingBox().getCenter().toLocation(player.getWorld()),
-                        10, 0.5, player.getBoundingBox().getHeight() / 2.0, 0.5, 1,
-                        BlockType.REDSTONE_BLOCK.createBlockData()
-                    );
-                }
-
-                // If the player was damaged in the past 5 seconds, prevent bleeding from decaying
-                if (lastDamageTimes.getOrDefault(uuid, 0L) + 5000L > System.currentTimeMillis()) {
-                    return value;
-                }
-
-                double newValue = value - 5;
-
-                if (newValue <= 0) {
-                    keysToRemove.add(uuid);
-                } else {
-                    bleedingBars.computeIfPresent(uuid, (key, bar) ->
-                        bar.name(getBleedingTitleForBleedingAmount(newValue))
-                            .progress(Math.clamp((float) (newValue / 100), 0F, 1F))
-                    );
-                }
-
-                return newValue;
-            });
-
-            // Cleaning up
-            keysToRemove.forEach(uuid -> {
-                bleedMap.remove(uuid);
-                lastDamageTimes.remove(uuid);
-
-                Player player = Bukkit.getPlayer(uuid);
-                BossBar bar = bleedingBars.remove(uuid);
-
-                if (player != null) player.hideBossBar(bar);
-            });
-
+            for (StatusManager manager : statusManagers) {
+                manager.tickStatus(lastDamageTimes);
+            }
         }, 0, 10L);
     }
 
@@ -163,6 +107,14 @@ public class CombatTracker implements Listener {
         return lastHitTime != null && lastHitTime.plusSeconds(combatTagDurationSeconds).isAfter(Instant.now());
     }
 
+    public boolean isStanceBroken(LivingEntity entity) {
+        return this.stanceManager.isStanceBroken(entity);
+    }
+
+    public StanceManager getStanceManager() {
+        return stanceManager;
+    }
+
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
         lastEntityHitTimes.remove(event.getPlayer().getUniqueId());
@@ -171,6 +123,7 @@ public class CombatTracker implements Listener {
     @EventHandler
     public void onHit(EntityDamageByEntityEvent event) {
 
+        // Don't allow friends to attack each other
         if (event.getDamager() instanceof Player first && event.getEntity() instanceof Player other) {
             if (VoidSurvival.getInstance().getFriendManager().testFriendship(first, other)) {
                 event.setCancelled(true);
@@ -178,6 +131,7 @@ public class CombatTracker implements Listener {
             }
         }
 
+        // lastEntityHitTimes is to prevent stuff such as executing commands in combat, so it should only apply to players
         if (event.getEntity() instanceof Player player) {
             this.lastEntityHitTimes.put(player.getUniqueId(), Instant.now());
         }
@@ -186,7 +140,7 @@ public class CombatTracker implements Listener {
             this.lastEntityHitTimes.put(player.getUniqueId(), Instant.now());
         }
 
-        // Proteccc
+        // Don't allow indirect attacks to build up status effects
         if (event.getDamageSource().isIndirect()
             || event.getCause() != EntityDamageEvent.DamageCause.ENTITY_ATTACK
             || event.getDamageSource().getDamageType().equals(DamageTypes.BLEED)
@@ -194,101 +148,21 @@ public class CombatTracker implements Listener {
             return;
         }
 
-        if (event.getDamager() instanceof LivingEntity damager && event.getEntity() instanceof Player player) {
+        if (event.getDamager() instanceof LivingEntity damager && event.getEntity() instanceof LivingEntity target) {
 
-            // Also known as the last time the player was damaged by a living entity
-            lastDamageTimes.put(player.getUniqueId(), System.currentTimeMillis());
+            // Only enemies have a controllable stance for now
+            if (!(target instanceof Player)) {
+                this.stanceManager.updateStance(damager, target);
+            }
 
-            EntityEquipment equipment = damager.getEquipment();
+            // Also known as the last time the entity was damaged by another entity
+            this.lastDamageTimes.put(target.getUniqueId(), Instant.now());
 
-            if (equipment == null) return;
-
-            ItemStack weapon = equipment.getItemInMainHand();
-
-            int bleedingLevel = weapon.getEnchantmentLevel(Enchantments.BLEED);
-
-            // If the sword has no bleeding, just don't do anything
-            if (bleedingLevel == 0) return;
-
-            double attackSpeedModifier = damager instanceof Player attacker ? attacker.getAttackCooldown() : 1.0;
-            double bleedResistance = calculateBleedResistance(player.getEquipment());
-            double bleedingDamage = 10 * (1.0 - bleedResistance) * (event.isCritical() ? 1.5 : 1.0) * attackSpeedModifier;
-            double currentBleeding = bleedMap.getOrDefault(player.getUniqueId(), 0.0) + bleedingDamage;
-
-            bleedingBars.computeIfAbsent(player.getUniqueId(), key -> {
-
-                BossBar bar = BossBar.bossBar(
-                    getBleedingTitleForBleedingAmount(currentBleeding), (float) (currentBleeding / 100), BossBar.Color.RED,
-                    BossBar.Overlay.NOTCHED_20
-                );
-
-                player.showBossBar(bar);
-
-                return bar;
-
-            }).progress(Math.clamp((float) (currentBleeding / 100), 0F, 1F))
-                .name(getBleedingTitleForBleedingAmount(currentBleeding));
-
-            if (currentBleeding >= 100) {
-
-                player.damage(4 + 4 * bleedingLevel, DamageSource.builder(DamageTypes.BLEED)
-                    .withDirectEntity(damager)
-                    .withCausingEntity(damager)
-                    .build()
-                );
-
-                player.getWorld().spawnParticle(Particle.BLOCK_CRUMBLE,
-                    player.getLocation().clone().add(0, 1, 0),
-                    200, 0.5, 0.5, 0.5, 0,
-                    BlockType.REDSTONE_BLOCK.createBlockData()
-                );
-
-                player.playSound(player.getLocation(), Sound.ENTITY_TURTLE_EGG_BREAK, 2F, 0.5F);
-
-                bleedMap.remove(player.getUniqueId());
-                player.hideBossBar(bleedingBars.remove(player.getUniqueId()));
-
-            } else {
-                bleedMap.put(player.getUniqueId(), currentBleeding);
+            for (StatusManager manager : this.statusManagers) {
+                manager.updateStatus(target, damager, event);
             }
         }
 
-    }
-
-    private Component getBleedingTitleForBleedingAmount(double bleeding) {
-        return TextUtil.color("<dark_red><bold>BLEED</bold> <red>[%d/100]", (int) bleeding);
-    }
-
-    private double calculateBleedResistance(EntityEquipment equipment) {
-
-        if (equipment == null) return 0.0;
-
-        double resistance = 0.0;
-
-        for (ItemStack armor : equipment.getArmorContents()) {
-
-            if (armor == null) continue;
-
-            // +1% per protection level
-            // +4% per protection 4
-            // +16% from enchantments in total
-            resistance += armor.getEnchantmentLevel(Enchantment.PROTECTION);
-
-            ItemAttributeModifiers modifiers = armor.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
-
-            if (modifiers == null) continue;
-
-            // Full armor bars would mean +20% bleed resistance
-            for (ItemAttributeModifiers.Entry modifier : modifiers.modifiers()) {
-                if (modifier.attribute().equals(Attributes.ARMOR)) {
-                    resistance += modifier.modifier().getAmount();
-                }
-            }
-
-            // Full protection 4 diamond armor would give +36% bleed resistance in total
-        }
-
-        return resistance / 100;
     }
 
     @EventHandler

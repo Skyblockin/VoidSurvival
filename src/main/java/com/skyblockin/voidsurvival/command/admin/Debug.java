@@ -10,9 +10,10 @@ import com.skyblockin.voidsurvival.config.Json;
 import com.skyblockin.voidsurvival.loot.LootTable;
 import com.skyblockin.voidsurvival.loot.LootUtil;
 import com.skyblockin.voidsurvival.nms.NMSUtil;
-import com.skyblockin.voidsurvival.storage.Database;
+import com.skyblockin.voidsurvival.storage.database.Database;
 import com.skyblockin.voidsurvival.storage.Island;
 import com.skyblockin.voidsurvival.storage.PlayerData;
+import com.skyblockin.voidsurvival.storage.database.IslandDataTable;
 import com.skyblockin.voidsurvival.util.CommandUtil;
 import com.skyblockin.voidsurvival.util.Functions;
 import com.skyblockin.voidsurvival.util.TextUtil;
@@ -52,22 +53,22 @@ public final class Debug {
                         int range = ctx.getArgument("range", Integer.class);
                         int limit = ctx.getArgument("limit", Integer.class);
 
-                        List<Island> islands = Database.getIslandsInRange(chunkX, chunkZ, range, limit);
+                        VoidSurvival.getIslandTable().getIslandsInRange(chunkX, chunkZ, range, limit).thenAccept(islands -> {
+                            int i = 1;
 
-                        int i = 1;
+                            for (Island island : islands) {
 
-                        for (Island island : islands) {
+                                int x = island.x();
+                                int z = island.z();
+                                int chunkDistance = (int) Math.sqrt(Math.pow(x - chunkX, 2) + Math.pow(z - chunkZ, 2));
 
-                            int x = island.x();
-                            int z = island.z();
-                            int chunkDistance = (int) Math.sqrt(Math.pow(x - chunkX, 2) + Math.pow(z - chunkZ, 2));
-
-                            player.sendMessage(TextUtil.color(
-                                "%d. island (id: %d) at <click:run_command:/tp %d 64 %d>%d, %d</click> (%d chunks away)",
-                                i, island.id(), x * 16 + 8, z * 16 + 8, x, z, chunkDistance
-                            ));
-                            i++;
-                        }
+                                player.sendMessage(TextUtil.color(
+                                    "%d. island (id: %d) at <click:run_command:/tp %d 64 %d>%d, %d</click> (%d chunks away)",
+                                    i, island.id(), x * 16 + 8, z * 16 + 8, x, z, chunkDistance
+                                ));
+                                i++;
+                            }
+                        });
 
                     }))
                 )

@@ -37,7 +37,7 @@ public class RangedValue implements Gettable<Integer> {
 
             JsonNode node = p.getCodec().readTree(p);
 
-            if (node.isInt()) return new RangedValue(node.asInt());
+            if (node.isNumber()) return new RangedValue(node.asInt());
             else if (node.isArray()) return new RangedValue(node.get(0).asInt(), node.get(1).asInt());
 
             return null;

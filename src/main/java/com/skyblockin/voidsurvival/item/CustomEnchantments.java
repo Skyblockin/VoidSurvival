@@ -1,4 +1,4 @@
-package com.skyblockin.voidsurvival.constants;
+package com.skyblockin.voidsurvival.item;
 
 import com.skyblockin.voidsurvival.enchantment.CustomEnchantment;
 import io.papermc.paper.registry.keys.tags.ItemTypeTagKeys;

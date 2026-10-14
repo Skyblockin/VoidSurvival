@@ -47,4 +47,12 @@ public record BlockPosition(int x, int y, int z) {
         return new BlockPosition(this.x, y, this.z);
     }
 
+    public int distanceSquared(Location location) {
+
+        int dx = x - location.getBlockX();
+        int dy = y - location.getBlockY();
+        int dz = z - location.getBlockZ();
+
+        return dx * dx + dy * dy + dz * dz;
+    }
 }

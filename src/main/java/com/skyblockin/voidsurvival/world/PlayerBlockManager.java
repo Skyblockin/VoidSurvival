@@ -6,10 +6,12 @@ import com.skyblockin.voidsurvival.math.BlockPosition;
 import com.skyblockin.voidsurvival.math.ChunkPosition;
 import com.skyblockin.voidsurvival.region.Flags;
 import com.skyblockin.voidsurvival.storage.*;
+import com.skyblockin.voidsurvival.storage.chunk.ChunkDataController;
 import com.skyblockin.voidsurvival.util.CustomTimeUnit;
 import com.skyblockin.voidsurvival.util.Functions;
 import com.skyblockin.voidsurvival.util.PlayerUtil;
 import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
+import io.papermc.paper.event.packet.PlayerChunkUnloadEvent;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockType;
@@ -19,9 +21,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -30,8 +34,11 @@ public class PlayerBlockManager implements Listener {
 
     private final HashMap<BlockType, Pair<Integer, Integer>> regenerationTimes = new HashMap<>();
     private final HashMap<UUID, HashMap<ChunkPosition, HashMap<BlockPosition, Long>>> playerBlockChanges = new HashMap<>();
+    private final ChunkDataController controller = new ChunkDataController();
 
-    public PlayerBlockManager() {
+    public PlayerBlockManager() throws SQLException {
+
+        controller.initialize();
 
         VoidSurvival.getInstance().runTaskTimer(() -> {
 
@@ -105,10 +112,31 @@ public class PlayerBlockManager implements Listener {
     }
 
     @EventHandler
+    public void onPlayerChunkUnload(PlayerChunkUnloadEvent event) {
+
+        Chunk chunk = event.getChunk();
+
+        try {
+            if (controller.getModifiedChunkCount() >= 100) {
+                controller.saveChunks();
+            }
+        } catch (Exception ex) {
+            VoidSurvival.logError("ChunkDataController failed to unload chunk at %d, %d: %s", ex, chunk.getX(), chunk.getZ(), ex.getMessage());
+        }
+
+    }
+
+    @EventHandler
     public void onPlayerChunkLoad(PlayerChunkLoadEvent event) {
 
         Player player = event.getPlayer();
         Chunk chunk = event.getChunk();
+
+        try {
+            controller.loadChunks(List.of(ChunkPosition.ofChunk(chunk)));
+        } catch (Exception ex) {
+            VoidSurvival.logError("ChunkDataController failed to load chunk at %d, %d: %s", ex, chunk.getX(), chunk.getZ(), ex.getMessage());
+        }
 
         HashMap<ChunkPosition, HashMap<BlockPosition, Long>> changes = playerBlockChanges.get(event.getPlayer().getUniqueId());
 
@@ -130,10 +158,30 @@ public class PlayerBlockManager implements Listener {
     }
 
     @EventHandler
+    public void onBlockPlace(BlockPlaceEvent event) {
+
+        Player player = event.getPlayer();
+        Block block = event.getBlock();
+
+        try {
+            controller.setPlacedBy(block.getX(), block.getY(), block.getZ(), player.getUniqueId());
+        } catch (Exception ex) {
+            VoidSurvival.logError("ChunkDataController failed to track block place at %d, %d, %d: %s", ex, block.getX(), block.getY(), block.getZ(), ex.getMessage());
+        }
+
+    }
+
+    @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
 
         Player player = event.getPlayer();
         Block block = event.getBlock();
+
+        try {
+            controller.remove(block.getX(), block.getY(), block.getZ());
+        } catch (Exception ex) {
+            VoidSurvival.logError("ChunkDataController failed to track block remove at %d, %d, %d: %s", ex, block.getX(), block.getY(), block.getZ(), ex.getMessage());
+        }
 
         // Allow ops to just modify the world as they wish
         if (player.isOp() || !Flags.REGENERATE_BLOCKS.test(player, block)) {
