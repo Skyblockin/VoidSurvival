@@ -1,5 +1,6 @@
 package com.skyblockin.voidsurvival.block;
 
+import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Pair;
 import com.skyblockin.voidsurvival.gathering.GatheringNode;
 import com.skyblockin.voidsurvival.item.ItemData;
@@ -11,6 +12,7 @@ import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.Tool;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.attribute.Attribute;
@@ -86,7 +88,7 @@ public class BlockListener implements Listener {
             return;
         }
 
-        if (player.getGameMode() == org.bukkit.GameMode.CREATIVE) {
+        if (player.getGameMode() == GameMode.CREATIVE) {
             clearSession(player.getUniqueId());
             return;
         }
@@ -95,7 +97,7 @@ public class BlockListener implements Listener {
 
         Block block = player.getTargetBlockExact(4);
 
-        if (block == null || !WorldGuardUtil.testBuild(block.getLocation(), player)) {
+        if (block == null) {
             clearSession(player.getUniqueId());
             return;
         }
@@ -103,7 +105,25 @@ public class BlockListener implements Listener {
         UUID uuid = player.getUniqueId();
         BlockBreakSession session = blockBreakProgress.get(uuid);
 
-        boolean actuallyBreak = !Flags.REGENERATE_BLOCKS.test(player, block);
+        boolean isProtected = !WorldGuardUtil.testBuild(block.getLocation(), player);
+        boolean isCustomBreakable = VoidSurvival.getInstance().getPlayerBlockManager().isBreakableBlock(block);
+        boolean hasRegenFlag = Flags.REGENERATE_BLOCKS.test(player, block);
+
+        if (isProtected) {
+            if (hasRegenFlag) {
+                if (!isCustomBreakable) {
+                    clearSession(uuid);
+                    return;
+                }
+            } else {
+                if (isCustomBreakable) {
+                    clearSession(uuid);
+                    return;
+                }
+            }
+        }
+
+        boolean actuallyBreak = !hasRegenFlag;
 
         if (session == null || !block.equals(session.getBlock())) {
 
@@ -140,7 +160,7 @@ public class BlockListener implements Listener {
                 if (hardness < 0) return new ToolEvaluation(0, false);
                 if (hardness == 0) return new ToolEvaluation(1, true);
 
-                boolean handIsValid = customBlock.getProperties().requiredToolType <= 0;
+                boolean handIsValid = customBlock.getProperties().requiredToolType <= 0 && customBlock.getProperties().requiredToolTier <= 0;
 
                 float divider = handIsValid ? 30.0F : 100.0F;
                 float breakPerTick = 1.0F / (hardness * divider);

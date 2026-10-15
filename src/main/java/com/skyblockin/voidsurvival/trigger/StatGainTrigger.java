@@ -20,7 +20,7 @@ public abstract class StatGainTrigger<T extends Event> implements Trigger<T> {
     }
 
     @Override
-    public abstract void activate(T event);
+    public abstract void activate(TriggerManager manager, T event);
 
     @Override
     public Requirements getRequirements() {

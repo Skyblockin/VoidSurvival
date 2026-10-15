@@ -32,7 +32,9 @@ import net.kyori.adventure.util.TriState;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.BlockType;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.*;
@@ -112,6 +114,8 @@ public class JsonDeserializers {
     public static final LocationDeserializer LOCATION = new LocationDeserializer();
     public static final WorldDeserializer WORLD = new WorldDeserializer();
     public static final CustomModelDataDeserializer CUSTOM_MODEL_DATA = new CustomModelDataDeserializer();
+    public static final BlockDataDeserializer BLOCK_DATA = new BlockDataDeserializer();
+    public static final BlockStateDeserializer BLOCK_STATE = new BlockStateDeserializer();
 
     private static <T> StdDelegatingDeserializer<T> delegate(Converter<?, T> converter) {
         return new StdDelegatingDeserializer<>(converter);
@@ -1037,6 +1041,30 @@ public class JsonDeserializers {
             float pitch = (float) node.get("pitch").asDouble();
 
             return new Location(world, x, y, z, yaw, pitch);
+        }
+    }
+
+    public static class BlockDataDeserializer extends StdDeserializer<BlockData> {
+
+        protected BlockDataDeserializer() {
+            super(BlockData.class);
+        }
+
+        @Override
+        public BlockData deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
+            return Bukkit.createBlockData(p.getValueAsString());
+        }
+    }
+
+    public static class BlockStateDeserializer extends StdDeserializer<BlockState> {
+
+        protected BlockStateDeserializer() {
+            super(BlockState.class);
+        }
+
+        @Override
+        public BlockState deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
+            return Bukkit.createBlockData(p.getValueAsString()).createBlockState();
         }
     }
 }

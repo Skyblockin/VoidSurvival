@@ -53,7 +53,7 @@ public class KillGainTrigger extends StatGainTrigger<EntityDeathEvent> {
     }
 
     @Override
-    public void activate(EntityDeathEvent event) {
+    public void activate(TriggerManager manager, EntityDeathEvent event) {
 
         LivingEntity entity = event.getEntity();
         EntityDamageEvent damageEvent = entity.getLastDamageCause();
@@ -80,48 +80,10 @@ public class KillGainTrigger extends StatGainTrigger<EntityDeathEvent> {
             boolean meetsRequirements = getRequirements() == null || getRequirements().test(data);
 
             if (meetsRequirements && currentKills >= requiredKills) {
-                for (String triggerableId : triggerableIds) {
-                    VoidSurvival.getInstance().getTriggerManager().trigger(triggerableId, player, data);
-                }
+                TriggerSequence.runSequence(triggerableIds, manager, player, data);
             }
         }
 
     }
-
-
-    /*
-    public static class Deserializer extends StdDeserializer<KillGainTrigger> {
-
-        protected Deserializer() {
-            super(KillGainTrigger.class);
-        }
-
-        @Override
-        public KillGainTrigger deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-
-            JsonNode node = p.getCodec().readTree(p);
-
-            String id = node.get("id").asText();
-            String regionId = node.get("region_id").asText();
-
-            JsonNode triggersNode = node.get("triggers");
-
-            List<String> triggerableIds = Json.listFromJson(triggersNode, String.class);
-
-            int requiredKills = node.get("required_kills").asInt();
-
-            List<EntityType> entityTypes = List.of();
-
-            if (node.has("entity_types")) {
-                entityTypes = Json.listFromJson(node.get("entity_types"), EntityType.class);
-            }
-
-            Requirements requirements = Json.fromJson(node.get("requirements"), Requirements.class);
-            ProgressionDisplay progressionDisplay = Json.fromJson(node.get("display"), ProgressionDisplay.class);
-
-            return new KillGainTrigger(id, regionId, progressionDisplay, entityTypes, requiredKills, triggerableIds, requirements);
-        }
-
-    }*/
 
 }

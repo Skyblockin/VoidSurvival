@@ -19,7 +19,9 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.BlockType;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.*;
@@ -111,6 +113,8 @@ public class Json {
         module.addDeserializer(Location.class, JsonDeserializers.LOCATION);
         module.addDeserializer(World.class, JsonDeserializers.WORLD);
         module.addDeserializer(CustomModelData.class, JsonDeserializers.CUSTOM_MODEL_DATA);
+        module.addDeserializer(BlockData.class, JsonDeserializers.BLOCK_DATA);
+        module.addDeserializer(BlockState.class, JsonDeserializers.BLOCK_STATE);
 
         module.addKeyDeserializer(EquipmentSlot.class, JsonDeserializers.EQUIPMENT_SLOT_KEY);
         module.addKeyDeserializer(NamespacedKey.class, JsonDeserializers.NAMESPACED_KEY);

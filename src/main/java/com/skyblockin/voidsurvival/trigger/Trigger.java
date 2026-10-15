@@ -6,7 +6,7 @@ public interface Trigger<T extends Event> {
 
     String getId();
 
-    void activate(T event);
+    void activate(TriggerManager manager, T event);
 
     Requirements getRequirements();
 

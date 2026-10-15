@@ -46,23 +46,19 @@ public class BlockBreakSession {
 
             if (!actuallyBreak) {
 
+                CustomBlockMineEvent.callEvent(player, block, customBlock);
+
                 if (customBlock != null) {
                     player.getInventory().addItem(customBlock.getProperties().breakResult.createItem());
                 } else {
                     player.getInventory().addItem(new ItemStack(block.getType()));
                 }
 
-                BlockData oldData = block.getBlockData();
-                block.setType(Material.BEDROCK);
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        block.setBlockData(oldData);
-                    }
-                }.runTaskLater(VoidSurvival.getInstance(), 20 * 60);
                 tool.damage(1, player);
 
             } else {
+
+                CustomBlockMineEvent.callEvent(player, block, customBlock);
 
                 if (customBlock != null) {
                     block.setType(Material.AIR);
@@ -73,6 +69,7 @@ public class BlockBreakSession {
                     block.breakNaturally(tool, true, true);
                     tool.damage(1, player);
                 }
+
             }
 
             reset();

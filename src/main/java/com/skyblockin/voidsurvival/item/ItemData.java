@@ -22,7 +22,11 @@ import io.papermc.paper.datacomponent.item.Repairable;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.*;
+import org.bukkit.inventory.meta.BlockDataMeta;
+import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -84,6 +88,8 @@ public final class ItemData {
     public ItemArmorTrim trim = null;
     public ResolvableProfile profile = null;
     public ItemContainerContents containerContents = null;
+    public BlockState blockState;
+    public BlockData blockData;
 
     public Key breakSound = null;
 
@@ -112,6 +118,18 @@ public final class ItemData {
 
         if (spawnerData != null) {
             item = spawnerData.applyNmsTag(item);
+        }
+
+        if (blockData != null) {
+            item.editMeta(BlockDataMeta.class, meta -> {
+                meta.setBlockData(blockData);
+            });
+        }
+
+        if (blockState != null) {
+            item.editMeta(BlockStateMeta.class, meta -> {
+                meta.setBlockState(blockState);
+            });
         }
 
         // Item appearance things

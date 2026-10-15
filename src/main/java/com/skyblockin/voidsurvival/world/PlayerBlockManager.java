@@ -1,6 +1,8 @@
 package com.skyblockin.voidsurvival.world;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.block.CustomBlock;
+import com.skyblockin.voidsurvival.block.CustomBlockMineEvent;
 import com.skyblockin.voidsurvival.config.Pair;
 import com.skyblockin.voidsurvival.math.BlockPosition;
 import com.skyblockin.voidsurvival.math.ChunkPosition;
@@ -32,7 +34,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @SuppressWarnings("UnstableApiUsage")
 public class PlayerBlockManager implements Listener {
 
-    private final HashMap<BlockType, Pair<Integer, Integer>> regenerationTimes = new HashMap<>();
+    private final HashMap<String, Pair<Integer, Integer>> regenerationTimes = new HashMap<>();
     private final HashMap<UUID, HashMap<ChunkPosition, HashMap<BlockPosition, Long>>> playerBlockChanges = new HashMap<>();
     private final ChunkDataController controller = new ChunkDataController();
 
@@ -100,15 +102,27 @@ public class PlayerBlockManager implements Listener {
 
         for (String key : section.getKeys(false)) {
 
-            BlockType blockType = Registry.BLOCK.get(NamespacedKey.minecraft(key));
-
             int minTime = (int) Functions.getTimeFromYaml(section, key + ".min-time", 1000, CustomTimeUnit.TICKS);
             int maxTime = (int) Functions.getTimeFromYaml(section, key + ".max-time", 1000, CustomTimeUnit.TICKS);
 
-            this.regenerationTimes.put(blockType, new Pair<>(minTime, maxTime));
+            this.regenerationTimes.put(key, new Pair<>(minTime, maxTime));
         }
 
         VoidSurvival.logInfo("Loaded ore generation with %d entries", this.regenerationTimes.size());
+    }
+
+    public boolean isBreakableBlock(Block block) {
+
+        CustomBlock customBlock = CustomBlock.ofBlock(block);
+        String id;
+
+        if (customBlock != null) {
+            id = customBlock.getId();
+        } else {
+            id = block.getType().getKey().asString();
+        }
+
+        return regenerationTimes.containsKey(id);
     }
 
     @EventHandler
@@ -172,45 +186,34 @@ public class PlayerBlockManager implements Listener {
     }
 
     @EventHandler
-    public void onBlockBreak(BlockBreakEvent event) {
+    public void onCustomBlockBreak(CustomBlockMineEvent event) {
 
+        CustomBlock customBlock = event.getCustomBlock();
         Player player = event.getPlayer();
         Block block = event.getBlock();
 
-        try {
-            controller.remove(block.getX(), block.getY(), block.getZ());
-        } catch (Exception ex) {
-            VoidSurvival.logError("ChunkDataController failed to track block remove at %d, %d, %d: %s", ex, block.getX(), block.getY(), block.getZ(), ex.getMessage());
+        String id;
+
+        if (customBlock != null) {
+            id = customBlock.getId();
+        } else {
+            id = block.getType().getKey().asString();
         }
 
-        // Allow ops to just modify the world as they wish
-        if (player.isOp() || !Flags.REGENERATE_BLOCKS.test(player, block)) {
-            return;
-        }
+        Pair<Integer, Integer> times = regenerationTimes.get(id);
 
-        Long currentTicks = getBlockChangeTicks(player, block);
+        long time = ThreadLocalRandom.current().nextInt(times.left, times.right);
 
-        // Don't do stuff if the block is already on cooldown
-        if (currentTicks != null) {
-            event.setCancelled(true);
-            return;
-        }
+        BlockData oldData = block.getBlockData();
+        block.setType(Material.BEDROCK);
+        VoidSurvival.getInstance().runTaskLater(() -> {
+            block.setBlockData(oldData);
+        }, time);
+    }
 
-        Pair<Integer, Integer> regenerationTime = regenerationTimes.get(block.getType().asBlockType());
-
-        if (regenerationTime != null) {
-
-            ItemStack tool = player.getEquipment().getItemInMainHand();
-
-            long ticks = regenerationTime.left();
-            if (regenerationTime.left().compareTo(regenerationTime.right()) < 0) {
-                ticks = ThreadLocalRandom.current().nextLong(regenerationTime.left(), regenerationTime.right());
-            }
-
-            markBlockAsDifferent(player, block, ticks);
-            VoidSurvival.getInstance().runTaskLater(() -> changeBlockForPlayer(player, block), 1);
-            PlayerUtil.giveItems(player, block.getDrops(tool, player));
-
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        if (!event.getPlayer().isOp()) {
             event.setCancelled(true);
         }
     }
@@ -286,7 +289,7 @@ public class PlayerBlockManager implements Listener {
 
         Material type = block.getType();
 
-        if (type.name().toLowerCase().endsWith("ore")) {
+        if (type.name().toLowerCase().endsWith("ore") || type.name().equalsIgnoreCase("note_block")) {
             return BlockType.BEDROCK.createBlockData();
         } else if (type == Material.CAMPFIRE) {
             return BlockType.CAMPFIRE.createBlockData(campfire -> campfire.setLit(true));

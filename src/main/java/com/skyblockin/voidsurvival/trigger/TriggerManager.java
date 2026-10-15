@@ -131,14 +131,14 @@ public final class TriggerManager implements Listener {
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         for (InteractTrigger trigger : interactTriggers) {
-            trigger.activate(event);
+            trigger.activate(this, event);
         }
     }
 
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
         for (KillGainTrigger trigger : killTriggers) {
-            trigger.activate(event);
+            trigger.activate(this, event);
         }
     }
 
