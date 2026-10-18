@@ -53,7 +53,7 @@ public class PlayerJoinHandler implements Listener {
 
         try {
 
-            PlayerData data = VoidSurvival.getTable(PlayerDataTable.class).loadPlayer(event.getUniqueId().toString()).join();
+            PlayerData data = VoidSurvival.getPlayerTable().loadPlayer(event.getUniqueId().toString()).join();
 
             data.lastKnownUserName = event.getPlayerProfile().getName();
 
@@ -73,7 +73,7 @@ public class PlayerJoinHandler implements Listener {
 
             PlayerData data = PlayerData.of(event.getPlayer());
 
-            VoidSurvival.getTable(PlayerDataTable.class).savePlayers(List.of(data))
+            VoidSurvival.getPlayerTable().savePlayers(List.of(data))
                 .exceptionally(throwable -> {
                     VoidSurvival.logError("Encountered error while saving player data", throwable);
                     return null;

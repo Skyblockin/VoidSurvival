@@ -3,6 +3,7 @@ package com.skyblockin.voidsurvival.world;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.block.CustomBlock;
 import com.skyblockin.voidsurvival.block.CustomBlockMineEvent;
+import com.skyblockin.voidsurvival.block.CustomBlockPreMineEvent;
 import com.skyblockin.voidsurvival.config.Pair;
 import com.skyblockin.voidsurvival.math.BlockPosition;
 import com.skyblockin.voidsurvival.math.ChunkPosition;
@@ -186,6 +187,17 @@ public class PlayerBlockManager implements Listener {
     }
 
     @EventHandler
+    public void onCustomBlockBreakPre(CustomBlockPreMineEvent event) {
+
+        Long ticks = getBlockChangeTicks(event.getPlayer(), event.getBlock());
+
+        if (ticks != null && ticks >= 0) {
+            event.setCancelled(true);
+        }
+
+    }
+
+    @EventHandler
     public void onCustomBlockBreak(CustomBlockMineEvent event) {
 
         CustomBlock customBlock = event.getCustomBlock();
@@ -202,13 +214,19 @@ public class PlayerBlockManager implements Listener {
 
         Pair<Integer, Integer> times = regenerationTimes.get(id);
 
-        long time = ThreadLocalRandom.current().nextInt(times.left, times.right);
+        if (times != null) {
+            long time = ThreadLocalRandom.current().nextInt(times.left, times.right);
+            markBlockAsDifferent(player, block, time);
+            VoidSurvival.getInstance().runTaskLater(() -> changeBlockForPlayer(player, block), 1);
+        }
 
+        /*
         BlockData oldData = block.getBlockData();
         block.setType(Material.BEDROCK);
         VoidSurvival.getInstance().runTaskLater(() -> {
             block.setBlockData(oldData);
-        }, time);
+        }, time);*/
+
     }
 
     @EventHandler

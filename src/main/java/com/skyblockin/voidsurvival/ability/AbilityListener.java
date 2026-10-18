@@ -1,6 +1,7 @@
 package com.skyblockin.voidsurvival.ability;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.block.CustomBlockMineEvent;
 import com.skyblockin.voidsurvival.util.Offset;
 import com.skyblockin.voidsurvival.util.TagUtil;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
@@ -39,7 +40,7 @@ import java.util.Set;
 public class AbilityListener implements Listener {
 
     @EventHandler
-    public void onBlockBreak(BlockBreakEvent event) {
+    public void onBlockBreak(CustomBlockMineEvent event) {
 
         Player player = event.getPlayer();
         SkillsUser user = AuraSkillsApi.get().getUser(player.getUniqueId());

@@ -41,23 +41,20 @@ public class CustomBlock {
         return byIdMap.get(id);
     }
 
-    private static CustomBlock register(String id, Properties properties, Instrument instrument, Note note) {
-        CustomBlock block = new CustomBlock(id, properties, instrument, note);
+    private static CustomBlock register(String id, Instrument instrument, Note note) {
+        CustomBlock block = new CustomBlock(id, instrument, note);
         byIdMap.put(id, block);
         LUT[(instrument.ordinal() * STRIDE_INSTRUMENT) + (note.getOctave() * STRIDE_OCTAVE) + note.getTone().ordinal()] = block;
         return block;
     }
 
     public static final CustomBlock DEUXITE_ORE = register("deuxite_ore",
-        new Properties(1, 6, 400, new ItemData()),
         Instrument.PIANO, new Note(0)
     );
     public static final CustomBlock MITHRIL_ORE = register("mithril_ore",
-        new Properties(1, 6, 200, new ItemData()),
         Instrument.PIANO, new Note(1)
     );
     public static final CustomBlock PIGNITE_ORE = register("pignite_ore",
-        new Properties(1, 6, 100, new ItemData()),
         Instrument.PIANO, new Note(2)
     );
 
@@ -78,16 +75,17 @@ public class CustomBlock {
                 CustomBlock block = getById(fileName);
 
                 if (block == null) {
-                    VoidSurvival.logError("Tried to access missing block with id '%s'", fileName);
+                    VoidSurvival.logError("Tried to access nonexistent custom block with id '%s'", fileName);
                     continue;
                 }
 
                 JsonNode node = Json.readFromFile(file);
 
-                block.getProperties().requiredToolTier = node.path("required_tool_tier").asInt(-1);
-                block.getProperties().requiredToolType = node.path("required_tool_type").asInt(-1);
-                block.getProperties().toughness = (float) node.get("toughness").asDouble();
-                block.getProperties().breakResult = Json.convert(node.get("reward"), ItemData.class);
+                block.requiredToolTier = node.path("required_tool_tier").asInt(-1);
+                block.requiredToolType = node.path("required_tool_type").asInt(-1);
+                block.toughness = (float) node.get("toughness").asDouble();
+                block.breakResult = Json.convert(node.get("reward"), ItemData.class);
+                block.breakSound = node.path("break_sound").asText("minecraft:block.stone.break");
 
                 validLoads++;
             }
@@ -102,23 +100,24 @@ public class CustomBlock {
 
     // Using notes and instruments to identify blocks
     private final String id;
-    private final Properties properties;
     private final Instrument instrument;
     private final Note note;
 
-    public CustomBlock(String id, Properties properties, Instrument instrument, Note note) {
+    public int requiredToolTier = -1;
+    public int requiredToolType = -1;
+    public float toughness = -1;
+    public ItemData breakResult = new ItemData();
+    public BlockData data = Material.OBSIDIAN.createBlockData();
+    public String breakSound = "minecraft:block.stone.break";
+
+    public CustomBlock(String id, Instrument instrument, Note note) {
         this.id = id;
-        this.properties = properties;
         this.instrument = instrument;
         this.note = note;
     }
 
     public String getId() {
         return id;
-    }
-
-    public Properties getProperties() {
-        return properties;
     }
 
     public Instrument getInstrument() {
@@ -129,20 +128,4 @@ public class CustomBlock {
         return note;
     }
 
-    public static class Properties {
-
-        public int requiredToolTier;
-        public int requiredToolType;
-        public float toughness;
-        public ItemData breakResult;
-        public BlockData data = Material.OBSIDIAN.createBlockData();
-
-        public Properties(int requiredToolType, int requiredtoolTier, float toughness, ItemData breakResult) {
-            this.requiredToolType = requiredToolType;
-            this.requiredToolTier = requiredtoolTier;
-            this.toughness = toughness;
-            this.breakResult = breakResult;
-        }
-
-    }
 }

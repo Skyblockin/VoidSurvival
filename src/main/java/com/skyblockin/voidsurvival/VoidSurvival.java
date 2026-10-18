@@ -258,6 +258,7 @@ public class VoidSurvival extends JavaPlugin {
             this.database.waitForAllTasksAndShutdown();
 
             this.gatheringNodeManager.save();
+            this.triggerManager.save();
 
             getServer().getScheduler().cancelTasks(this);
 

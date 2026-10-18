@@ -48,7 +48,7 @@ public class LootTable {
 
             LootTable table = new LootTable();
 
-            node.fields().forEachRemaining(entry -> {
+            node.properties().forEach(entry -> {
 
                 String id = entry.getKey();
                 JsonNode itemNode = entry.getValue();

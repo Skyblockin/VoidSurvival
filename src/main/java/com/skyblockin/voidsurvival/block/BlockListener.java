@@ -30,6 +30,8 @@ import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.components.ToolComponent;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -79,7 +81,7 @@ public class BlockListener implements Listener {
         player.getAttribute(Attribute.BLOCK_BREAK_SPEED).setBaseValue(0);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    /*@EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerAnimation(PlayerAnimationEvent event) {
 
         Player player = event.getPlayer();
@@ -104,6 +106,13 @@ public class BlockListener implements Listener {
 
         UUID uuid = player.getUniqueId();
         BlockBreakSession session = blockBreakProgress.get(uuid);
+
+        CustomBlock customBlock = CustomBlock.ofBlock(block);
+
+        if (!CustomBlockPreMineEvent.callEvent(player, block, customBlock)) {
+            clearSession(player.getUniqueId());
+            return;
+        }
 
         boolean isProtected = !WorldGuardUtil.testBuild(block.getLocation(), player);
         boolean isCustomBreakable = VoidSurvival.getInstance().getPlayerBlockManager().isBreakableBlock(block);
@@ -144,6 +153,106 @@ public class BlockListener implements Listener {
         if (session.update()) {
             clearSession(uuid);
         }
+    }*/
+
+    private static final Map<UUID, BukkitTask> activeMiningTasks = new HashMap<>();
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerInteract(PlayerInteractEvent event) {
+
+        Player player = event.getPlayer();
+
+        if (event.getAction() != Action.LEFT_CLICK_BLOCK) {
+            return;
+        }
+
+        Block block = event.getClickedBlock();
+
+        if (block == null || player.getGameMode() == GameMode.CREATIVE) {
+            clearSession(player.getUniqueId());
+            return;
+        }
+
+        UUID uuid = player.getUniqueId();
+
+        // If already mining this exact block, let the repeating task handle it
+        BlockBreakSession existingSession = blockBreakProgress.get(uuid);
+
+        if (existingSession != null && block.equals(existingSession.getBlock())) {
+            return;
+        }
+
+        CustomBlock customBlock = CustomBlock.ofBlock(block);
+
+        if (!CustomBlockPreMineEvent.callEvent(player, block, customBlock)) {
+            clearSession(uuid);
+            return;
+        }
+
+        boolean isProtected = !WorldGuardUtil.testBuild(block.getLocation(), player);
+        boolean isCustomBreakable = VoidSurvival.getInstance().getPlayerBlockManager().isBreakableBlock(block);
+        boolean hasRegenFlag = Flags.REGENERATE_BLOCKS.test(player, block);
+
+        if (isProtected) {
+            if (hasRegenFlag) {
+                if (!isCustomBreakable) {
+                    clearSession(uuid);
+                    return;
+                }
+            } else {
+                if (isCustomBreakable) {
+                    clearSession(uuid);
+                    return;
+                }
+            }
+        }
+
+        boolean actuallyBreak = !hasRegenFlag;
+        ItemStack item = player.getInventory().getItemInMainHand();
+
+        ToolEvaluation evaluationResult = getMiningSpeedForBlock(item, block);
+
+        // Reset any old session and start fresh
+        clearSession(uuid);
+
+        BlockBreakSession session = new BlockBreakSession(player, item, block, evaluationResult.breakPerTick, actuallyBreak, evaluationResult.shouldDropAnything);
+        blockBreakProgress.put(uuid, session);
+
+        // Start a continuous tick task to handle the mining progression smoothly
+        BukkitTask task = new BukkitRunnable() {
+
+            private int delayTicks = 0;
+
+            @Override
+            public void run() {
+                if (!player.isOnline() || player.getGameMode() == GameMode.CREATIVE) {
+                    clearSession(uuid);
+                    cancel();
+                    return;
+                }
+
+                double reach = player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE).getValue(); // Default 4.5 in Survival
+                Block target = player.getTargetBlockExact((int) Math.ceil(reach));
+                if (target == null || !target.getLocation().equals(block.getLocation())) {
+                    clearSession(uuid);
+                    cancel();
+                    return;
+                }
+
+                if (delayTicks > 0) {
+                    delayTicks--;
+                    return;
+                }
+
+                if (session.update()) {
+                    delayTicks = 5;
+                    clearSession(uuid);
+                    cancel();
+                }
+            }
+        }.runTaskTimer(VoidSurvival.getInstance(), 0L, 1L);
+
+        activeMiningTasks.put(uuid, task);
     }
 
     private record ToolEvaluation(float breakPerTick, boolean shouldDropAnything) {}
@@ -156,11 +265,11 @@ public class BlockListener implements Listener {
         if (toolData == null) {
             if (customBlock != null) {
 
-                float hardness = customBlock.getProperties().toughness;
+                float hardness = customBlock.toughness;
                 if (hardness < 0) return new ToolEvaluation(0, false);
                 if (hardness == 0) return new ToolEvaluation(1, true);
 
-                boolean handIsValid = customBlock.getProperties().requiredToolType <= 0 && customBlock.getProperties().requiredToolTier <= 0;
+                boolean handIsValid = customBlock.requiredToolType <= 0 && customBlock.requiredToolTier <= 0;
 
                 float divider = handIsValid ? 30.0F : 100.0F;
                 float breakPerTick = 1.0F / (hardness * divider);
@@ -185,9 +294,9 @@ public class BlockListener implements Listener {
         boolean isValidTool;
 
         if (customBlock != null) {
-            hardness = customBlock.getProperties().toughness;
-            int requiredToolTier = customBlock.getProperties().requiredToolTier;
-            int requiredToolType = customBlock.getProperties().requiredToolType;
+            hardness = customBlock.toughness;
+            int requiredToolTier = customBlock.requiredToolTier;
+            int requiredToolType = customBlock.requiredToolType;
             isValidTool = toolData.toolTier >= requiredToolTier && (toolData.toolType == requiredToolType || requiredToolType < 0);
         } else {
             hardness = block.getType().getHardness();
@@ -209,10 +318,10 @@ public class BlockListener implements Listener {
             int efficiencyLevel = item.getEnchantmentLevel(Enchantment.EFFICIENCY);
             int totalToolPower = toolData.toolPower + (efficiencyLevel > 0 ? (efficiencyLevel * efficiencyLevel + 1) : 0);
             speedMultiplier = (float) totalToolPower;
-            divider = 150.0F;
+            divider = 30.0F;
         } else {
             speedMultiplier = 1.0F;
-            boolean requiresTool = customBlock != null ? customBlock.getProperties().requiredToolType > 0 : block.getBlockData().requiresCorrectToolForDrops();
+            boolean requiresTool = customBlock != null ? customBlock.requiredToolType > 0 : block.getBlockData().requiresCorrectToolForDrops();
             divider = requiresTool ? 100.0F : 30.0F;
         }
 
@@ -269,6 +378,10 @@ public class BlockListener implements Listener {
     }
 
     private void clearSession(UUID uuid) {
+        BukkitTask task = activeMiningTasks.remove(uuid);
+        if (task != null) {
+            task.cancel();
+        }
         BlockBreakSession session = blockBreakProgress.remove(uuid);
         if (session != null) {
             session.reset();

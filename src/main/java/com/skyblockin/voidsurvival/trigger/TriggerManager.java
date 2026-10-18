@@ -63,6 +63,7 @@ public final class TriggerManager implements Listener {
 
             File triggerFile = new File(VoidSurvival.getInstance().getDataFolder(), "triggers.json");
             File triggerableFile = new File(VoidSurvival.getInstance().getDataFolder(), "triggerables.json");
+            File toggleStates = new File(VoidSurvival.getInstance().getDataFolder(), "toggle_states.json");
 
             if (!triggerFile.exists()) {
                 triggerFile.getParentFile().mkdirs();
@@ -101,10 +102,12 @@ public final class TriggerManager implements Listener {
             }
 
             JsonNode triggerableFileNode = Json.readFromFile(triggerableFile);
+            JsonNode triggerableListNode = triggerableFileNode.get("triggerables");
+            JsonNode toggleStatesNode = Json.readFromFile(toggleStates);
 
             triggerables.clear();
 
-            for (JsonNode node : triggerableFileNode) {
+            for (JsonNode node : triggerableListNode) {
 
                 if (!node.has("type")) {
                     VoidSurvival.logError("Encountered triggerable with no 'type' field, skipping...");
@@ -112,18 +115,49 @@ public final class TriggerManager implements Listener {
                 }
 
                 String triggerableType = node.get("type").asText().toLowerCase();
+                String id = node.get("id").asText();
 
-                switch (triggerableType) {
-                    case "gate" -> addTriggerable(Json.convert(node, Gate.class));
-                    case "sound" -> addTriggerable(Json.convert(node, SoundPlayer.class));
-                    case "item" -> addTriggerable(Json.convert(node, ItemGive.class));
-                    case "compound" -> addTriggerable(Json.convert(node, Compound.class));
-                    default -> VoidSurvival.logError("Unknown triggerable type: " + triggerableType);
+                Triggerable triggerable = switch (triggerableType) {
+                    case "gate" -> Json.convert(node, Gate.class);
+                    case "sound" -> Json.convert(node, SoundPlayer.class);
+                    case "item" -> Json.convert(node, ItemGive.class);
+                    case "compound" -> Json.convert(node, Compound.class);
+                    default -> null;
+                };
+
+                if (triggerable == null) {
+                    VoidSurvival.logError("Unknown triggerable type or failed parse: %s for id %s", triggerableType, id);
+                    continue;
+                }
+
+                if (toggleStatesNode != null && triggerable instanceof Toggleable toggleable) {
+                    toggleable.setState(toggleStatesNode.get(id).asBoolean());
                 }
             }
 
         } catch (Exception ex) {
             VoidSurvival.logError("Failed to load triggers and triggerables", ex);
+        }
+
+    }
+
+    public void save() {
+
+        try {
+
+            File file = new File(VoidSurvival.getInstance().getDataFolder(), "toggle_states.json");
+            HashMap<String, Boolean> toggleStates = new HashMap<>();
+
+            triggerables.forEach((id, triggerable) -> {
+                if (triggerable instanceof Toggleable toggleable) {
+                    toggleStates.put(id, toggleable.isToggled());
+                }
+            });
+
+            Json.writeToFile(file, toggleStates);
+
+        } catch (Exception ex) {
+            VoidSurvival.logError("Failed to save toggle states: ", ex);
         }
 
     }
