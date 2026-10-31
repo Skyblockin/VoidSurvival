@@ -2,10 +2,9 @@ package com.skyblockin.voidsurvival.world;
 
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.skyblockin.voidsurvival.VoidSurvival;
-import com.skyblockin.voidsurvival.storage.database.Database;
-import com.skyblockin.voidsurvival.storage.database.GlobalDataTable;
 import com.skyblockin.voidsurvival.storage.database.IslandDataTable;
 import com.skyblockin.voidsurvival.util.Functions;
+import com.skyblockin.voidsurvival.world.edit.WorldEditUtil;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;

@@ -178,6 +178,10 @@ public class PlayerBlockManager implements Listener {
         Player player = event.getPlayer();
         Block block = event.getBlock();
 
+        if (player.isOp() || player.getGameMode() == GameMode.CREATIVE) {
+            return;
+        }
+
         try {
             controller.setPlacedBy(block.getX(), block.getY(), block.getZ(), player.getUniqueId());
         } catch (Exception ex) {
@@ -189,7 +193,13 @@ public class PlayerBlockManager implements Listener {
     @EventHandler
     public void onCustomBlockBreakPre(CustomBlockPreMineEvent event) {
 
-        Long ticks = getBlockChangeTicks(event.getPlayer(), event.getBlock());
+        Player player = event.getPlayer();
+
+        if (player.getGameMode() == GameMode.CREATIVE) {
+            return;
+        }
+
+        Long ticks = getBlockChangeTicks(player, event.getBlock());
 
         if (ticks != null && ticks >= 0) {
             event.setCancelled(true);
@@ -219,19 +229,11 @@ public class PlayerBlockManager implements Listener {
             markBlockAsDifferent(player, block, time);
             VoidSurvival.getInstance().runTaskLater(() -> changeBlockForPlayer(player, block), 1);
         }
-
-        /*
-        BlockData oldData = block.getBlockData();
-        block.setType(Material.BEDROCK);
-        VoidSurvival.getInstance().runTaskLater(() -> {
-            block.setBlockData(oldData);
-        }, time);*/
-
     }
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
-        if (!event.getPlayer().isOp()) {
+        if (event.getPlayer().getGameMode() != GameMode.CREATIVE) {
             event.setCancelled(true);
         }
     }

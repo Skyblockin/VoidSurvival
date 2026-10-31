@@ -185,7 +185,7 @@ public class CampfireManager implements Listener {
             String id = Accessors.CAMPFIRE_WARP_ID.read(campfire);
             if (id != null) {
                 deleteCampfireHologram(player, id);
-                VoidSurvival.getTable(PlayerDataTable.class).deleteCampfireFromEveryoneById(id);
+                VoidSurvival.getPlayerTable().deleteCampfireFromEveryoneById(id);
             }
         }
     }

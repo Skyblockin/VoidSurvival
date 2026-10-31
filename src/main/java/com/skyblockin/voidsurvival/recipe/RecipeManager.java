@@ -96,8 +96,6 @@ public class RecipeManager implements Listener {
 
                 JsonNode node = Json.readFromFile(recipeFile);
 
-
-
                 this.recipeMap.clear();
 
                 for (Map.Entry<String, JsonNode> entry : node.properties()) {

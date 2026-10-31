@@ -16,6 +16,7 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.*;
@@ -71,6 +72,33 @@ public class Functions {
 
     public static <T> T randomChoice(List<T> elements) {
         return elements.get(ThreadLocalRandom.current().nextInt(elements.size()));
+    }
+
+    public static <T> List<T> randomChoice(List<T> elements, int n) {
+
+        ArrayList<T> results = new ArrayList<>(n);
+
+        for (int i = 0; i < n; i++) {
+            results.add(randomChoice(elements));
+        }
+
+        return results;
+    }
+
+    public static <T> List<T> randomChoiceUnique(List<T> elements, int n) {
+
+        ArrayList<T> copy = new ArrayList<>(elements);
+        ArrayList<T> results = new ArrayList<>(n);
+
+        for (int i = 0; i < n; i++) {
+            results.add(copy.remove(ThreadLocalRandom.current().nextInt(elements.size())));
+        }
+
+        return results;
+    }
+
+    public static boolean randomChance(double chance) {
+        return ThreadLocalRandom.current().nextDouble() < chance;
     }
 
     @SuppressWarnings("UnstableApiUsage")

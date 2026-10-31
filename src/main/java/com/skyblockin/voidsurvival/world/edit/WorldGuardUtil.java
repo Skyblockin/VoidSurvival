@@ -1,4 +1,4 @@
-package com.skyblockin.voidsurvival.world;
+package com.skyblockin.voidsurvival.world.edit;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
@@ -7,8 +7,6 @@ import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.flags.Flag;
-import com.sk89q.worldguard.protection.flags.Flags;
-import com.sk89q.worldguard.protection.flags.LocationFlag;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
@@ -21,12 +19,15 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class WorldGuardUtil {
+
+    public static ProtectedRegion getRegion(World world, String regionId) {
+        return getRegionManager(world)
+            .map(manager -> manager.getRegion(regionId))
+            .orElse(null);
+    }
 
     public static Set<String> getAllRegionsInWorld(World world) {
         RegionManager manager = WorldGuard.getInstance()
@@ -96,11 +97,11 @@ public class WorldGuardUtil {
         region.setFlag(flag, value ? StateFlag.State.ALLOW : StateFlag.State.DENY);
     }
 
-    public static RegionManager getRegionManager(World world) {
-        return WorldGuard.getInstance()
+    public static Optional<RegionManager> getRegionManager(World world) {
+        return Optional.ofNullable(WorldGuard.getInstance()
             .getPlatform()
             .getRegionContainer()
-            .get(BukkitAdapter.adapt(world));
+            .get(BukkitAdapter.adapt(world)));
     }
 
     public static boolean testBuild(Location location, Player player) {

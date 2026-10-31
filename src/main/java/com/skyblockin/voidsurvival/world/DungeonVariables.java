@@ -4,12 +4,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-import com.skyblockin.voidsurvival.math.BlockPosition;
 import com.skyblockin.voidsurvival.math.Cuboid;
 import com.skyblockin.voidsurvival.math.Position;
 import com.skyblockin.voidsurvival.region.Flags;
 import com.skyblockin.voidsurvival.region.MobCapMap;
-import org.bukkit.block.Block;
+import com.skyblockin.voidsurvival.world.edit.WorldGuardUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;

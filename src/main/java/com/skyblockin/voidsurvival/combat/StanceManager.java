@@ -174,7 +174,7 @@ public class StanceManager {
 
             stanceHealths.clear();
 
-            node.fields().forEachRemaining(entry -> {
+            node.properties().forEach(entry -> {
                 stanceHealths.put(entry.getKey(), entry.getValue().asInt());
             });
 

@@ -52,6 +52,11 @@ public abstract class StatusManager {
     public void updateStatus(LivingEntity entity, LivingEntity damager, EntityDamageByEntityEvent event) {
 
         double statusDamage = calculateStatusDamage(entity, damager, event);
+
+        if (statusDamage < 0) {
+            return;
+        }
+
         double currentStatusProgress = statusMap.getOrDefault(entity.getUniqueId(), 0.0) + statusDamage;
 
         if (entity instanceof Player) {

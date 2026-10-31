@@ -8,14 +8,10 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.sk89q.worldedit.math.transform.AffineTransform;
 import com.skyblockin.voidsurvival.config.Json;
 import com.skyblockin.voidsurvival.math.BlockPosition;
-import com.skyblockin.voidsurvival.math.Cuboid;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.trigger.TriggerManager;
-import com.skyblockin.voidsurvival.world.WorldEditUtil;
+import com.skyblockin.voidsurvival.world.edit.WorldEditUtil;
 import org.bukkit.World;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.BlockType;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 
 import java.io.IOException;

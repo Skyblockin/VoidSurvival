@@ -18,7 +18,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 
-@SuppressWarnings("UnstableApiUsage")
 public class BleedStatusManager extends StatusManager {
 
     public BleedStatusManager() {

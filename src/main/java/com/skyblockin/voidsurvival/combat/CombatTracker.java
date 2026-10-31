@@ -49,7 +49,7 @@ public class CombatTracker implements Listener {
 
                 ItemStack item = player.getEquipment().getHelmet();
 
-                if (item != null && !item.isEmpty() && Accessors.ITEM_ID.equals(item, ItemIds.AVARITIA)) {
+                if (!item.isEmpty() && Accessors.ITEM_ID.equals(item, ItemIds.AVARITIA)) {
                     player.damage(4, DamageSource.builder(DamageTypes.GREED).build());
                 }
             });

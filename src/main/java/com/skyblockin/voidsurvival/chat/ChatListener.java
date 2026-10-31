@@ -25,7 +25,7 @@ public class ChatListener implements Listener {
         }
 
         event.result(event.result().replaceText(config ->
-            config.match("\\[item\\]")
+            config.match("\\[item]")
             .replacement(item.effectiveName().hoverEvent(item.asHoverEvent()))
         ));
     }

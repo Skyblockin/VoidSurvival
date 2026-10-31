@@ -19,7 +19,7 @@ public class InteractTrigger implements Trigger<PlayerInteractEvent> {
     private final String id;
     private final List<String> triggerableIds;
     private final Block block;
-    private Cuboid cuboid;
+    private final Cuboid cuboid;
     private final Requirements requirements;
 
     @JsonCreator

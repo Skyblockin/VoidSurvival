@@ -3,7 +3,7 @@ package com.skyblockin.voidsurvival.trigger;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.storage.PlayerData;
-import com.skyblockin.voidsurvival.world.WorldGuardUtil;
+import com.skyblockin.voidsurvival.world.edit.WorldGuardUtil;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;

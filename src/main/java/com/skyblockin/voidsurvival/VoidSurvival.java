@@ -31,7 +31,8 @@ import com.skyblockin.voidsurvival.world.CampfireManager;
 import com.skyblockin.voidsurvival.world.IslandGenerator;
 import com.skyblockin.voidsurvival.customoregen.OreGenerator;
 import com.skyblockin.voidsurvival.world.PlayerBlockManager;
-import com.skyblockin.voidsurvival.world.WorldListener;
+import com.skyblockin.voidsurvival.world.edit.WorldListener;
+import com.skyblockin.voidsurvival.world.town.TownManager;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.Location;
@@ -78,6 +79,7 @@ public class VoidSurvival extends JavaPlugin {
     private FriendManager friendManager;
     private GatheringNodeManager gatheringNodeManager;
     private TriggerManager triggerManager;
+    private TownManager townManager;
     private CombatTracker combatTracker;
     private FallTracker fallTracker;
 
@@ -129,6 +131,7 @@ public class VoidSurvival extends JavaPlugin {
         this.friendManager = new FriendManager();
         this.gatheringNodeManager = new GatheringNodeManager();
         this.triggerManager = new TriggerManager();
+        this.townManager = new TownManager();
         this.combatTracker = new CombatTracker();
         this.fallTracker = new FallTracker();
 
@@ -158,6 +161,7 @@ public class VoidSurvival extends JavaPlugin {
         this.lootTableManager.loadCooldowns();
         this.recipeManager.loadRecipes();
         this.gatheringNodeManager.load();
+        this.townManager.load();
         this.oreGenerator.reload();
         CustomBlock.load();
 
@@ -178,6 +182,7 @@ public class VoidSurvival extends JavaPlugin {
             this.gatheringNodeManager,
             this.triggerManager,
             this.fallTracker,
+            this.townManager,
             this.oreGenerator,
             new RegionFlagListener(),
             new EntityEquipmentHandler(),
@@ -230,6 +235,7 @@ public class VoidSurvival extends JavaPlugin {
         this.recipeManager.loadRecipes();
         this.gatheringNodeManager.load();
         this.triggerManager.load();
+        this.townManager.load();
         this.oreGenerator.reload();
         CustomBlock.load();
     }
@@ -326,6 +332,10 @@ public class VoidSurvival extends JavaPlugin {
 
     public TriggerManager getTriggerManager() {
         return triggerManager;
+    }
+
+    public TownManager getTownManager() {
+        return townManager;
     }
 
     public boolean isAllowingJoins() {

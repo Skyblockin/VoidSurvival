@@ -2,21 +2,18 @@ package com.skyblockin.voidsurvival.block;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Pair;
-import com.skyblockin.voidsurvival.gathering.GatheringNode;
 import com.skyblockin.voidsurvival.item.ItemData;
 import com.skyblockin.voidsurvival.item.ItemManager;
 import com.skyblockin.voidsurvival.region.Flags;
 import com.skyblockin.voidsurvival.storage.Accessors;
-import com.skyblockin.voidsurvival.world.WorldGuardUtil;
-import io.papermc.paper.datacomponent.DataComponentTypes;
-import io.papermc.paper.datacomponent.item.Tool;
-import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.registry.TypedKey;
+import com.skyblockin.voidsurvival.util.ToolData;
+import com.skyblockin.voidsurvival.world.edit.WorldGuardUtil;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -24,12 +21,9 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockDamageAbortEvent;
-import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.components.ToolComponent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -48,8 +42,12 @@ public class BlockListener implements Listener {
             return;
         }
 
+        // TODO: Figure out how to make this not fucked
         if (clickedBlock.getType() == Material.NOTE_BLOCK) {
-            if (event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.LEFT_CLICK_BLOCK) {
+            if (event.getAction() == Action.LEFT_CLICK_BLOCK && event.getPlayer().getGameMode() != GameMode.CREATIVE) {
+                event.setCancelled(true);
+            }
+            if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
                 event.setCancelled(true);
             }
         }
@@ -57,13 +55,22 @@ public class BlockListener implements Listener {
 
     @EventHandler
     public void onNoteBlockPhysics(BlockPhysicsEvent event) {
+
         Block block = event.getBlock();
+
         if (block.getType() == Material.NOTE_BLOCK) {
+            event.setCancelled(true);
+        }
+
+        Block aboveBlock = block.getRelative(BlockFace.UP);
+
+        if (aboveBlock.getType() == Material.NOTE_BLOCK) {
             event.setCancelled(true);
         }
     }
 
     private static final Map<UUID, BlockBreakSession> blockBreakProgress = new HashMap<>();
+    private static final Map<UUID, BukkitTask> activeMiningTasks = new HashMap<>();
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockDamageAbort(BlockDamageAbortEvent event) {
@@ -80,82 +87,6 @@ public class BlockListener implements Listener {
         Player player = event.getPlayer();
         player.getAttribute(Attribute.BLOCK_BREAK_SPEED).setBaseValue(0);
     }
-
-    /*@EventHandler(priority = EventPriority.MONITOR)
-    public void onPlayerAnimation(PlayerAnimationEvent event) {
-
-        Player player = event.getPlayer();
-
-        if (event.getAnimationType() != PlayerAnimationType.ARM_SWING) {
-            return;
-        }
-
-        if (player.getGameMode() == GameMode.CREATIVE) {
-            clearSession(player.getUniqueId());
-            return;
-        }
-
-        ItemStack item = player.getInventory().getItemInMainHand();
-
-        Block block = player.getTargetBlockExact(4);
-
-        if (block == null) {
-            clearSession(player.getUniqueId());
-            return;
-        }
-
-        UUID uuid = player.getUniqueId();
-        BlockBreakSession session = blockBreakProgress.get(uuid);
-
-        CustomBlock customBlock = CustomBlock.ofBlock(block);
-
-        if (!CustomBlockPreMineEvent.callEvent(player, block, customBlock)) {
-            clearSession(player.getUniqueId());
-            return;
-        }
-
-        boolean isProtected = !WorldGuardUtil.testBuild(block.getLocation(), player);
-        boolean isCustomBreakable = VoidSurvival.getInstance().getPlayerBlockManager().isBreakableBlock(block);
-        boolean hasRegenFlag = Flags.REGENERATE_BLOCKS.test(player, block);
-
-        if (isProtected) {
-            if (hasRegenFlag) {
-                if (!isCustomBreakable) {
-                    clearSession(uuid);
-                    return;
-                }
-            } else {
-                if (isCustomBreakable) {
-                    clearSession(uuid);
-                    return;
-                }
-            }
-        }
-
-        boolean actuallyBreak = !hasRegenFlag;
-
-        if (session == null || !block.equals(session.getBlock())) {
-
-            ToolEvaluation evaluationResult = getMiningSpeedForBlock(item, block);
-
-            if (!evaluationResult.shouldDropAnything()) {
-                clearSession(uuid);
-                return;
-            }
-
-            if (session != null) {
-                session.reset();
-            }
-            session = new BlockBreakSession(player, item, block, evaluationResult.breakPerTick, actuallyBreak);
-            blockBreakProgress.put(uuid, session);
-        }
-
-        if (session.update()) {
-            clearSession(uuid);
-        }
-    }*/
-
-    private static final Map<UUID, BukkitTask> activeMiningTasks = new HashMap<>();
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerInteract(PlayerInteractEvent event) {
@@ -184,6 +115,7 @@ public class BlockListener implements Listener {
 
         CustomBlock customBlock = CustomBlock.ofBlock(block);
 
+        // Allow for other classes to have a say in the flow of this
         if (!CustomBlockPreMineEvent.callEvent(player, block, customBlock)) {
             clearSession(uuid);
             return;
@@ -259,7 +191,7 @@ public class BlockListener implements Listener {
 
     private ToolEvaluation getMiningSpeedForBlock(ItemStack item, Block block) {
 
-        ToolData toolData = getToolTierAndTypeAndPower(item);
+        ToolData toolData = ToolData.of(item);
         CustomBlock customBlock = CustomBlock.ofBlock(block);
 
         if (toolData == null) {
@@ -295,9 +227,9 @@ public class BlockListener implements Listener {
 
         if (customBlock != null) {
             hardness = customBlock.toughness;
-            int requiredToolTier = customBlock.requiredToolTier;
-            int requiredToolType = customBlock.requiredToolType;
-            isValidTool = toolData.toolTier >= requiredToolTier && (toolData.toolType == requiredToolType || requiredToolType < 0);
+            boolean isRequiredTier = customBlock.requiredToolTier < toolData.toolTier || customBlock.requiredToolTier < 0;
+            boolean isRequiredType = customBlock.requiredToolType == toolData.toolType || customBlock.requiredToolType < 0;
+            isValidTool = isRequiredTier && isRequiredType;
         } else {
             hardness = block.getType().getHardness();
             boolean matchesTag = false;
@@ -331,51 +263,7 @@ public class BlockListener implements Listener {
         return new ToolEvaluation(breakPerTick, shouldDrop);
     }
 
-    private record ToolData(int toolTier, int toolType, int toolPower) {}
 
-    private ToolData getToolTierAndTypeAndPower(ItemStack item) {
-
-        String id = Accessors.ITEM_ID.read(item);
-
-        if (id != null) {
-            ItemData data = ItemManager.getItemById(id);
-            if (data == null || data.toolTier == -1 || data.toolType == -1 || data.toolPower == -1) {
-                return null;
-            }
-            return new ToolData(data.toolTier, data.toolType, data.toolPower);
-        }
-
-        String[] itemTierAndName = item.getType().name().split("_");
-
-        if (itemTierAndName.length != 2) {
-            return null;
-        }
-
-        Pair<Integer, Integer> itemTierAndPower = switch (itemTierAndName[0].toLowerCase()) {
-            case "wooden" -> new Pair<>(1, 2);
-            case "stone" -> new Pair<>(2, 4);
-            case "bronze" -> new Pair<>(3, 5);
-            case "gold" -> new Pair<>(3, 12);
-            case "iron" -> new Pair<>(4, 6);
-            case "diamond" -> new Pair<>(5, 8);
-            case "netherite" -> new Pair<>(6, 9);
-            default -> null;
-        };
-
-        int itemType = switch(itemTierAndName[1].toLowerCase()) {
-            case "pickaxe" -> 1;
-            case "axe" -> 2;
-            case "shovel" -> 3;
-            case "hoe" -> 4;
-            default -> -1;
-        };
-
-        if (itemTierAndPower == null || itemType == -1) {
-            return null;
-        }
-
-        return new ToolData(itemTierAndPower.left, itemType, itemTierAndPower.right);
-    }
 
     private void clearSession(UUID uuid) {
         BukkitTask task = activeMiningTasks.remove(uuid);

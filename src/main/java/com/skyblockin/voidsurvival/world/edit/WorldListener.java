@@ -1,8 +1,7 @@
-package com.skyblockin.voidsurvival.world;
+package com.skyblockin.voidsurvival.world.edit;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.storage.Accessors;
-import com.skyblockin.voidsurvival.storage.database.Database;
 import com.skyblockin.voidsurvival.storage.database.GlobalDataTable;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import org.bukkit.Bukkit;
@@ -14,8 +13,6 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.ItemStack;
-
-import java.util.concurrent.ExecutionException;
 
 public class WorldListener implements Listener {
 

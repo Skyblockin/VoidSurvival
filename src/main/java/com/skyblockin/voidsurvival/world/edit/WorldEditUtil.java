@@ -1,4 +1,4 @@
-package com.skyblockin.voidsurvival.world;
+package com.skyblockin.voidsurvival.world.edit;
 
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
@@ -26,6 +26,8 @@ import com.skyblockin.voidsurvival.math.BlockPosition;
 import com.skyblockin.voidsurvival.math.Cuboid;
 import com.skyblockin.voidsurvival.math.Position;
 import com.skyblockin.voidsurvival.region.Flags;
+import com.skyblockin.voidsurvival.world.DungeonVariables;
+import com.skyblockin.voidsurvival.world.WorldUtil;
 import org.bukkit.World;
 import org.bukkit.block.Chest;
 
@@ -172,7 +174,13 @@ public class WorldEditUtil {
 
     public static void saveDungeon(World world, int x, int y, int z, String outerDungeonRegionId) throws IOException, WorldEditException {
 
-        RegionManager manager = WorldGuardUtil.getRegionManager(world);
+        RegionManager manager = WorldGuardUtil.getRegionManager(world).orElse(null);
+
+        if (manager == null) {
+            VoidSurvival.logError("Failed to save dungeon from region " + outerDungeonRegionId + ": region manager does not exist for world " + world.getName());
+            return;
+        }
+
         ProtectedRegion region = manager.getRegion(outerDungeonRegionId);
 
         if (region == null) {

@@ -6,6 +6,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.sk89q.worldedit.WorldEditException;
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.entity.trait.FighterTrait;
 import com.skyblockin.voidsurvival.event.CampfireLoadEvent;
 import com.skyblockin.voidsurvival.gathering.GatheringNode;
 import com.skyblockin.voidsurvival.gathering.GatheringNodeManager;
@@ -15,24 +16,29 @@ import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.math.Position;
 import com.skyblockin.voidsurvival.util.CommandUtil;
 import com.skyblockin.voidsurvival.util.TextUtil;
-import com.skyblockin.voidsurvival.world.WorldEditUtil;
-import com.skyblockin.voidsurvival.world.WorldGuardUtil;
+import com.skyblockin.voidsurvival.world.edit.WorldEditUtil;
+import com.skyblockin.voidsurvival.world.edit.WorldGuardUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.math.BlockPosition;
-import io.papermc.paper.registry.RegistryKey;
+import net.citizensnpcs.api.CitizensAPI;
+import net.citizensnpcs.api.ai.NavigatorParameters;
+import net.citizensnpcs.api.npc.NPC;
+import net.citizensnpcs.api.trait.trait.Equipment;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Campfire;
 import org.bukkit.block.Sign;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.LeatherArmorMeta;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -145,6 +151,31 @@ public final class Admin {
                     GatheringNodeManager manager = VoidSurvival.getInstance().getGatheringNodeManager();
                     manager.removeNode(com.skyblockin.voidsurvival.math.BlockPosition.ofBlock(target));
                 }
+            }))
+        )
+        .then(literal("fighter")
+            .executes(CommandUtil.playerCommand((ctx, player) -> {
+
+                NPC npc = CitizensAPI.getTemporaryNPCRegistry().createNPC(EntityType.PLAYER, "Fighter");
+
+                npc.setAlwaysUseNameHologram(true);
+                npc.setProtected(false);
+                npc.addTrait(FighterTrait.class);
+
+                Equipment equipment = npc.getOrAddTrait(Equipment.class);
+
+                equipment.set(Equipment.EquipmentSlot.HELMET, new ItemStack(Material.IRON_HELMET));
+                equipment.set(Equipment.EquipmentSlot.BODY, new ItemStack(Material.IRON_CHESTPLATE));
+                equipment.set(Equipment.EquipmentSlot.LEGGINGS, new ItemStack(Material.IRON_LEGGINGS));
+                equipment.set(Equipment.EquipmentSlot.BOOTS, new ItemStack(Material.IRON_BOOTS));
+
+                equipment.set(Equipment.EquipmentSlot.HAND, new ItemStack(Material.DIAMOND_AXE));
+
+                npc.spawn(player.getLocation());
+
+                NavigatorParameters params = npc.getNavigator().getLocalParameters();
+
+                params.avoidWater(false);
             }))
         )
         .then(literal("testmsg")

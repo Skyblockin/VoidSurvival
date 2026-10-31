@@ -35,7 +35,7 @@ public class PlayerDataTable extends SQLiteTable {
                         return fromResultSet(rs);
                     }
 
-                    return null;
+                    return new PlayerData(UUID.fromString(uuid));
                 }
             }
         });
