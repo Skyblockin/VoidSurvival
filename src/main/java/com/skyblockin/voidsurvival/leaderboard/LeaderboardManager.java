@@ -1,7 +1,6 @@
 package com.skyblockin.voidsurvival.leaderboard;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
-import com.skyblockin.voidsurvival.storage.database.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.storage.database.PlayerDataTable;
 

@@ -1,5 +1,6 @@
 package com.skyblockin.voidsurvival;
 
+import com.skyblockin.voidsurvival.enchantment.CustomEnchantment;
 import com.skyblockin.voidsurvival.item.CustomEnchantments;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
@@ -66,7 +67,10 @@ public class VoidSurvivalBootstrap implements PluginBootstrap {
             event.registrar().addToTag(DamageTypeTagKeys.BYPASSES_ENCHANTMENTS, List.of(BLEED_DAMAGE_TYPE_KEY));
         }));
 
-        manager.registerEventHandler(RegistryEvents.ENCHANTMENT.compose().newHandler(CustomEnchantments.BLEED::register));
+        manager.registerEventHandler(RegistryEvents.ENCHANTMENT.compose().newHandler(handler -> {
+            CustomEnchantments.REPLENISH.register(handler);
+            CustomEnchantments.BLEED.register(handler);
+        }));
     }
 
 }

@@ -10,10 +10,8 @@ import com.skyblockin.voidsurvival.config.Json;
 import com.skyblockin.voidsurvival.loot.LootTable;
 import com.skyblockin.voidsurvival.loot.LootUtil;
 import com.skyblockin.voidsurvival.nms.NMSUtil;
-import com.skyblockin.voidsurvival.storage.database.Database;
 import com.skyblockin.voidsurvival.storage.Island;
 import com.skyblockin.voidsurvival.storage.PlayerData;
-import com.skyblockin.voidsurvival.storage.database.IslandDataTable;
 import com.skyblockin.voidsurvival.util.CommandUtil;
 import com.skyblockin.voidsurvival.util.Functions;
 import com.skyblockin.voidsurvival.util.TextUtil;
@@ -33,7 +31,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static io.papermc.paper.command.brigadier.Commands.argument;

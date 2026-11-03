@@ -1,10 +1,8 @@
 package com.skyblockin.voidsurvival.storage.database;
 
-import java.sql.Connection;
-
 @FunctionalInterface
-public interface DatabaseFunction<T> {
+public interface DatabaseFunction<T, R> {
 
-    T execute(Connection connection) throws Exception;
+    R execute(T object) throws Exception;
 
 }

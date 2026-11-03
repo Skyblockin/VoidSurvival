@@ -6,7 +6,6 @@ import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.loot.LootChestManager;
 import com.skyblockin.voidsurvival.loot.LootTable;
 import com.skyblockin.voidsurvival.storage.database.ChestDataTable;
-import com.skyblockin.voidsurvival.storage.database.Database;
 import com.skyblockin.voidsurvival.util.CommandUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.block.Block;

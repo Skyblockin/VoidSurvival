@@ -2,11 +2,11 @@ package com.skyblockin.voidsurvival.storage.database;
 
 public class SQLiteTable {
 
-    protected final Database database;
+    protected final SQLiteDatabase database;
     private final String tableName;
     private final String[] columns;
 
-    public SQLiteTable(Database database, String tableName, String... columns) {
+    public SQLiteTable(SQLiteDatabase database, String tableName, String... columns) {
         this.database = database;
         this.tableName = tableName;
         this.columns = columns;

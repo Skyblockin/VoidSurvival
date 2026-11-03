@@ -1,9 +1,7 @@
 package com.skyblockin.voidsurvival.storage.database;
 
-import java.sql.Connection;
+public interface DatabaseConsumer<T> {
 
-public interface DatabaseConsumer {
-
-    void consume(Connection connection) throws Exception;
+    void consume(T object) throws Exception;
 
 }

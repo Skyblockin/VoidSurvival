@@ -17,6 +17,7 @@ import com.skyblockin.voidsurvival.item.ItemManager;
 import com.skyblockin.voidsurvival.math.BlockPosition;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.util.TextUtil;
+import com.skyblockin.voidsurvival.util.ToolData;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -122,7 +123,7 @@ public class GatheringNode {
 
             ItemStack item = player.getInventory().getItemInMainHand();
 
-            ToolData data = getToolTierAndTypeAndPower(item);
+            ToolData data = ToolData.of(item);
 
             if (data == null) {
                 return;
@@ -141,7 +142,7 @@ public class GatheringNode {
             if (!isOnCooldown && !isAlreadyGathering) {
                 this.itemDisplay.hide(player);
 
-                float gatherSpeed = Math.max(0.2F, (float) data.toolPower());
+                float gatherSpeed = Math.max(0.2F, (float) data.toolPower);
                 float gatherPerTick = gatherSpeed / type.getToughness();
 
                 VoidSurvival.logInfo("Gathering node with %.2f toughness with %f power\n", type.getToughness(), gatherSpeed);
@@ -152,52 +153,6 @@ public class GatheringNode {
             }
         }
 
-    }
-
-    private record ToolData(int toolTier, int toolType, int toolPower) {}
-
-    private ToolData getToolTierAndTypeAndPower(ItemStack item) {
-
-        String id = Accessors.ITEM_ID.read(item);
-
-        if (id != null) {
-            ItemData data = ItemManager.getItemById(id);
-            if (data == null || data.toolTier == -1 || data.toolType == -1 || data.toolPower == -1) {
-                return null;
-            }
-            return new ToolData(data.toolTier, data.toolType, data.toolPower);
-        }
-
-        String[] itemTierAndName = item.getType().name().split("_");
-
-        if (itemTierAndName.length != 2) {
-            return null;
-        }
-
-        Pair<Integer, Integer> itemTierAndPower = switch (itemTierAndName[0].toLowerCase()) {
-            case "wooden" -> new Pair<>(1, 2);
-            case "stone" -> new Pair<>(2, 4);
-            case "bronze" -> new Pair<>(3, 5);
-            case "gold" -> new Pair<>(3, 12);
-            case "iron" -> new Pair<>(4, 6);
-            case "diamond" -> new Pair<>(5, 8);
-            case "netherite" -> new Pair<>(6, 9);
-            default -> null;
-        };
-
-        int itemType = switch(itemTierAndName[1].toLowerCase()) {
-            case "pickaxe" -> 1;
-            case "axe" -> 2;
-            case "shovel" -> 3;
-            case "hoe" -> 4;
-            default -> -1;
-        };
-
-        if (itemTierAndPower == null || itemType == -1) {
-            return null;
-        }
-
-        return new ToolData(itemTierAndPower.left, itemType, itemTierAndPower.right);
     }
 
     public void onCancelGathering(Player player) {

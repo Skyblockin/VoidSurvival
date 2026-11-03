@@ -4,7 +4,6 @@ import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Json;
 import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.storage.database.ChestDataTable;
-import com.skyblockin.voidsurvival.storage.database.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.util.FileUtil;
 import com.skyblockin.voidsurvival.util.Format;
@@ -87,7 +86,7 @@ public class LootChestManager implements Listener {
         try {
 
             this.chestLootTables.clear();
-            this.chestLootTables.putAll(VoidSurvival.getTable(ChestDataTable.class).getChestLocations().get());
+            this.chestLootTables.putAll(VoidSurvival.getChestTable().getChestLocations().join());
 
             VoidSurvival.logInfo("Loaded %d chest locations.", this.chestLootTables.size());
 

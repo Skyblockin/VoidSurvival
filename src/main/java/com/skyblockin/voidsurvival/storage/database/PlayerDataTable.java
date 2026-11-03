@@ -17,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class PlayerDataTable extends SQLiteTable {
 
-    public PlayerDataTable(Database database) {
+    public PlayerDataTable(SQLiteDatabase database) {
         super(database, "players",
             "id TEXT PRIMARY KEY", "player_data TEXT"
         );

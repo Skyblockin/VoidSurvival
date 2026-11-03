@@ -4,7 +4,6 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.leaderboard.LeaderboardType;
 import com.skyblockin.voidsurvival.message.MessageKeys;
-import com.skyblockin.voidsurvival.storage.database.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.storage.database.IslandDataTable;
 import com.skyblockin.voidsurvival.util.*;
@@ -25,7 +24,6 @@ import java.util.List;
 import static io.papermc.paper.command.brigadier.Commands.argument;
 import static io.papermc.paper.command.brigadier.Commands.literal;
 
-@SuppressWarnings("UnstableApiUsage")
 public final class BasicCommands {
 
     private static Component renderLeaderboard(Component title, LeaderboardType type, List<PlayerData> leaderboard) {

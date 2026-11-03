@@ -5,7 +5,6 @@ import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.math.BlockPosition;
 import com.skyblockin.voidsurvival.social.Friend;
 import com.skyblockin.voidsurvival.social.FriendList;
-import com.skyblockin.voidsurvival.storage.database.Database;
 import com.skyblockin.voidsurvival.storage.database.PlayerDataTable;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

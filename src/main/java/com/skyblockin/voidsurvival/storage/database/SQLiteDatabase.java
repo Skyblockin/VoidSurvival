@@ -6,7 +6,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-public class Database {
+public class SQLiteDatabase {
 
     private final HashMap<Class<? extends SQLiteTable>, SQLiteTable> tables = new HashMap<>();
     private ExecutorService executor;
@@ -49,7 +49,7 @@ public class Database {
 
     public <T extends SQLiteTable> void addTable(Class<T> clazz) {
         try {
-            T table = clazz.getDeclaredConstructor(Database.class).newInstance(this);
+            T table = clazz.getDeclaredConstructor(SQLiteDatabase.class).newInstance(this);
             tables.put(clazz, table);
         } catch (Exception ex) {
             VoidSurvival.logError("Failed to add table", ex);
@@ -85,7 +85,7 @@ public class Database {
         this.connections.put(connection);
     }
 
-    public CompletableFuture<Void> consume(DatabaseConsumer consumer) {
+    public CompletableFuture<Void> consume(DatabaseConsumer<Connection> consumer) {
         return CompletableFuture.runAsync(() -> {
             try {
                 Connection connection = acquireConnection();
@@ -103,7 +103,7 @@ public class Database {
         }, executor);
     }
 
-    public <T> CompletableFuture<T> execute(DatabaseFunction<T> function) {
+    public <R> CompletableFuture<R> execute(DatabaseFunction<Connection, R> function) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 Connection connection = acquireConnection();

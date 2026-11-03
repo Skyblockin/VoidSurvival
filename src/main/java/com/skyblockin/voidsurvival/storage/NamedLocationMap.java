@@ -33,7 +33,7 @@ public class NamedLocationMap extends HashMap<String, Location> {
 
             NamedLocationMap map = new NamedLocationMap();
 
-            node.fields().forEachRemaining(entry -> {
+            node.properties().forEach(entry -> {
 
                 String homeName = entry.getKey();
                 JsonNode homeData = entry.getValue();

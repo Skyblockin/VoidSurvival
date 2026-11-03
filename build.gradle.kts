@@ -31,8 +31,6 @@ dependencies {
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.4.5")
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.19")
 
-    compileOnly("dev.aurelium:auraskills-api-bukkit:2.2.4")
-
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.22.1")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.1")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.22.1")

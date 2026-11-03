@@ -11,7 +11,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class IslandDataTable extends SQLiteTable{
 
-    public IslandDataTable(Database database) {
+    public IslandDataTable(SQLiteDatabase database) {
         super(database, "islands", "id INTEGER PRIMARY KEY", "x INTEGER", "z INTEGER");
     }
 

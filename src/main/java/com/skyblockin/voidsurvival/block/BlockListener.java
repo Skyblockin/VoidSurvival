@@ -7,6 +7,7 @@ import com.skyblockin.voidsurvival.item.ItemManager;
 import com.skyblockin.voidsurvival.region.Flags;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.util.ToolData;
+import com.skyblockin.voidsurvival.util.ToolEvaluation;
 import com.skyblockin.voidsurvival.world.edit.WorldGuardUtil;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
@@ -20,6 +21,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageAbortEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.player.*;
@@ -92,6 +94,7 @@ public class BlockListener implements Listener {
     public void onPlayerInteract(PlayerInteractEvent event) {
 
         Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
 
         if (event.getAction() != Action.LEFT_CLICK_BLOCK) {
             return;
@@ -100,11 +103,14 @@ public class BlockListener implements Listener {
         Block block = event.getClickedBlock();
 
         if (block == null || player.getGameMode() == GameMode.CREATIVE) {
-            clearSession(player.getUniqueId());
+            clearSession(uuid);
             return;
         }
 
-        UUID uuid = player.getUniqueId();
+        if (block.getType().getHardness() < 0) {
+            clearSession(uuid);
+            return;
+        }
 
         // If already mining this exact block, let the repeating task handle it
         BlockBreakSession existingSession = blockBreakProgress.get(uuid);
@@ -142,7 +148,7 @@ public class BlockListener implements Listener {
         boolean actuallyBreak = !hasRegenFlag;
         ItemStack item = player.getInventory().getItemInMainHand();
 
-        ToolEvaluation evaluationResult = getMiningSpeedForBlock(item, block);
+        ToolEvaluation evaluationResult = ToolEvaluation.of(item, block);
 
         // Reset any old session and start fresh
         clearSession(uuid);
@@ -154,6 +160,7 @@ public class BlockListener implements Listener {
         BukkitTask task = new BukkitRunnable() {
 
             private int delayTicks = 0;
+            private final boolean isInstantBreak = evaluationResult.breakPerTick >= 1;
 
             @Override
             public void run() {
@@ -177,7 +184,7 @@ public class BlockListener implements Listener {
                 }
 
                 if (session.update()) {
-                    delayTicks = 5;
+                    delayTicks = isInstantBreak ? 0 : 5;
                     clearSession(uuid);
                     cancel();
                 }
@@ -186,84 +193,6 @@ public class BlockListener implements Listener {
 
         activeMiningTasks.put(uuid, task);
     }
-
-    private record ToolEvaluation(float breakPerTick, boolean shouldDropAnything) {}
-
-    private ToolEvaluation getMiningSpeedForBlock(ItemStack item, Block block) {
-
-        ToolData toolData = ToolData.of(item);
-        CustomBlock customBlock = CustomBlock.ofBlock(block);
-
-        if (toolData == null) {
-            if (customBlock != null) {
-
-                float hardness = customBlock.toughness;
-                if (hardness < 0) return new ToolEvaluation(0, false);
-                if (hardness == 0) return new ToolEvaluation(1, true);
-
-                boolean handIsValid = customBlock.requiredToolType <= 0 && customBlock.requiredToolTier <= 0;
-
-                float divider = handIsValid ? 30.0F : 100.0F;
-                float breakPerTick = 1.0F / (hardness * divider);
-
-                return new ToolEvaluation(breakPerTick, handIsValid);
-            }
-
-            float hardness = block.getType().getHardness();
-            if (hardness < 0) return new ToolEvaluation(0, false);
-            if (hardness == 0) return new ToolEvaluation(1, true);
-
-            boolean isPreferred = block.isPreferredTool(item);
-            float divider = block.getBlockData().requiresCorrectToolForDrops() ? 100.0F : 30.0F;
-
-            float breakPerTick = 1.0F / (hardness * divider);
-            boolean shouldDrop = !block.getBlockData().requiresCorrectToolForDrops() || isPreferred;
-
-            return new ToolEvaluation(breakPerTick, shouldDrop);
-        }
-
-        float hardness;
-        boolean isValidTool;
-
-        if (customBlock != null) {
-            hardness = customBlock.toughness;
-            boolean isRequiredTier = customBlock.requiredToolTier < toolData.toolTier || customBlock.requiredToolTier < 0;
-            boolean isRequiredType = customBlock.requiredToolType == toolData.toolType || customBlock.requiredToolType < 0;
-            isValidTool = isRequiredTier && isRequiredType;
-        } else {
-            hardness = block.getType().getHardness();
-            boolean matchesTag = false;
-            if (toolData.toolType == 1 && Tag.MINEABLE_PICKAXE.isTagged(block.getType())) matchesTag = true;
-            else if (toolData.toolType == 2 && Tag.MINEABLE_AXE.isTagged(block.getType())) matchesTag = true;
-            else if (toolData.toolType == 3 && Tag.MINEABLE_SHOVEL.isTagged(block.getType())) matchesTag = true;
-            else if (toolData.toolType == 4 && Tag.MINEABLE_HOE.isTagged(block.getType())) matchesTag = true;
-            isValidTool = matchesTag;
-        }
-
-        if (hardness < 0) return new ToolEvaluation(0, false);
-        if (hardness == 0) return new ToolEvaluation(1, true);
-
-        float speedMultiplier;
-        float divider;
-
-        if (isValidTool) {
-            int efficiencyLevel = item.getEnchantmentLevel(Enchantment.EFFICIENCY);
-            int totalToolPower = toolData.toolPower + (efficiencyLevel > 0 ? (efficiencyLevel * efficiencyLevel + 1) : 0);
-            speedMultiplier = (float) totalToolPower;
-            divider = 30.0F;
-        } else {
-            speedMultiplier = 1.0F;
-            boolean requiresTool = customBlock != null ? customBlock.requiredToolType > 0 : block.getBlockData().requiresCorrectToolForDrops();
-            divider = requiresTool ? 100.0F : 30.0F;
-        }
-
-        float breakPerTick = speedMultiplier / (hardness * divider);
-        boolean shouldDrop = customBlock != null ? isValidTool : (!block.getBlockData().requiresCorrectToolForDrops() || isValidTool);
-
-        return new ToolEvaluation(breakPerTick, shouldDrop);
-    }
-
-
 
     private void clearSession(UUID uuid) {
         BukkitTask task = activeMiningTasks.remove(uuid);

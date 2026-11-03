@@ -9,7 +9,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class GlobalDataTable extends SQLiteTable {
 
-    public GlobalDataTable(Database database) {
+    public GlobalDataTable(SQLiteDatabase database) {
         super(database, "global_data",
             "id INTEGER PRIMARY KEY CHECK (id = 0)",
             "chunk_count INTEGER"

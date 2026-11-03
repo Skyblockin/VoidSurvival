@@ -2,9 +2,7 @@ package com.skyblockin.voidsurvival.social;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.message.MessageKeys;
-import com.skyblockin.voidsurvival.storage.database.Database;
 import com.skyblockin.voidsurvival.storage.PlayerData;
-import com.skyblockin.voidsurvival.storage.database.PlayerDataTable;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;

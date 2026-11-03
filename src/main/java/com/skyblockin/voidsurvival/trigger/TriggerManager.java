@@ -105,34 +105,38 @@ public final class TriggerManager implements Listener {
             JsonNode triggerableListNode = triggerableFileNode.get("triggerables");
             JsonNode toggleStatesNode = Json.readFromFile(toggleStates);
 
-            triggerables.clear();
+            if (triggerableListNode != null) {
 
-            for (JsonNode node : triggerableListNode) {
+                triggerables.clear();
 
-                if (!node.has("type")) {
-                    VoidSurvival.logError("Encountered triggerable with no 'type' field, skipping...");
-                    continue;
+                for (JsonNode node : triggerableListNode) {
+
+                    if (!node.has("type")) {
+                        VoidSurvival.logError("Encountered triggerable with no 'type' field, skipping...");
+                        continue;
+                    }
+
+                    String triggerableType = node.get("type").asText().toLowerCase();
+                    String id = node.get("id").asText();
+
+                    Triggerable triggerable = switch (triggerableType) {
+                        case "gate" -> Json.convert(node, Gate.class);
+                        case "sound" -> Json.convert(node, SoundPlayer.class);
+                        case "item" -> Json.convert(node, ItemGive.class);
+                        case "compound" -> Json.convert(node, Compound.class);
+                        default -> null;
+                    };
+
+                    if (triggerable == null) {
+                        VoidSurvival.logError("Unknown triggerable type or failed parse: %s for id %s", triggerableType, id);
+                        continue;
+                    }
+
+                    if (toggleStatesNode != null && triggerable instanceof Toggleable toggleable) {
+                        toggleable.setState(toggleStatesNode.get(id).asBoolean());
+                    }
                 }
 
-                String triggerableType = node.get("type").asText().toLowerCase();
-                String id = node.get("id").asText();
-
-                Triggerable triggerable = switch (triggerableType) {
-                    case "gate" -> Json.convert(node, Gate.class);
-                    case "sound" -> Json.convert(node, SoundPlayer.class);
-                    case "item" -> Json.convert(node, ItemGive.class);
-                    case "compound" -> Json.convert(node, Compound.class);
-                    default -> null;
-                };
-
-                if (triggerable == null) {
-                    VoidSurvival.logError("Unknown triggerable type or failed parse: %s for id %s", triggerableType, id);
-                    continue;
-                }
-
-                if (toggleStatesNode != null && triggerable instanceof Toggleable toggleable) {
-                    toggleable.setState(toggleStatesNode.get(id).asBoolean());
-                }
             }
 
         } catch (Exception ex) {
@@ -145,7 +149,7 @@ public final class TriggerManager implements Listener {
 
         try {
 
-            File file = new File(VoidSurvival.getInstance().getDataFolder(), "toggle_states.json");
+            File file = VoidSurvival.getInstance().getFile("toggle_states.json");
             HashMap<String, Boolean> toggleStates = new HashMap<>();
 
             triggerables.forEach((id, triggerable) -> {

@@ -58,7 +58,7 @@ public class IslandGenerator {
                 z = random.nextInt(-chunkRange, chunkRange);
                 chunk = world.getChunkAt(x, z, false);
             } while (chunk.isGenerated() && chunk.getInhabitedTime() > (20 * 30) &&
-                !VoidSurvival.getTable(IslandDataTable.class).getIslandsInRange(x, z, 32, 1)
+                !VoidSurvival.getIslandTable().getIslandsInRange(x, z, 32, 1)
                     .join()
                     .isEmpty()
             );
@@ -96,7 +96,7 @@ public class IslandGenerator {
     // 400 islands -> 20000
     private int getIslandGenerationRange() {
 
-        int count = VoidSurvival.getTable(IslandDataTable.class).getIslandCount().join();
+        int count = VoidSurvival.getIslandTable().getIslandCount().join();
         int range = (int) Math.sqrt(count * 500000) + 100;
 
         VoidSurvival.logDebug("Generated island range %d with %d islands", range, count);

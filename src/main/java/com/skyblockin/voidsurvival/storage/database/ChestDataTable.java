@@ -15,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class ChestDataTable extends SQLiteTable {
 
-    public ChestDataTable(Database database) {
+    public ChestDataTable(SQLiteDatabase database) {
         super(database, "chest_locations",
             "location INTEGER",
             "world TEXT",

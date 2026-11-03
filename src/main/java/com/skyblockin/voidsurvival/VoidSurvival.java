@@ -1,12 +1,9 @@
 package com.skyblockin.voidsurvival;
 
-import com.skyblockin.voidsurvival.ability.Abilities;
-import com.skyblockin.voidsurvival.ability.AbilityListener;
 import com.skyblockin.voidsurvival.block.BlockListener;
 import com.skyblockin.voidsurvival.block.CustomBlock;
 import com.skyblockin.voidsurvival.chat.ChatListener;
 import com.skyblockin.voidsurvival.combat.CombatTracker;
-import com.skyblockin.voidsurvival.combat.FallTracker;
 import com.skyblockin.voidsurvival.command.BasicCommands;
 import com.skyblockin.voidsurvival.command.FriendCommand;
 import com.skyblockin.voidsurvival.command.MainCommand;
@@ -33,7 +30,6 @@ import com.skyblockin.voidsurvival.customoregen.OreGenerator;
 import com.skyblockin.voidsurvival.world.PlayerBlockManager;
 import com.skyblockin.voidsurvival.world.edit.WorldListener;
 import com.skyblockin.voidsurvival.world.town.TownManager;
-import dev.aurelium.auraskills.api.AuraSkillsApi;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -66,7 +62,7 @@ public class VoidSurvival extends JavaPlugin {
         return INSTANCE;
     }
 
-    private Database database;
+    private SQLiteDatabase database;
 
     private MessageManager messageManager;
     private IslandGenerator islandGenerator;
@@ -81,7 +77,6 @@ public class VoidSurvival extends JavaPlugin {
     private TriggerManager triggerManager;
     private TownManager townManager;
     private CombatTracker combatTracker;
-    private FallTracker fallTracker;
 
     private WorldListener worldListener;
 
@@ -133,11 +128,10 @@ public class VoidSurvival extends JavaPlugin {
         this.triggerManager = new TriggerManager();
         this.townManager = new TownManager();
         this.combatTracker = new CombatTracker();
-        this.fallTracker = new FallTracker();
 
         try {
 
-            this.database = new Database();
+            this.database = new SQLiteDatabase();
 
             this.database.addTable(PlayerDataTable.class);
             this.database.addTable(IslandDataTable.class);
@@ -167,10 +161,6 @@ public class VoidSurvival extends JavaPlugin {
 
         FileUtil.createOrGetFile("mana_abilities.yml");
 
-        AuraSkillsApi.get()
-            .useRegistry("voidsurvival", getDataFolder())
-            .registerManaAbility(Abilities.TREECAPITATOR);
-
         registerEvents(
             GuiManager.init(),
             new ChatListener(),
@@ -181,14 +171,12 @@ public class VoidSurvival extends JavaPlugin {
             this.combatTracker,
             this.gatheringNodeManager,
             this.triggerManager,
-            this.fallTracker,
             this.townManager,
             this.oreGenerator,
             new RegionFlagListener(),
             new EntityEquipmentHandler(),
             this.recipeManager,
             new BlockListener(),
-            new AbilityListener(),
             new PlayerListener(),
             new CampfireManager()
         );
@@ -383,7 +371,7 @@ public class VoidSurvival extends JavaPlugin {
         return getDataPath().resolve(Path.of(first, others)).toFile();
     }
 
-    public static Database getDatabase() {
+    public static SQLiteDatabase getDatabase() {
         return VoidSurvival.getInstance().database;
     }
 
