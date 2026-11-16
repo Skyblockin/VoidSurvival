@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.skyblockin.voidsurvival.config.Json;
+import com.skyblockin.voidsurvival.constants.Units;
 import com.skyblockin.voidsurvival.util.Functions;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -62,7 +63,7 @@ public class SpawnerData {
             if (timeNode.isInt()) {
                 return (short) timeNode.asInt(defaultValue);
             } else if (timeNode.isTextual()) {
-                return (short) Functions.parseTicks(timeNode.asText());
+                return (short) Units.TIME.parse(timeNode.asText(), "t");
             }
 
             return (short) defaultValue;

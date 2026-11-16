@@ -1,4 +1,4 @@
-package com.skyblockin.voidsurvival.world;
+package com.skyblockin.voidsurvival.manager;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.block.CustomBlock;
@@ -7,14 +7,10 @@ import com.skyblockin.voidsurvival.block.CustomBlockPreMineEvent;
 import com.skyblockin.voidsurvival.config.Pair;
 import com.skyblockin.voidsurvival.math.BlockPosition;
 import com.skyblockin.voidsurvival.math.ChunkPosition;
-import com.skyblockin.voidsurvival.region.Flags;
-import com.skyblockin.voidsurvival.storage.*;
 import com.skyblockin.voidsurvival.storage.chunk.ChunkDataController;
 import com.skyblockin.voidsurvival.util.CustomTimeUnit;
 import com.skyblockin.voidsurvival.util.Functions;
-import com.skyblockin.voidsurvival.util.PlayerUtil;
 import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
-import io.papermc.paper.event.packet.PlayerChunkUnloadEvent;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockType;
@@ -25,7 +21,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.inventory.ItemStack;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.event.world.ChunkUnloadEvent;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.SQLException;
@@ -33,7 +31,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 @SuppressWarnings("UnstableApiUsage")
-public class PlayerBlockManager implements Listener {
+public class PlayerBlockManager extends Manager implements Listener {
 
     private final HashMap<String, Pair<Integer, Integer>> regenerationTimes = new HashMap<>();
     private final HashMap<UUID, HashMap<ChunkPosition, HashMap<BlockPosition, Long>>> playerBlockChanges = new HashMap<>();
@@ -90,9 +88,11 @@ public class PlayerBlockManager implements Listener {
 
     }
 
-    public void reload() {
+    public void reload(VoidSurvival plugin) {
 
-        ConfigurationSection section = VoidSurvival.getInstance().getConfig().getConfigurationSection("ore-generation-times");
+        if (!isEnabled()) return;
+
+        ConfigurationSection section = plugin.getConfig().getConfigurationSection("ore-generation-times");
 
         if (section == null) {
             VoidSurvival.logInfo("config.yml is missing section ore-generation-times, ore generation was not loaded.");
@@ -103,8 +103,8 @@ public class PlayerBlockManager implements Listener {
 
         for (String key : section.getKeys(false)) {
 
-            int minTime = (int) Functions.getTimeFromYaml(section, key + ".min-time", 1000, CustomTimeUnit.TICKS);
-            int maxTime = (int) Functions.getTimeFromYaml(section, key + ".max-time", 1000, CustomTimeUnit.TICKS);
+            int minTime = (int) Functions.getTimeFromYaml(section, key + ".min-time", 1000, "t");
+            int maxTime = (int) Functions.getTimeFromYaml(section, key + ".max-time", 1000, "t");
 
             this.regenerationTimes.put(key, new Pair<>(minTime, maxTime));
         }
@@ -126,15 +126,21 @@ public class PlayerBlockManager implements Listener {
         return regenerationTimes.containsKey(id);
     }
 
+    public void shutdown() {
+        try {
+            controller.close();
+        } catch (SQLException ex) {
+            VoidSurvival.logError("Failed to close ChunkDataController", ex);
+        }
+    }
+
     @EventHandler
-    public void onPlayerChunkUnload(PlayerChunkUnloadEvent event) {
+    public void onChunkUnload(ChunkUnloadEvent event) {
 
         Chunk chunk = event.getChunk();
 
         try {
-            if (controller.getModifiedChunkCount() >= 100) {
-                controller.saveChunks();
-            }
+            controller.saveChunks(List.of(ChunkPosition.ofChunk(chunk)), true);
         } catch (Exception ex) {
             VoidSurvival.logError("ChunkDataController failed to unload chunk at %d, %d: %s", ex, chunk.getX(), chunk.getZ(), ex.getMessage());
         }
@@ -142,9 +148,8 @@ public class PlayerBlockManager implements Listener {
     }
 
     @EventHandler
-    public void onPlayerChunkLoad(PlayerChunkLoadEvent event) {
+    public void onChunkLoad(ChunkLoadEvent event) {
 
-        Player player = event.getPlayer();
         Chunk chunk = event.getChunk();
 
         try {
@@ -152,6 +157,13 @@ public class PlayerBlockManager implements Listener {
         } catch (Exception ex) {
             VoidSurvival.logError("ChunkDataController failed to load chunk at %d, %d: %s", ex, chunk.getX(), chunk.getZ(), ex.getMessage());
         }
+    }
+
+    @EventHandler
+    public void onPlayerChunkLoad(PlayerChunkLoadEvent event) {
+
+        Player player = event.getPlayer();
+        Chunk chunk = event.getChunk();
 
         HashMap<ChunkPosition, HashMap<BlockPosition, Long>> changes = playerBlockChanges.get(event.getPlayer().getUniqueId());
 
@@ -236,6 +248,11 @@ public class PlayerBlockManager implements Listener {
         if (event.getPlayer().getGameMode() != GameMode.CREATIVE) {
             event.setCancelled(true);
         }
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        playerBlockChanges.remove(event.getPlayer().getUniqueId());
     }
 
     public Long getBlockChangeTicks(Player player, Block block) {

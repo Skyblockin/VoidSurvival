@@ -1,9 +1,12 @@
-package com.skyblockin.voidsurvival.loot;
+package com.skyblockin.voidsurvival.manager;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Json;
+import com.skyblockin.voidsurvival.constants.Units;
+import com.skyblockin.voidsurvival.loot.DummyInventoryHolder;
+import com.skyblockin.voidsurvival.loot.LootTable;
+import com.skyblockin.voidsurvival.loot.LootUtil;
 import com.skyblockin.voidsurvival.message.MessageKeys;
-import com.skyblockin.voidsurvival.storage.database.ChestDataTable;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.util.FileUtil;
 import com.skyblockin.voidsurvival.util.Format;
@@ -24,7 +27,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
-public class LootChestManager implements Listener {
+public class LootChestManager extends Manager implements Listener {
 
     private final HashMap<String, LootTable> tables = new HashMap<>();
     private final HashMap<Location, String> chestLootTables = new HashMap<>();
@@ -55,16 +58,17 @@ public class LootChestManager implements Listener {
         return chestLootTables;
     }
 
-    public void reload() {
-        loadTables();
+    @Override
+    public void reload(VoidSurvival plugin) {
+        loadTables(plugin);
         // The chest locations are in a database managed by the plugin so uhhh they should probably not be reloaded each time
         // loadChestLocations();
-        loadCooldowns();
+        loadCooldowns(plugin);
     }
 
-    public void loadCooldowns() {
+    public void loadCooldowns(VoidSurvival plugin) {
 
-        ConfigurationSection section = VoidSurvival.getInstance().getConfig().getConfigurationSection("chest-cooldowns");
+        ConfigurationSection section = plugin.getConfig().getConfigurationSection("chest-cooldowns");
 
         if (section == null) {
             VoidSurvival.logInfo("config.yml is missing section chest-cooldowns, chest cooldowns were not loaded.");
@@ -74,14 +78,14 @@ public class LootChestManager implements Listener {
         this.cooldowns.clear();
 
         for (String key : section.getKeys(false)) {
-            long timeMillis = Functions.parseMillis(section.getString(key));
+            long timeMillis = Units.TIME.parse(section.getString(key));
             this.cooldowns.put(key, timeMillis);
         }
 
         VoidSurvival.logInfo("Loaded chest cooldowns with %d entries.", this.cooldowns.size());
     }
 
-    public void loadChestLocations() {
+    public void loadChestLocations(VoidSurvival plugin) {
 
         try {
 
@@ -95,7 +99,7 @@ public class LootChestManager implements Listener {
         }
     }
 
-    public void loadTables() {
+    public void loadTables(VoidSurvival plugin) {
 
         this.tables.clear();
 

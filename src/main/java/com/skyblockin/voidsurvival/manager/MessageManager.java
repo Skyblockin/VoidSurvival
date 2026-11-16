@@ -1,6 +1,7 @@
-package com.skyblockin.voidsurvival.message;
+package com.skyblockin.voidsurvival.manager;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.util.TextUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -10,13 +11,14 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Objects;
 
-public class MessageManager {
+public class MessageManager extends Manager {
 
     private final HashMap<String, String> messages = new HashMap<>();
 
-    public void reload() {
+    @Override
+    public void reload(VoidSurvival plugin) {
 
-        File file = VoidSurvival.getInstance().getFile("messages.yml");
+        File file = plugin.getFile("messages.yml");
 
         if (!file.exists()) {
             writeEmptyConfig();

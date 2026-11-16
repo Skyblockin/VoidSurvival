@@ -506,7 +506,7 @@ public class JsonDeserializers {
                         Float defaultMiningSpeed = Json.convert(rule.get("default_mining_speed"), Float.class);
                         Boolean correctToolForDrops = Json.convert(rule.get("correct_tool"), Boolean.class);
 
-                        builder.addRule(Tool.rule(Functions.parseRegistryKeySet(RegistryKey.BLOCK, type), defaultMiningSpeed, TriState.byBoolean(correctToolForDrops)));
+                        builder.addRule(Tool.rule(Json.parseRegistryKeySet(RegistryKey.BLOCK, type), defaultMiningSpeed, TriState.byBoolean(correctToolForDrops)));
 
                     } catch (Exception ex) {
                         VoidSurvival.logError("Failed to parse tool rule: " + rule, ex);
@@ -659,7 +659,7 @@ public class JsonDeserializers {
         @Override
         public BlockPredicate deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
 
-            RegistryKeySet<@NotNull BlockType> blockSet = Functions.parseRegistryKeySet(RegistryKey.BLOCK, p.getCodec().readTree(p));
+            RegistryKeySet<@NotNull BlockType> blockSet = Json.parseRegistryKeySet(RegistryKey.BLOCK, p.getCodec().readTree(p));
 
             return BlockPredicate.predicate().blocks(blockSet).build();
         }
@@ -703,7 +703,7 @@ public class JsonDeserializers {
 
         @Override
         public DamageResistant deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-            return DamageResistant.damageResistant(Functions.parseRegistryKeySet(RegistryKey.DAMAGE_TYPE, p.getCodec().readTree(p)));
+            return DamageResistant.damageResistant(Json.parseRegistryKeySet(RegistryKey.DAMAGE_TYPE, p.getCodec().readTree(p)));
         }
     }
 
@@ -845,7 +845,7 @@ public class JsonDeserializers {
 
         @Override
         public Repairable deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-            return Repairable.repairable(Functions.parseRegistryKeySet(RegistryKey.ITEM, p.getCodec().readTree(p)));
+            return Repairable.repairable(Json.parseRegistryKeySet(RegistryKey.ITEM, p.getCodec().readTree(p)));
         }
     }
 
@@ -862,7 +862,7 @@ public class JsonDeserializers {
 
             return DamageReduction
                 .damageReduction()
-                .type(Functions.parseRegistryKeySet(RegistryKey.DAMAGE_TYPE, node.get("damage_type")))
+                .type(Json.parseRegistryKeySet(RegistryKey.DAMAGE_TYPE, node.get("damage_type")))
                 .factor((float) node.get("factor").asDouble(1.0))
                 .base((float) node.get("base").asDouble(0.0))
                 .horizontalBlockingAngle((float) node.get("horizontal_angle").asDouble(0.0))

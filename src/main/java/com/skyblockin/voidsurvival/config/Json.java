@@ -14,6 +14,12 @@ import io.papermc.paper.block.BlockPredicate;
 import io.papermc.paper.datacomponent.item.*;
 import io.papermc.paper.datacomponent.item.blocksattacks.DamageReduction;
 import io.papermc.paper.datacomponent.item.blocksattacks.ItemDamageFunction;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.TypedKey;
+import io.papermc.paper.registry.set.RegistryKeySet;
+import io.papermc.paper.registry.set.RegistrySet;
+import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
@@ -29,11 +35,13 @@ import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -243,30 +251,32 @@ public class Json {
         return MAPPER.readValue(json, clazz);
     }
 
-    public static Color colorFromJson(JsonNode node) {
+    @SuppressWarnings("UnstableApiUsage")
+    public static <T extends Keyed> RegistryKeySet<@NotNull T> parseRegistryKeySet(RegistryKey<@NotNull T> registryKey, JsonNode node) {
 
-        if (node == null) {
-            return null;
-        }
+        if (node.isArray()) {
 
-        if (node.isNumber()) {
-            return Color.fromRGB(node.asInt());
-        } else if (node.isTextual()) {
+            List<TypedKey<@NotNull T>> keys = new ArrayList<>(node.size());
 
-            String text = node.asText();
-
-            if (text.startsWith("#")) {
-                text = text.substring(1);
+            for (JsonNode value : node) {
+                keys.add(TypedKey.create(registryKey, value.asText()));
             }
 
-            return Color.fromRGB(Integer.parseInt(text, 16));
-        } else if (node.isObject()) {
-            return Color.fromRGB(node.get("r").asInt(), node.get("g").asInt(), node.get("b").asInt());
+            return RegistrySet.keySet(registryKey, keys);
+
+        } else {
+
+            String value = node.asText();
+
+            if (value.startsWith("#")) {
+                value = value.substring(1);
+                return RegistryAccess.registryAccess().getRegistry(registryKey).getTag(TagKey.create(registryKey, value));
+            } else {
+                return RegistrySet.keySet(registryKey, TypedKey.create(registryKey, value));
+            }
+
         }
 
-        throw new IllegalArgumentException(
-            "Unable to parse Color from Json! Make sure the color is either a base 10 integer, a hex string or a Json object with integer fields r, g and b"
-        );
     }
 
 

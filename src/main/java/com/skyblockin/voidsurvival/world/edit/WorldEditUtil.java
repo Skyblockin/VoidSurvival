@@ -21,7 +21,7 @@ import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Json;
-import com.skyblockin.voidsurvival.loot.LootChestManager;
+import com.skyblockin.voidsurvival.manager.LootChestManager;
 import com.skyblockin.voidsurvival.math.BlockPosition;
 import com.skyblockin.voidsurvival.math.Cuboid;
 import com.skyblockin.voidsurvival.math.Position;

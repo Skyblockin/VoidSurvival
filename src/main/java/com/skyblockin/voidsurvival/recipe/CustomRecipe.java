@@ -22,7 +22,7 @@ public class CustomRecipe {
         Recipe recipe = parseRecipe(key, node);
 
         if (node.has("unlocked_by")) {
-            unlockedBy = Functions.parseRegistryKeySet(RegistryKey.ITEM, node.get("unlocked_by"));
+            unlockedBy = Json.parseRegistryKeySet(RegistryKey.ITEM, node.get("unlocked_by"));
         }
 
         return new CustomRecipe(recipe, unlockedBy);

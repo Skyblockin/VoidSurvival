@@ -1,5 +1,8 @@
-package com.skyblockin.voidsurvival.combat;
+package com.skyblockin.voidsurvival.manager;
 
+import com.skyblockin.voidsurvival.combat.DamageTypes;
+import com.skyblockin.voidsurvival.combat.StanceManager;
+import com.skyblockin.voidsurvival.combat.StatusManager;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.combat.status.BleedStatusManager;
 import com.skyblockin.voidsurvival.item.ItemIds;
@@ -23,28 +26,32 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-public class CombatTracker implements Listener {
+public class CombatManager extends Manager implements Listener {
 
     private final HashMap<UUID, Instant> lastDamageTimes = new HashMap<>();
     private final HashMap<UUID, Instant> lastEntityHitTimes = new HashMap<>();
 
     private final List<StatusManager> statusManagers;
     private final StanceManager stanceManager;
+    private final VoidSurvival plugin;
 
-    public CombatTracker() {
-
-        Server server = VoidSurvival.getInstance().getServer();
+    public CombatManager(VoidSurvival plugin) {
+        this.plugin = plugin;
+        Server server = plugin.getServer();
 
         this.stanceManager = new StanceManager();
-        this.statusManagers = List.of(new BleedStatusManager());
+        this.statusManagers = List.of(
+            new BleedStatusManager()
+        );
 
-        VoidSurvival.getInstance().runTaskTimer(() -> {
-
+        plugin.runTaskTimer(() -> {
+            if (!isEnabled()) return;
             server.getOnlinePlayers().forEach(player -> {
 
                 ItemStack item = player.getEquipment().getHelmet();
@@ -53,11 +60,11 @@ public class CombatTracker implements Listener {
                     player.damage(4, DamageSource.builder(DamageTypes.GREED).build());
                 }
             });
-
         }, 0, 20L);
 
-        // Let bleeding decay by 5 points every half a second, meaning 10 seconds to decay from a full bar
-        VoidSurvival.getInstance().runTaskTimer(() -> {
+        // Tick all status effects every half a second
+        plugin.runTaskTimer(() -> {
+            if (!isEnabled()) return;
             for (StatusManager manager : statusManagers) {
                 manager.tickStatus(lastDamageTimes);
             }
@@ -66,13 +73,16 @@ public class CombatTracker implements Listener {
 
     @EventHandler
     public void onProjectileHit(ProjectileHitEvent event) {
+        if (!isEnabled()) return;
         if (TagUtil.isTagged(EntityTypeTagKeys.ARROWS, event.getEntity().getType())) {
             event.getEntity().remove();
         }
     }
 
     @EventHandler
-    public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
+    public void onPlayerCommandPreProcess(PlayerCommandPreprocessEvent event) {
+
+        if (!isEnabled()) return;
 
         Player player = event.getPlayer();
 
@@ -96,12 +106,12 @@ public class CombatTracker implements Listener {
     }
 
     public boolean isCommandBlockedInCombat(String command) {
-        return VoidSurvival.getInstance().getCombatBlockedCommands().contains(command);
+        return plugin.getCombatBlockedCommands().contains(command);
     }
 
     public boolean isCombatTagged(Player player) {
 
-        int combatTagDurationSeconds = VoidSurvival.getInstance().getCombatTagDurationSeconds();
+        int combatTagDurationSeconds = plugin.getCombatTagDurationSeconds();
         Instant lastHitTime = lastEntityHitTimes.get(player.getUniqueId());
 
         return lastHitTime != null && lastHitTime.plusSeconds(combatTagDurationSeconds).isAfter(Instant.now());
@@ -117,15 +127,18 @@ public class CombatTracker implements Listener {
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
+        if (!isEnabled()) return;
         lastEntityHitTimes.remove(event.getPlayer().getUniqueId());
     }
 
     @EventHandler
     public void onHit(EntityDamageByEntityEvent event) {
 
+        if (!isEnabled()) return;
+
         // Don't allow friends to attack each other
         if (event.getDamager() instanceof Player first && event.getEntity() instanceof Player other) {
-            if (VoidSurvival.getInstance().getFriendManager().testFriendship(first, other)) {
+            if (plugin.getFriendManager().testFriendship(first, other)) {
                 event.setCancelled(true);
                 return;
             }
@@ -168,6 +181,8 @@ public class CombatTracker implements Listener {
     @EventHandler
     public void onKill(PlayerDeathEvent event) {
 
+        if (!isEnabled()) return;
+
         DamageSource source = event.getDamageSource();
 
         Component deathMessage = event.deathMessage();
@@ -208,4 +223,8 @@ public class CombatTracker implements Listener {
         data.killStreak = 0;
     }
 
+    @Override
+    public void reload(VoidSurvival plugin) throws IOException {
+        stanceManager.reload(plugin);
+    }
 }

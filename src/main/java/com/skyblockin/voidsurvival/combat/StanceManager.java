@@ -164,9 +164,9 @@ public class StanceManager {
         entity.setAI(true);
     }
 
-    public void reload() throws IOException {
+    public void reload(VoidSurvival plugin) throws IOException {
 
-        File file = FileUtil.createOrGetFile("mob_stances.json");
+        File file = plugin.getOrCreateFile("mob_stances.json");
 
         if (file != null) {
 

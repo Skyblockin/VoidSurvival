@@ -1,8 +1,9 @@
-package com.skyblockin.voidsurvival.gathering;
+package com.skyblockin.voidsurvival.manager;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Json;
+import com.skyblockin.voidsurvival.gathering.GatheringNode;
+import com.skyblockin.voidsurvival.gathering.GatheringNodeType;
 import com.skyblockin.voidsurvival.math.BlockPosition;
 import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
 import org.bukkit.Chunk;
@@ -17,7 +18,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
-public class GatheringNodeManager implements Listener {
+public class GatheringNodeManager extends Manager implements Listener {
 
     private final HashMap<String, GatheringNodeType> gatheringNodeTypes = new HashMap<>();
     private final HashMap<BlockPosition, GatheringNode> gatheringNodes = new HashMap<>();
@@ -59,6 +60,8 @@ public class GatheringNodeManager implements Listener {
     @EventHandler
     public void onEntityInteract(PlayerInteractAtEntityEvent event) {
 
+        if (!isEnabled()) return;
+
         GatheringNode alreadyGathering = null;
 
         for (GatheringNode node : gatheringNodes.values()) {
@@ -77,6 +80,8 @@ public class GatheringNodeManager implements Listener {
     @EventHandler
     public void onLoad(PlayerChunkLoadEvent event) {
 
+        if (!isEnabled()) return;
+
         Player player = event.getPlayer();
         Chunk chunk = event.getChunk();
 
@@ -91,6 +96,8 @@ public class GatheringNodeManager implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
 
+        if (!isEnabled()) return;
+
         Player player = event.getPlayer();
         Chunk chunk = player.getLocation().getChunk();
 
@@ -102,21 +109,17 @@ public class GatheringNodeManager implements Listener {
 
     }
 
-    public void load() {
+    @Override
+    public void reload(VoidSurvival plugin) {
 
         try {
 
-            File typeFile = new File(VoidSurvival.getInstance().getDataFolder(), "gathering_node_types.json");
-            File dataFile = new File(VoidSurvival.getInstance().getDataFolder(), "gathering_nodes.json");
+            File typeFile = plugin.getOrCreateFile("gathering_node_types.json");
+            File dataFile = plugin.getOrCreateFile("gathering_nodes.json");
 
-            if (!typeFile.exists()) {
-                typeFile.getParentFile().mkdirs();
-                typeFile.createNewFile();
-            }
-
-            if (!dataFile.exists()) {
-                dataFile.getParentFile().mkdirs();
-                dataFile.createNewFile();
+            if (typeFile == null || dataFile == null) {
+                VoidSurvival.logError("Failed to load gathering node files");
+                return;
             }
 
             for (GatheringNode node : gatheringNodes.values()) {

@@ -2,6 +2,7 @@ package com.skyblockin.voidsurvival.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.AbstractIterator;
+import com.skyblockin.voidsurvival.constants.Units;
 import com.skyblockin.voidsurvival.math.BlockPosition;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
@@ -101,32 +102,8 @@ public class Functions {
         return ThreadLocalRandom.current().nextDouble() < chance;
     }
 
-    @SuppressWarnings("UnstableApiUsage")
-    public static <T extends Keyed> RegistryKeySet<@NotNull T> parseRegistryKeySet(RegistryKey<@NotNull T> registryKey, JsonNode node) {
-
-        if (node.isArray()) {
-
-            List<TypedKey<@NotNull T>> keys = new ArrayList<>(node.size());
-
-            for (JsonNode value : node) {
-                keys.add(TypedKey.create(registryKey, value.asText()));
-            }
-
-            return RegistrySet.keySet(registryKey, keys);
-
-        } else {
-
-            String value = node.asText();
-
-            if (value.startsWith("#")) {
-                value = value.substring(1);
-                return RegistryAccess.registryAccess().getRegistry(registryKey).getTag(TagKey.create(registryKey, value));
-            } else {
-                return RegistrySet.keySet(registryKey, TypedKey.create(registryKey, value));
-            }
-
-        }
-
+    public static String nameToTableId(String name) {
+        return name.replace(" ", "_").toLowerCase();
     }
 
     public static String tableIdToName(String tableId) {
@@ -140,51 +117,7 @@ public class Functions {
         return String.join(" ", parts);
     }
 
-    private record TimePair(CustomTimeUnit unit, char suffix) {}
-    private static final TimePair[] TIME_PAIRS = {
-        new TimePair(CustomTimeUnit.DAYS, 'd'),
-        new TimePair(CustomTimeUnit.HOURS, 'h'),
-        new TimePair(CustomTimeUnit.MINUTES, 'm'),
-        new TimePair(CustomTimeUnit.SECONDS, 's'),
-        new TimePair(CustomTimeUnit.TICKS, 't')
-    };
-
-    public static long parseMillis(String s) {
-
-        long millis = 0;
-
-        // Standardize the string because yeah lol
-        s = s.replaceAll(" ", "").toLowerCase();
-
-        boolean sawAtLeastOneUnit = false;
-
-        for (TimePair pair : TIME_PAIRS) {
-
-            int index = s.indexOf(pair.suffix);
-            if (index > 0) {
-                sawAtLeastOneUnit = true;
-                millis += pair.unit.convert(Long.parseLong(s.substring(0, index)), TimeUnit.MILLISECONDS);
-            }
-
-            s = s.substring(index + 1);
-        }
-
-        if (!sawAtLeastOneUnit) {
-            try {
-                return Long.parseLong(s);
-            } catch (Exception ex) {
-                throw new IllegalArgumentException("Invalid time format! Could not find any valid suffix in time string '" + s + "', valid suffixes are: 'd', 'h', 'm', 's'", ex);
-            }
-        }
-
-        return millis;
-    }
-
-    public static long parseTicks(String s) {
-        return parseMillis(s) / 50;
-    }
-
-    public static long getTimeFromYaml(ConfigurationSection section, String key, int defaultValue, CustomTimeUnit unit) {
+    public static long getTimeFromYaml(ConfigurationSection section, String key, int defaultValue, String unit) {
 
         String s = section.getString(key);
 
@@ -193,7 +126,7 @@ public class Functions {
         }
 
         try {
-            return CustomTimeUnit.MILLISECONDS.convert(parseMillis(s), unit);
+            return Units.TIME.parse(s, unit);
         } catch (IllegalArgumentException iae) {
             return section.getInt(key, defaultValue);
         }

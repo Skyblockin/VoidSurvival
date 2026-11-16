@@ -7,7 +7,7 @@ import com.skyblockin.voidsurvival.gui.GuiItem;
 import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.math.Position;
-import com.skyblockin.voidsurvival.world.CampfireManager;
+import com.skyblockin.voidsurvival.manager.CampfireManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Sound;

@@ -3,9 +3,8 @@ package com.skyblockin.voidsurvival.command.admin;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
-import com.skyblockin.voidsurvival.loot.LootChestManager;
+import com.skyblockin.voidsurvival.manager.LootChestManager;
 import com.skyblockin.voidsurvival.loot.LootTable;
-import com.skyblockin.voidsurvival.storage.database.ChestDataTable;
 import com.skyblockin.voidsurvival.util.CommandUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.block.Block;
@@ -76,7 +75,7 @@ public final class Chest {
         .then(literal("saveloot")
             .executes(ctx -> {
 
-                VoidSurvival.getTable(ChestDataTable.class)
+                VoidSurvival.getChestTable()
                     .saveChestLocations(VoidSurvival.getInstance().getLootTableManager().getChestLootTables());
                 ctx.getSource().getSender().sendRichMessage("<green>Saved chest loot tables.");
 

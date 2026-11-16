@@ -80,7 +80,9 @@ public class CustomEnchantment {
     }
 
     public TypedKey<@NotNull Enchantment> getKey() {
-        return EnchantmentKeys.create(new NamespacedKey("voidsurvival", name.toLowerCase().replace(" ", "_")));
+        return EnchantmentKeys.create(
+            new NamespacedKey("voidsurvival", name.toLowerCase().replace(" ", "_"))
+        );
     }
 
     public Enchantment get() {

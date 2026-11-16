@@ -1,8 +1,9 @@
-package com.skyblockin.voidsurvival.customoregen;
+package com.skyblockin.voidsurvival.manager;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Json;
+import com.skyblockin.voidsurvival.customoregen.CriteriaBasedUpgrade;
 import com.skyblockin.voidsurvival.util.FileUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -22,16 +23,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 
-public class OreGenerator implements Listener {
+public class OreGeneratorManager extends Manager implements Listener {
 
     private final HashMap<String, CriteriaBasedUpgrade> upgrades = new HashMap<>();
     private final ArrayList<CriteriaBasedUpgrade> upgradeOrder = new ArrayList<>();
     private final HashMap<UUID, String> currentUpgrade = new HashMap<>();
     private final HashMap<Block, UUID> lastBrokenBy = new HashMap<>();
 
-    public void reload() {
+    public void reload(VoidSurvival plugin) {
 
-        File file = FileUtil.createOrGetFile("ore_upgrades.json");
+        File file = plugin.getFile("ore_upgrades.json");
 
         if (file != null) {
 
@@ -62,6 +63,8 @@ public class OreGenerator implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
 
+        if (!isEnabled()) return;
+
         Player player = event.getPlayer();
 
         for (CriteriaBasedUpgrade upgrade : upgradeOrder) {
@@ -73,11 +76,14 @@ public class OreGenerator implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
+        if (!isEnabled()) return;
         lastBrokenBy.put(event.getBlock(), event.getPlayer().getUniqueId());
     }
 
     @EventHandler
     public void onBlockForm(BlockFormEvent event) {
+
+        if (!isEnabled()) return;
 
         UUID uuid = lastBrokenBy.get(event.getBlock());
 

@@ -1,10 +1,9 @@
-package com.skyblockin.voidsurvival.recipe;
+package com.skyblockin.voidsurvival.manager;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.config.Json;
-import com.skyblockin.voidsurvival.item.ItemData;
-import com.skyblockin.voidsurvival.item.ItemManager;
+import com.skyblockin.voidsurvival.recipe.CustomRecipe;
 import com.skyblockin.voidsurvival.util.FileUtil;
 import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
 import org.bukkit.Bukkit;
@@ -13,16 +12,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.ServerLoadEvent;
-import org.bukkit.inventory.FurnaceRecipe;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
-public class RecipeManager implements Listener {
+public class RecipeManager extends Manager implements Listener {
 
     private final HashMap<NamespacedKey, CustomRecipe> recipeMap = new HashMap<>();
 
@@ -86,7 +82,8 @@ public class RecipeManager implements Listener {
 
     }
 
-    public void loadRecipes() {
+    @Override
+    public void reload(VoidSurvival plugin) {
 
         int count = 0;
 

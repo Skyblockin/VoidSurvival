@@ -1,4 +1,4 @@
-package com.skyblockin.voidsurvival.storage;
+package com.skyblockin.voidsurvival.storage.pdc;
 
 import com.skyblockin.voidsurvival.math.Position;
 import org.bukkit.persistence.PersistentDataAdapterContext;

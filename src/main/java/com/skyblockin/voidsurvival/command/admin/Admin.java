@@ -9,7 +9,7 @@ import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.entity.trait.FighterTrait;
 import com.skyblockin.voidsurvival.event.CampfireLoadEvent;
 import com.skyblockin.voidsurvival.gathering.GatheringNode;
-import com.skyblockin.voidsurvival.gathering.GatheringNodeManager;
+import com.skyblockin.voidsurvival.manager.GatheringNodeManager;
 import com.skyblockin.voidsurvival.gathering.GatheringNodeType;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.storage.PlayerData;
@@ -36,7 +36,6 @@ import org.bukkit.block.Sign;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.LeatherArmorMeta;
 
 import java.io.IOException;
 import java.util.Arrays;

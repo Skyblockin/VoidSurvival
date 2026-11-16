@@ -1,51 +1,87 @@
-package com.skyblockin.voidsurvival.block;
+package com.skyblockin.voidsurvival.manager;
 
+import com.skyblockin.voidsurvival.block.BlockBreakSession;
+import com.skyblockin.voidsurvival.block.CustomBlock;
+import com.skyblockin.voidsurvival.block.CustomBlockPreMineEvent;
 import com.skyblockin.voidsurvival.VoidSurvival;
-import com.skyblockin.voidsurvival.config.Pair;
-import com.skyblockin.voidsurvival.item.ItemData;
-import com.skyblockin.voidsurvival.item.ItemManager;
 import com.skyblockin.voidsurvival.region.Flags;
-import com.skyblockin.voidsurvival.storage.Accessors;
-import com.skyblockin.voidsurvival.util.ToolData;
 import com.skyblockin.voidsurvival.util.ToolEvaluation;
 import com.skyblockin.voidsurvival.world.edit.WorldGuardUtil;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
-import org.bukkit.Tag;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageAbortEvent;
-import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class BlockListener implements Listener {
+public class MiningManager extends Manager implements Listener {
+
+    private static final Map<UUID, BlockBreakSession> blockBreakProgress = new HashMap<>();
+    private static final Map<UUID, BukkitTask> activeMiningTasks = new HashMap<>();
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockDamageAbort(BlockDamageAbortEvent event) {
+        if (!isEnabled()) return;
+        clearSession(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        if (!isEnabled()) return;
+        clearSession(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        if (!isEnabled()) return;
+        Player player = event.getPlayer();
+        player.getAttribute(Attribute.BLOCK_BREAK_SPEED).setBaseValue(0);
+    }
+
+    @Override
+    public void onDisable(VoidSurvival plugin) {
+        for (Player player : plugin.getServer().getOnlinePlayers()) {
+            clearSession(player.getUniqueId());
+            player.getAttribute(Attribute.BLOCK_BREAK_SPEED).setBaseValue(Attribute.BLOCK_BREAK_SPEED.getDefaultValue());
+        }
+    }
+
+    @Override
+    public void onEnable(VoidSurvival plugin) {
+        for (Player player : plugin.getServer().getOnlinePlayers()) {
+            player.getAttribute(Attribute.BLOCK_BREAK_SPEED).setBaseValue(0);
+        }
+    }
 
     @EventHandler
-    public void onNoteBlockInteract(PlayerInteractEvent event) {
+    public void onClickBlock(PlayerInteractEvent event) {
 
-        Block clickedBlock = event.getClickedBlock();
+        if (!isEnabled()) return;
 
-        if (clickedBlock == null) {
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
+        Block block = event.getClickedBlock();
+
+        if (block == null) {
             return;
         }
 
         // TODO: Figure out how to make this not fucked
-        if (clickedBlock.getType() == Material.NOTE_BLOCK) {
+        // Cancel events for note blocks as we use them for custom blocks and don't want their states modified
+        if (block.getType() == Material.NOTE_BLOCK) {
             if (event.getAction() == Action.LEFT_CLICK_BLOCK && event.getPlayer().getGameMode() != GameMode.CREATIVE) {
                 event.setCancelled(true);
             }
@@ -53,61 +89,12 @@ public class BlockListener implements Listener {
                 event.setCancelled(true);
             }
         }
-    }
-
-    @EventHandler
-    public void onNoteBlockPhysics(BlockPhysicsEvent event) {
-
-        Block block = event.getBlock();
-
-        if (block.getType() == Material.NOTE_BLOCK) {
-            event.setCancelled(true);
-        }
-
-        Block aboveBlock = block.getRelative(BlockFace.UP);
-
-        if (aboveBlock.getType() == Material.NOTE_BLOCK) {
-            event.setCancelled(true);
-        }
-    }
-
-    private static final Map<UUID, BlockBreakSession> blockBreakProgress = new HashMap<>();
-    private static final Map<UUID, BukkitTask> activeMiningTasks = new HashMap<>();
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onBlockDamageAbort(BlockDamageAbortEvent event) {
-        clearSession(event.getPlayer().getUniqueId());
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onPlayerQuit(PlayerQuitEvent event) {
-        clearSession(event.getPlayer().getUniqueId());
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        player.getAttribute(Attribute.BLOCK_BREAK_SPEED).setBaseValue(0);
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onPlayerInteract(PlayerInteractEvent event) {
-
-        Player player = event.getPlayer();
-        UUID uuid = player.getUniqueId();
 
         if (event.getAction() != Action.LEFT_CLICK_BLOCK) {
             return;
         }
 
-        Block block = event.getClickedBlock();
-
-        if (block == null || player.getGameMode() == GameMode.CREATIVE) {
-            clearSession(uuid);
-            return;
-        }
-
-        if (block.getType().getHardness() < 0) {
+        if (player.getGameMode() == GameMode.CREATIVE || block.getType().getHardness() < 0) {
             clearSession(uuid);
             return;
         }

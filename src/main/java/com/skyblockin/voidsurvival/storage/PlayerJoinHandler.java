@@ -31,9 +31,7 @@ public class PlayerJoinHandler implements Listener {
         var worldGuardLocation = WorldGuardUtil.getFlagValueAt(player.getLocation(), Flags.TELE_LOC);
 
         if (worldGuardLocation != null) {
-
             Location location = BukkitAdapter.adapt(worldGuardLocation);
-
             if (player.getLocation().distanceSquared(location) >= 25) {
                 player.teleportAsync(location);
             }

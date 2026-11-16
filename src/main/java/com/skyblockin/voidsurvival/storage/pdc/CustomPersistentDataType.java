@@ -1,6 +1,4 @@
-package com.skyblockin.voidsurvival.item;
-
-import com.skyblockin.voidsurvival.storage.PositionPersistentDataType;
+package com.skyblockin.voidsurvival.storage.pdc;
 
 public final class CustomPersistentDataType {
 

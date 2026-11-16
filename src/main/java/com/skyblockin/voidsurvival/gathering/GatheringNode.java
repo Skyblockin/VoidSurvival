@@ -100,11 +100,9 @@ public class GatheringNode {
     }
 
     public void onLoad(Player player) {
-
         if (this.cooldownHandler.isOnCooldown(player)) {
             return;
         }
-
         this.itemDisplay.show(player);
     }
 

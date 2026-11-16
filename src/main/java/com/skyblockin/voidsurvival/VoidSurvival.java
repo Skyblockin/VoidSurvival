@@ -1,33 +1,22 @@
 package com.skyblockin.voidsurvival;
 
-import com.skyblockin.voidsurvival.block.BlockListener;
+import com.skyblockin.voidsurvival.manager.*;
 import com.skyblockin.voidsurvival.block.CustomBlock;
 import com.skyblockin.voidsurvival.chat.ChatListener;
-import com.skyblockin.voidsurvival.combat.CombatTracker;
 import com.skyblockin.voidsurvival.command.BasicCommands;
 import com.skyblockin.voidsurvival.command.FriendCommand;
 import com.skyblockin.voidsurvival.command.MainCommand;
-import com.skyblockin.voidsurvival.gathering.GatheringNodeManager;
 import com.skyblockin.voidsurvival.item.ItemManager;
 import com.skyblockin.voidsurvival.entity.EntityEquipmentHandler;
 import com.skyblockin.voidsurvival.entity.PlayerListener;
 import com.skyblockin.voidsurvival.gui.GuiManager;
-import com.skyblockin.voidsurvival.leaderboard.LeaderboardManager;
-import com.skyblockin.voidsurvival.loot.LootChestManager;
-import com.skyblockin.voidsurvival.message.MessageManager;
-import com.skyblockin.voidsurvival.recipe.RecipeManager;
 import com.skyblockin.voidsurvival.region.Flags;
 import com.skyblockin.voidsurvival.region.RegionFlagListener;
 import com.skyblockin.voidsurvival.social.FriendManager;
 import com.skyblockin.voidsurvival.storage.*;
 import com.skyblockin.voidsurvival.storage.database.*;
 import com.skyblockin.voidsurvival.trigger.TriggerManager;
-import com.skyblockin.voidsurvival.util.CustomTimeUnit;
-import com.skyblockin.voidsurvival.util.FileUtil;
-import com.skyblockin.voidsurvival.world.CampfireManager;
 import com.skyblockin.voidsurvival.world.IslandGenerator;
-import com.skyblockin.voidsurvival.customoregen.OreGenerator;
-import com.skyblockin.voidsurvival.world.PlayerBlockManager;
 import com.skyblockin.voidsurvival.world.edit.WorldListener;
 import com.skyblockin.voidsurvival.world.town.TownManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -42,6 +31,7 @@ import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -66,9 +56,10 @@ public class VoidSurvival extends JavaPlugin {
 
     private MessageManager messageManager;
     private IslandGenerator islandGenerator;
-    private OreGenerator oreGenerator;
+    private OreGeneratorManager oreGeneratorManager;
     private PlayerBlockManager playerBlockManager;
     private LootChestManager lootTableManager;
+    private WorldGenerationManager worldGenerationManager;
     private LeaderboardManager leaderboardManager;
     private ItemManager itemManager;
     private RecipeManager recipeManager;
@@ -76,7 +67,7 @@ public class VoidSurvival extends JavaPlugin {
     private GatheringNodeManager gatheringNodeManager;
     private TriggerManager triggerManager;
     private TownManager townManager;
-    private CombatTracker combatTracker;
+    private CombatManager combatManager;
 
     private WorldListener worldListener;
 
@@ -104,30 +95,33 @@ public class VoidSurvival extends JavaPlugin {
 
         registerCommands();
 
-        this.combatTagDurationSeconds = (int) getTimeFromYaml(getConfig(), "combat-tag-duration-seconds", 10, CustomTimeUnit.SECONDS);
+        this.combatTagDurationSeconds = (int) getTimeFromYaml(getConfig(), "combat-tag-duration-seconds", 10, "s");
         this.combatBlockedCommands = config.getStringList("blocked-commands");
-        this.blockDegenerationSeconds = (int) getTimeFromYaml(getConfig(), "block-degeneration-seconds", 20, CustomTimeUnit.SECONDS);
+        this.blockDegenerationSeconds = (int) getTimeFromYaml(getConfig(), "block-degeneration-seconds", 20, "s");
         this.debug = config.getBoolean("debug");
         this.infirmaryLocation = config.getLocation("missing-home-backup-location", null);
 
         this.messageManager = new MessageManager();
         this.islandGenerator = new IslandGenerator();
-        this.oreGenerator = new OreGenerator();
+        this.oreGeneratorManager = new OreGeneratorManager();
+
         try {
             this.playerBlockManager = new PlayerBlockManager();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+
         this.lootTableManager = new LootChestManager();
         this.worldListener = new WorldListener();
         this.leaderboardManager = new LeaderboardManager();
         this.itemManager = new ItemManager();
+        this.worldGenerationManager = new WorldGenerationManager();
         this.recipeManager = new RecipeManager();
         this.friendManager = new FriendManager();
         this.gatheringNodeManager = new GatheringNodeManager();
         this.triggerManager = new TriggerManager();
         this.townManager = new TownManager();
-        this.combatTracker = new CombatTracker();
+        this.combatManager = new CombatManager(this);
 
         try {
 
@@ -146,20 +140,21 @@ public class VoidSurvival extends JavaPlugin {
             return;
         }
 
-        this.messageManager.reload();
+        this.messageManager.reload(this);
         this.itemManager.loadItemsFromFile();
-        this.playerBlockManager.reload();
+        this.playerBlockManager.reload(this);
         this.worldListener.loadGeneratedChunkCount();
-        this.lootTableManager.loadTables();
-        this.lootTableManager.loadChestLocations();
-        this.lootTableManager.loadCooldowns();
-        this.recipeManager.loadRecipes();
-        this.gatheringNodeManager.load();
-        this.townManager.load();
-        this.oreGenerator.reload();
+        this.lootTableManager.loadTables(this);
+        this.lootTableManager.loadChestLocations(this);
+        this.lootTableManager.loadCooldowns(this);
+        this.worldGenerationManager.reload(this);
+        this.recipeManager.reload(this);
+        this.gatheringNodeManager.reload(this);
+        this.townManager.reload(this);
+        this.oreGeneratorManager.reload(this);
         CustomBlock.load();
 
-        FileUtil.createOrGetFile("mana_abilities.yml");
+        CampfireManager campfireManager = new CampfireManager();
 
         registerEvents(
             GuiManager.init(),
@@ -168,19 +163,21 @@ public class VoidSurvival extends JavaPlugin {
             this.playerBlockManager,
             this.worldListener,
             this.lootTableManager,
-            this.combatTracker,
+            this.worldGenerationManager,
+            this.combatManager,
             this.gatheringNodeManager,
             this.triggerManager,
             this.townManager,
-            this.oreGenerator,
+            this.oreGeneratorManager,
             new RegionFlagListener(),
             new EntityEquipmentHandler(),
             this.recipeManager,
-            new BlockListener(),
+            new MiningManager(),
             new PlayerListener(),
-            new CampfireManager()
+            campfireManager
         );
 
+        campfireManager.init();
         this.allowJoins = true;
     }
 
@@ -212,19 +209,20 @@ public class VoidSurvival extends JavaPlugin {
 
     public void reload() {
         reloadConfig();
-        this.combatTagDurationSeconds = (int) getTimeFromYaml(getConfig(), "combat-tag-duration-seconds", 10, CustomTimeUnit.SECONDS);
+        this.combatTagDurationSeconds = (int) getTimeFromYaml(getConfig(), "combat-tag-duration-seconds", 10, "s");
         this.combatBlockedCommands = getConfig().getStringList("blocked-commands");
         this.infirmaryLocation = getConfig().getLocation("missing-home-backup-location", null);
-        this.messageManager.reload();
+        this.messageManager.reload(this);
         this.itemManager.reload();
         this.islandGenerator.reload();
-        this.playerBlockManager.reload();
-        this.lootTableManager.reload();
-        this.recipeManager.loadRecipes();
-        this.gatheringNodeManager.load();
+        this.playerBlockManager.reload(this);
+        this.lootTableManager.reload(this);
+        this.worldGenerationManager.reload(this);
+        this.recipeManager.reload(this);
+        this.gatheringNodeManager.reload(this);
         this.triggerManager.load();
-        this.townManager.load();
-        this.oreGenerator.reload();
+        this.townManager.reload(this);
+        this.oreGeneratorManager.reload(this);
         CustomBlock.load();
     }
 
@@ -249,6 +247,7 @@ public class VoidSurvival extends JavaPlugin {
             this.database.getTable(GlobalDataTable.class).saveGlobalData();
 
             // Wait for all tasks before shutting down (waitForAllTasksAndShutdown?), I don't know, weird names
+            this.playerBlockManager.shutdown();
             this.database.waitForAllTasksAndShutdown();
 
             this.gatheringNodeManager.save();
@@ -294,8 +293,8 @@ public class VoidSurvival extends JavaPlugin {
         return playerBlockManager;
     }
 
-    public CombatTracker getCombatTracker() {
-        return combatTracker;
+    public CombatManager getCombatTracker() {
+        return combatManager;
     }
 
     public LootChestManager getLootTableManager() {
@@ -363,12 +362,33 @@ public class VoidSurvival extends JavaPlugin {
         return islandDirectory.listFiles();
     }
 
+    public File getOrCreateFile(Path path) {
+
+        File file = getFile(path);
+
+        if (!file.exists()) {
+            try {
+                file.getParentFile().mkdirs();
+                file.createNewFile();
+            } catch (IOException e) {
+                logError("Failed to create file: " + file.getAbsolutePath(), e);
+                return null;
+            }
+        }
+
+        return file;
+    }
+
+    public File getOrCreateFile(String first, String... others) {
+        return getOrCreateFile(Path.of(first, others));
+    }
+
     public File getFile(Path path) {
         return getDataPath().resolve(path).toFile();
     }
 
     public File getFile(String first, String... others) {
-        return getDataPath().resolve(Path.of(first, others)).toFile();
+        return getFile(Path.of(first, others));
     }
 
     public static SQLiteDatabase getDatabase() {

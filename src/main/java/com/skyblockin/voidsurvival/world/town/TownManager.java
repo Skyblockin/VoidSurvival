@@ -16,11 +16,11 @@ public class TownManager implements Listener {
         return townMap.get(id);
     }
 
-    public void load() {
+    public void reload(VoidSurvival plugin) {
 
         try {
 
-            File file = VoidSurvival.getInstance().getFile("towns.json");
+            File file = plugin.getFile("towns.json");
 
             if (!file.exists()) {
                 return;

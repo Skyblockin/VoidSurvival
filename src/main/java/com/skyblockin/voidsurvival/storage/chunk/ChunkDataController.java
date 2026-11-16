@@ -1,5 +1,6 @@
 package com.skyblockin.voidsurvival.storage.chunk;
 
+import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.math.BlockPosition;
 import com.skyblockin.voidsurvival.math.ChunkPosition;
 
@@ -16,16 +17,16 @@ import java.util.zip.Inflater;
 public class ChunkDataController {
 
     private static final String DATABASE_NAME = "chunkcontrollerdata.db";
-    private static final String DATABASE_URL = "jdbc:sqlite:" + DATABASE_NAME;
 
     private final HashMap<ChunkPosition, ChunkData> dataMap = new HashMap<>();
     private int modifiedCount = 0;
-
-    public Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DATABASE_URL);
-    }
+    private Connection connection;
 
     public void initialize() throws SQLException {
+
+        if (connection != null) {
+            return;
+        }
 
         String createDataTable =
             """
@@ -35,9 +36,32 @@ public class ChunkDataController {
             )
             """;
 
-        Statement statement = getConnection().createStatement();
-        statement.executeUpdate(createDataTable);
-        statement.close();
+        String url = "jdbc:sqlite:" + VoidSurvival.getInstance().getDataPath().resolve(DATABASE_NAME);
+        this.connection = DriverManager.getConnection(url);
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate(createDataTable);
+        }
+    }
+
+    public void close() throws SQLException {
+
+        if (connection == null) {
+            return;
+        }
+
+        try {
+            saveChunks();
+        } finally {
+            connection.close();
+            connection = null;
+        }
+    }
+
+    private Connection getConnection() {
+        if (connection == null) {
+            throw new IllegalStateException("ChunkDataController has not been initialized");
+        }
+        return connection;
     }
 
     public static int[] unpackPosition(int packed) {
@@ -149,132 +173,84 @@ public class ChunkDataController {
             return;
         }
 
-        PreparedStatement statement = getConnection().prepareStatement(UPSERT_CHUNK);
+        try (PreparedStatement statement = getConnection().prepareStatement(UPSERT_CHUNK)) {
+            boolean shouldExecute = false;
 
-        boolean shouldExecute = false;
+            for (ChunkPosition pos : positions) {
 
-        for (ChunkPosition pos : positions) {
+                ChunkData data = unload ? dataMap.remove(pos) : dataMap.get(pos);
 
-            ChunkData data = unload ? dataMap.remove(pos) : dataMap.get(pos);
+                if (data != null && data.wasModified()) {
+                    data.setModified(false);
+                    shouldExecute = true;
+                    statement.setLong(1, pos.chunkKey());
+                    statement.setBytes(2, compress(data.serialize()));
+                    statement.addBatch();
+                    modifiedCount--;
+                }
+            }
 
-            if (data != null && data.wasModified()) {
-                data.setModified(false);
-                shouldExecute = true;
-                statement.setLong(1, pos.chunkKey());
-                statement.setBytes(2, compress(data.serialize()));
-                statement.addBatch();
-                modifiedCount--;
+            if (shouldExecute) {
+                statement.executeBatch();
             }
         }
 
-        if (shouldExecute) {
-            statement.executeBatch();
-        }
-
-        statement.close();
     }
 
     public void saveChunks() throws SQLException {
 
-        PreparedStatement statement = getConnection().prepareStatement(UPSERT_CHUNK);
+        try (PreparedStatement statement = getConnection().prepareStatement(UPSERT_CHUNK)) {
 
-        for (var entry : dataMap.entrySet()) {
-            if (entry.getValue().wasModified()) {
-                entry.getValue().setModified(false);
-                modifiedCount--;
-                statement.setLong(1, entry.getKey().chunkKey());
-                statement.setBytes(2, compress(entry.getValue().serialize()));
-                statement.addBatch();
+            boolean shouldExecute = false;
+
+            for (var entry : dataMap.entrySet()) {
+                if (entry.getValue().wasModified()) {
+                    entry.getValue().setModified(false);
+                    modifiedCount--;
+                    shouldExecute = true;
+                    statement.setLong(1, entry.getKey().chunkKey());
+                    statement.setBytes(2, compress(entry.getValue().serialize()));
+                    statement.addBatch();
+                }
+            }
+
+            if (shouldExecute) {
+                statement.executeBatch();
             }
         }
-
-        statement.executeBatch();
-        statement.close();
     }
 
     public List<ChunkData> loadChunks(List<ChunkPosition> positions) throws SQLException, DataFormatException {
 
         ArrayList<ChunkData> list = new ArrayList<>(positions.size());
 
-        PreparedStatement statement = getConnection().prepareStatement(
+        try (PreparedStatement statement = getConnection().prepareStatement(
             """
                 SELECT chunk_pos, data FROM chunk_data WHERE chunk_pos = ?
                 """
-        );
+        )) {
 
-        for (ChunkPosition pos : positions) {
-            statement.setLong(1, pos.chunkKey());
-            statement.addBatch();
-        }
+            for (ChunkPosition pos : positions) {
 
-        ResultSet rs = statement.executeQuery();
+                ChunkData existing = dataMap.get(pos);
 
-        while (rs.next()) {
+                if (existing != null) {
+                    list.add(existing);
+                    continue;
+                }
 
-            // The max (non-compressed) bytes for a chunk should be exactly 1966080, or about 2 megabytes.
-            // This should be absolutely fine to do.
-            ChunkPosition pos = ChunkPosition.ofLong(rs.getLong(1));
-            ChunkData data = new ChunkData(decompress(rs.getBytes(2)));
+                statement.setLong(1, pos.chunkKey());
 
-            dataMap.put(pos, data);
-
-            list.add(data);
-        }
-
-        statement.close();
-
-        return list;
-    }
-
-    public List<ChunkData> getChunks(List<ChunkPosition> positions) throws SQLException, DataFormatException {
-
-        ArrayList<ChunkData> list = new ArrayList<>();
-        ArrayList<ChunkPosition> notInMemoryList = new ArrayList<>();
-
-        // Get the in-memory ones first
-        for (ChunkPosition pos : positions) {
-
-            ChunkData data = dataMap.get(pos);
-
-            // The data might still exist in the database so let's check for that
-            if (data == null) {
-                notInMemoryList.add(pos);
-            } else {
-                list.add(data);
+                try (ResultSet rs = statement.executeQuery()) {
+                    if (rs.next()) {
+                        ChunkData data = new ChunkData(decompress(rs.getBytes(1)));
+                        dataMap.put(pos, data);
+                        list.add(data);
+                    }
+                }
             }
+
         }
-
-        // We found all the chunks from the database so no need to look at it!!
-        if (positions.size() == list.size()) {
-            return list;
-        }
-
-        PreparedStatement statement = getConnection().prepareStatement(
-            """
-                SELECT chunk_pos, data FROM chunk_data WHERE chunk_pos = ?
-                """
-        );
-
-        for (ChunkPosition pos : notInMemoryList) {
-            statement.setLong(1, pos.chunkKey());
-            statement.addBatch();
-        }
-
-        ResultSet rs = statement.executeQuery();
-
-        while (rs.next()) {
-
-            // The max (non-compressed) bytes for a chunk should be exactly 1966080, or about 2 megabytes.
-            // This should be absolutely fine to do.
-            ChunkPosition pos = ChunkPosition.ofLong(rs.getLong(1));
-            ChunkData data = new ChunkData(decompress(rs.getBytes(2)));
-
-            dataMap.put(pos, data);
-
-            list.add(data);
-        }
-
-        statement.close();
 
         return list;
     }
@@ -283,35 +259,46 @@ public class ChunkDataController {
 
         Inflater inflater = new Inflater();
 
-        inflater.setInput(input);
+        try {
+            inflater.setInput(input);
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        byte[] buffer = new byte[1024];
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
 
-        while (!inflater.finished()) {
-            int decompressedSize = inflater.inflate(buffer);
-            out.write(buffer, 0, decompressedSize);
+            while (!inflater.finished()) {
+                int decompressedSize = inflater.inflate(buffer);
+                if (decompressedSize == 0 && (inflater.needsInput() || inflater.needsDictionary())) {
+                    throw new DataFormatException("Truncated or corrupt chunk data");
+                }
+                out.write(buffer, 0, decompressedSize);
+            }
+
+            return out.toByteArray();
+        } finally {
+            inflater.end(); // frees native zlib memory immediately
         }
-
-        return out.toByteArray();
     }
 
     private byte[] compress(byte[] input) {
 
         Deflater deflater = new Deflater();
 
-        deflater.setInput(input);
-        deflater.finish();
+        try {
+            deflater.setInput(input);
+            deflater.finish();
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        byte[] buffer = new byte[1024];
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
 
-        while (!deflater.finished()) {
-            int compressedSize = deflater.deflate(buffer);
-            out.write(buffer, 0, compressedSize);
+            while (!deflater.finished()) {
+                int compressedSize = deflater.deflate(buffer);
+                out.write(buffer, 0, compressedSize);
+            }
+
+            return out.toByteArray();
+        } finally {
+            deflater.end(); // frees native zlib memory immediately
         }
-
-        return out.toByteArray();
     }
 
 }

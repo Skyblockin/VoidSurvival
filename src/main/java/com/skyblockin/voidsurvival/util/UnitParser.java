@@ -73,6 +73,10 @@ public final class UnitParser {
 
     public long parse(String s) {
 
+        if (s == null) {
+            return 0;
+        }
+
         if (!Character.isDigit(s.charAt(0))) {
             throw new IllegalArgumentException("Unit string must start with a digit");
         }
