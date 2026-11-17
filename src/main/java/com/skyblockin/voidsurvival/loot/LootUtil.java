@@ -3,6 +3,8 @@ package com.skyblockin.voidsurvival.loot;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.item.ItemIds;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -33,7 +35,7 @@ public class LootUtil {
     }
 
     public static void fillInventory(Inventory inventory, double lootBonus, LootTable lootTable) {
-        inventory.setContents(lootTable.fill(inventory.getSize(), lootBonus));
+        inventory.setContents(lootTable.fill(inventory.getSize(), 1 + lootBonus / 100));
     }
 
 }
