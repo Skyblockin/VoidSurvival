@@ -4,10 +4,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
-import com.skyblockin.voidsurvival.command.admin.Admin;
-import com.skyblockin.voidsurvival.command.admin.Chest;
-import com.skyblockin.voidsurvival.command.admin.Debug;
-import com.skyblockin.voidsurvival.command.admin.Give;
+import com.skyblockin.voidsurvival.command.admin.*;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.command.CommandSender;
 
@@ -23,6 +20,7 @@ public final class MainCommand {
         .then(Chest.COMMAND)
         .then(Give.COMMAND)
         .then(Debug.COMMAND)
+        .then(ToggleCommand.COMMAND)
         .then(quickOpCommand("reload", (ctx, sender) -> {
                 VoidSurvival.getInstance().reload();
                 sender.sendRichMessage("<green>VoidSurvival reloaded!");

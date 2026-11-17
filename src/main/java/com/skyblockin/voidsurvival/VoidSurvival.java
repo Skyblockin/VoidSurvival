@@ -55,6 +55,7 @@ public class VoidSurvival extends JavaPlugin {
     private SQLiteDatabase database;
 
     private MessageManager messageManager;
+    private MiningManager miningManager;
     private IslandGenerator islandGenerator;
     private OreGeneratorManager oreGeneratorManager;
     private PlayerBlockManager playerBlockManager;
@@ -111,6 +112,7 @@ public class VoidSurvival extends JavaPlugin {
             throw new RuntimeException(e);
         }
 
+        this.miningManager = new MiningManager();
         this.lootTableManager = new LootChestManager();
         this.worldListener = new WorldListener();
         this.leaderboardManager = new LeaderboardManager();
@@ -172,7 +174,7 @@ public class VoidSurvival extends JavaPlugin {
             new RegionFlagListener(),
             new EntityEquipmentHandler(),
             this.recipeManager,
-            new MiningManager(),
+            this.miningManager,
             new PlayerListener(),
             campfireManager
         );
@@ -271,6 +273,10 @@ public class VoidSurvival extends JavaPlugin {
 
     public MessageManager getMessageManager() {
         return messageManager;
+    }
+
+    public MiningManager getMiningManager() {
+        return miningManager;
     }
 
     public FriendManager getFriendManager() {
