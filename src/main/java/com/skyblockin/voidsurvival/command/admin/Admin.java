@@ -188,6 +188,23 @@ public final class Admin {
                 })
             )
         )
+        .then(literal("anvilrename")
+            .then(argument("name", StringArgumentType.greedyString())
+                .executes(CommandUtil.playerCommand((ctx, player) -> {
+
+                    String name = ctx.getArgument("name", String.class);
+
+                    ItemStack item = player.getInventory().getItemInMainHand();
+
+                    if (!item.isEmpty()) {
+                        item.editMeta(meta -> meta.displayName(TextUtil.color(name)));
+                        player.sendRichMessage("<green>Renamed item!");
+                    } else {
+                        player.sendRichMessage("<red>You must be holding an item!");
+                    }
+                }))
+            )
+        )
         .then(literal("home")
             .then(argument("home", StringArgumentType.word())
                 .executes(CommandUtil.playerCommand((ctx, player) -> {
