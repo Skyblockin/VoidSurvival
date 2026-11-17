@@ -1,6 +1,7 @@
 package com.skyblockin.voidsurvival.item.listeners;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
+import com.skyblockin.voidsurvival.item.ItemIds;
 import com.skyblockin.voidsurvival.math.Cuboid;
 import com.skyblockin.voidsurvival.nms.NMSUtil;
 import com.skyblockin.voidsurvival.storage.Accessors;
@@ -39,7 +40,7 @@ public class LavaWalkerListener implements Listener {
             return;
         }
 
-        if (Accessors.ITEM_ID.equals(boots, "pignite_boots")) {
+        if (Accessors.ITEM_ID.equals(boots, ItemIds.PIGNITE_BOOTS)) {
 
             int size = 4;
             int sizeSquared = size * size;
