@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@SuppressWarnings("UnstableApiUsage")
 public class DataComponentTypeList {
 
     private static final Map<String, DataComponentType> TYPES;
