@@ -20,7 +20,7 @@ import java.util.List;
 import static io.papermc.paper.command.brigadier.Commands.argument;
 import static io.papermc.paper.command.brigadier.Commands.literal;
 
-public final class Give {
+public final class GiveCommand {
 
       public static final LiteralCommandNode<CommandSourceStack> COMMAND = literal("give")
           .requires(ctx -> ctx.getSender().isOp())

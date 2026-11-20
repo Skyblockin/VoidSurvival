@@ -103,7 +103,7 @@ public class WeightedCollection<T> {
 
     @Override
     public String toString() {
-        return String.format("WeightedCollection{weight=%f, items=%d}", totalWeight, items.size());
+        return String.format("WeightedCollection{weight=%f, size=%d, items=%s}", totalWeight, items.size(), items);
     }
 
 }

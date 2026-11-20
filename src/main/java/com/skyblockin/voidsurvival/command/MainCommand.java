@@ -16,10 +16,10 @@ public final class MainCommand {
 
     public static final LiteralCommandNode<CommandSourceStack> COMMAND = literal("vs")
         .requires(ctx -> ctx.getSender().isOp())
-        .then(Admin.COMMAND)
-        .then(Chest.COMMAND)
-        .then(Give.COMMAND)
-        .then(Debug.COMMAND)
+        .then(AdminCommand.COMMAND)
+        .then(ChestCommand.COMMAND)
+        .then(GiveCommand.COMMAND)
+        .then(DebugCommand.COMMAND)
         .then(ToggleCommand.COMMAND)
         .then(quickOpCommand("reload", (ctx, sender) -> {
                 VoidSurvival.getInstance().reload();

@@ -2,7 +2,7 @@ package com.skyblockin.voidsurvival.manager;
 
 import com.skyblockin.voidsurvival.block.BlockBreakSession;
 import com.skyblockin.voidsurvival.block.CustomBlock;
-import com.skyblockin.voidsurvival.block.CustomBlockPreMineEvent;
+import com.skyblockin.voidsurvival.event.CustomBlockPreMineEvent;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.region.Flags;
 import com.skyblockin.voidsurvival.util.ToolEvaluation;
@@ -22,7 +22,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;

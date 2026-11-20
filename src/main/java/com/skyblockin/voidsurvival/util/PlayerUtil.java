@@ -1,13 +1,12 @@
 package com.skyblockin.voidsurvival.util;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
-import com.skyblockin.voidsurvival.config.Pair;
 import com.skyblockin.voidsurvival.gui.Gui;
 import com.skyblockin.voidsurvival.gui.GuiItem;
+import com.skyblockin.voidsurvival.manager.campfire.CampfireData;
 import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.storage.PlayerData;
-import com.skyblockin.voidsurvival.math.Position;
-import com.skyblockin.voidsurvival.manager.CampfireManager;
+import com.skyblockin.voidsurvival.manager.campfire.CampfireManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Sound;
@@ -81,7 +80,7 @@ public class PlayerUtil {
                 meta.customName(TextUtil.color("<!i><#ffa500>%s", campfireName));
             }), event -> {
 
-                Pair<String, Position> campfireData = CampfireManager.getCampfireData(campfireLocation);
+                CampfireData campfireData = CampfireManager.getCampfireData(campfireLocation);
                 Player clicker = (Player) event.getWhoClicked();
 
                 if (campfireData == null) {
@@ -95,8 +94,8 @@ public class PlayerUtil {
                     return;
                 }
 
-                String warpName = campfireData.left();
-                Location warpLocation = campfireData.right().toLocation(campfireLocation.getWorld());
+                String warpName = campfireData.id();
+                Location warpLocation = campfireData.position().toLocation(campfireLocation.getWorld());
 
                 warpToCampfire(warpName, warpLocation, clicker);
             });

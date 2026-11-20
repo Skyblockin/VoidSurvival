@@ -1,7 +1,6 @@
-package com.skyblockin.voidsurvival.manager;
+package com.skyblockin.voidsurvival.manager.campfire;
 
 import com.skyblockin.voidsurvival.VoidSurvival;
-import com.skyblockin.voidsurvival.config.Pair;
 import com.skyblockin.voidsurvival.event.CampfireClickEvent;
 import com.skyblockin.voidsurvival.event.CampfireLoadEvent;
 import com.skyblockin.voidsurvival.math.Position;
@@ -85,8 +84,6 @@ public class CampfireManager implements Listener {
         }
     }
 
-    // ---- Per-player visibility ----
-
     @EventHandler
     public void onCampfireLoad(CampfireLoadEvent event) {
 
@@ -128,8 +125,6 @@ public class CampfireManager implements Listener {
 
         VoidSurvival.getInstance().runTaskLater(() -> player.sendBlockChange(block.getLocation(), litCampfire), 1);
     }
-
-    // ---- Unchanged interaction handling ----
 
     @EventHandler
     public void onPlayerChunkLoad(PlayerChunkLoadEvent event) {
@@ -175,14 +170,14 @@ public class CampfireManager implements Listener {
         }
     }
 
-    public static Pair<String, Position> getCampfireData(Location location) {
+    public static CampfireData getCampfireData(Location location) {
 
         if (location.getBlock().getState() instanceof Campfire campfire) {
 
             String campfireId = Accessors.CAMPFIRE_WARP_ID.read(campfire);
             Position warpPosition = Accessors.CAMPFIRE_WARP_POSITION.read(campfire);
 
-            return new Pair<>(campfireId, warpPosition);
+            return new CampfireData(campfireId, warpPosition);
         }
 
         return null;

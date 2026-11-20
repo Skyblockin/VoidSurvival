@@ -36,7 +36,7 @@ import java.util.concurrent.CompletableFuture;
 import static io.papermc.paper.command.brigadier.Commands.argument;
 import static io.papermc.paper.command.brigadier.Commands.literal;
 
-public final class Debug {
+public final class DebugCommand {
 
     public static final LiteralCommandNode<CommandSourceStack> COMMAND = literal("debug")
         .requires(ctx -> ctx.getSender().isOp())

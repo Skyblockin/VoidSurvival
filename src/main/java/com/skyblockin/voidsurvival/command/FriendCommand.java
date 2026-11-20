@@ -6,7 +6,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.skyblockin.voidsurvival.VoidSurvival;
 import com.skyblockin.voidsurvival.message.MessageKeys;
 import com.skyblockin.voidsurvival.social.Friend;
-import com.skyblockin.voidsurvival.social.PaginatedList;
+import com.skyblockin.voidsurvival.util.PaginatedList;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.storage.PlayerDataException;
 import com.skyblockin.voidsurvival.util.CommandUtil;

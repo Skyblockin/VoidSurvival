@@ -11,6 +11,7 @@ import com.skyblockin.voidsurvival.event.CampfireLoadEvent;
 import com.skyblockin.voidsurvival.gathering.GatheringNode;
 import com.skyblockin.voidsurvival.manager.GatheringNodeManager;
 import com.skyblockin.voidsurvival.gathering.GatheringNodeType;
+import com.skyblockin.voidsurvival.manager.generation.CustomEntityRegistry;
 import com.skyblockin.voidsurvival.storage.Accessors;
 import com.skyblockin.voidsurvival.storage.PlayerData;
 import com.skyblockin.voidsurvival.math.Position;
@@ -46,7 +47,7 @@ import static io.papermc.paper.command.brigadier.Commands.argument;
 import static io.papermc.paper.command.brigadier.Commands.literal;
 
 @SuppressWarnings("UnstableApiUsage")
-public final class Admin {
+public final class AdminCommand {
 
     private static final List<String> VALID_STATISTIC_NAMES;
 
@@ -154,27 +155,7 @@ public final class Admin {
         )
         .then(literal("fighter")
             .executes(CommandUtil.playerCommand((ctx, player) -> {
-
-                NPC npc = CitizensAPI.getTemporaryNPCRegistry().createNPC(EntityType.PLAYER, "Fighter");
-
-                npc.setAlwaysUseNameHologram(true);
-                npc.setProtected(false);
-                npc.addTrait(FighterTrait.class);
-
-                Equipment equipment = npc.getOrAddTrait(Equipment.class);
-
-                equipment.set(Equipment.EquipmentSlot.HELMET, new ItemStack(Material.IRON_HELMET));
-                equipment.set(Equipment.EquipmentSlot.BODY, new ItemStack(Material.IRON_CHESTPLATE));
-                equipment.set(Equipment.EquipmentSlot.LEGGINGS, new ItemStack(Material.IRON_LEGGINGS));
-                equipment.set(Equipment.EquipmentSlot.BOOTS, new ItemStack(Material.IRON_BOOTS));
-
-                equipment.set(Equipment.EquipmentSlot.HAND, new ItemStack(Material.DIAMOND_AXE));
-
-                npc.spawn(player.getLocation());
-
-                NavigatorParameters params = npc.getNavigator().getLocalParameters();
-
-                params.avoidWater(false);
+                CustomEntityRegistry.FIGHTER.spawn(player.getLocation());
             }))
         )
         .then(literal("testmsg")

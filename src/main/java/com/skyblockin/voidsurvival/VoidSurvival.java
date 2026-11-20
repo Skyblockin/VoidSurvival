@@ -10,6 +10,8 @@ import com.skyblockin.voidsurvival.item.ItemManager;
 import com.skyblockin.voidsurvival.entity.EntityEquipmentHandler;
 import com.skyblockin.voidsurvival.entity.PlayerListener;
 import com.skyblockin.voidsurvival.gui.GuiManager;
+import com.skyblockin.voidsurvival.manager.campfire.CampfireManager;
+import com.skyblockin.voidsurvival.manager.generation.WorldGenerationManager;
 import com.skyblockin.voidsurvival.region.Flags;
 import com.skyblockin.voidsurvival.region.RegionFlagListener;
 import com.skyblockin.voidsurvival.social.FriendManager;
@@ -117,7 +119,7 @@ public class VoidSurvival extends JavaPlugin {
         this.worldListener = new WorldListener();
         this.leaderboardManager = new LeaderboardManager();
         this.itemManager = new ItemManager();
-        this.worldGenerationManager = new WorldGenerationManager();
+        this.worldGenerationManager = new WorldGenerationManager(this);
         this.recipeManager = new RecipeManager();
         this.friendManager = new FriendManager();
         this.gatheringNodeManager = new GatheringNodeManager();

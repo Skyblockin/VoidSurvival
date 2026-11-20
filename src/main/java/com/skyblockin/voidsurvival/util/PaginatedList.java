@@ -1,4 +1,4 @@
-package com.skyblockin.voidsurvival.social;
+package com.skyblockin.voidsurvival.util;
 
 import java.util.ArrayList;
 import java.util.Collection;

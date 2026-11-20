@@ -13,7 +13,7 @@ import org.bukkit.entity.Player;
 import static io.papermc.paper.command.brigadier.Commands.argument;
 import static io.papermc.paper.command.brigadier.Commands.literal;
 
-public final class Chest {
+public final class ChestCommand {
 
     public static final LiteralCommandNode<CommandSourceStack> COMMAND = literal("chest")
         .requires(ctx -> ctx.getSender().isOp())

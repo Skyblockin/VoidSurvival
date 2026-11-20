@@ -1,5 +1,6 @@
 package com.skyblockin.voidsurvival.block;
 
+import com.skyblockin.voidsurvival.event.CustomBlockMineEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.game.ClientboundBlockDestructionPacket;
 import org.bukkit.Effect;

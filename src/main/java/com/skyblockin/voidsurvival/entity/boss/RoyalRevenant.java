@@ -1,5 +1,6 @@
 package com.skyblockin.voidsurvival.entity.boss;
 
+import com.skyblockin.voidsurvival.entity.CustomEntity;
 import com.skyblockin.voidsurvival.entity.boss.trait.RoyalRevenantTrait;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
@@ -11,9 +12,9 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
 
-public class RoyalRevenant {
+public class RoyalRevenant implements CustomEntity<NPC>  {
 
-    public static NPC spawn(Location location) {
+    public NPC spawn(Location location) {
 
         NPC npc = CitizensAPI.getTemporaryNPCRegistry().createNPC(EntityType.ZOMBIE, "§cRoyal Revenant");
 
@@ -41,6 +42,11 @@ public class RoyalRevenant {
         npc.data().set("name", "Royal Revenant");
 
         return npc;
+    }
+
+    @Override
+    public boolean isValidForSpawn(Location location) {
+        return true;
     }
 
 }

@@ -16,10 +16,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 
 public class Functions {
@@ -73,6 +70,19 @@ public class Functions {
 
     public static <T> T randomChoice(List<T> elements) {
         return elements.get(ThreadLocalRandom.current().nextInt(elements.size()));
+    }
+
+    public static <K, V> Map.Entry<K, V> randomChoice(Map<K, V> elements) {
+
+        int index = ThreadLocalRandom.current().nextInt(elements.size());
+
+        for (Map.Entry<K, V> entry : elements.entrySet()) {
+            if (index-- == 0) {
+                return entry;
+            }
+        }
+
+        return null;
     }
 
     public static <T> List<T> randomChoice(List<T> elements, int n) {
