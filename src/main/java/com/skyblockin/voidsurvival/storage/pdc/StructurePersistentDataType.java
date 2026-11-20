@@ -24,7 +24,7 @@ public class StructurePersistentDataType implements PersistentDataType<byte[], S
     @Override
     public @NonNull byte[] toPrimitive(@NonNull Structure complex, @NotNull PersistentDataAdapterContext context) {
 
-        byte[] nameBytes = complex.name().getBytes();
+        byte[] nameBytes = complex.name.getBytes();
 
         // Six ints for the coordinates,
         // Four bytes for each of the ints,
@@ -33,12 +33,13 @@ public class StructurePersistentDataType implements PersistentDataType<byte[], S
 
         buffer.putInt(nameBytes.length);
         buffer.put(nameBytes);
-        buffer.putInt(complex.min().x());
-        buffer.putInt(complex.min().y());
-        buffer.putInt(complex.min().z());
-        buffer.putInt(complex.max().x());
-        buffer.putInt(complex.max().y());
-        buffer.putInt(complex.max().z());
+        buffer.putInt(complex.min.x());
+        buffer.putInt(complex.min.y());
+        buffer.putInt(complex.min.z());
+        buffer.putInt(complex.max.x());
+        buffer.putInt(complex.max.y());
+        buffer.putInt(complex.max.z());
+        buffer.putInt(complex.blocks);
 
         return buffer.array();
     }
@@ -58,7 +59,9 @@ public class StructurePersistentDataType implements PersistentDataType<byte[], S
         BlockPosition min = new BlockPosition(buffer.getInt(), buffer.getInt(), buffer.getInt());
         BlockPosition max = new BlockPosition(buffer.getInt(), buffer.getInt(), buffer.getInt());
 
-        return new Structure(name, min, max);
+        int blocks = buffer.getInt();
+
+        return new Structure(name, min, max, blocks);
     }
 
 }
